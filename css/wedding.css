@@ -60,3 +60,23 @@ h1, h2, h3 { font-family: var(--w-font-headline); font-weight: 600; line-height:
 @media (max-width: 767px) {
   #w-portfolio .w-gallery { grid-template-columns: repeat(2, 1fr); }
 }
+
+#w-about { display: flex; gap: 40px; align-items: center; flex-wrap: wrap; }
+#w-about img { flex: 1 1 300px; border-radius: 2px; }
+#w-about .text { flex: 1 1 400px; }
+
+#w-packages .w-package-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+#w-packages .w-package {
+  border: 1px solid rgba(58,53,48,0.15);
+  padding: 32px 24px;
+  text-align: center;
+}
+#w-packages .w-package h3 { font-size: 1.3rem; margin-bottom: 12px; }
+#w-packages .w-package .price { color: var(--w-color-accent); font-size: 1.5rem; font-family: var(--w-font-headline); margin: 16px 0; }
+@media (max-width: 900px) {
+  #w-packages .w-package-grid { grid-template-columns: 1fr; }
+}
