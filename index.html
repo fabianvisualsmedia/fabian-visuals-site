@@ -124,7 +124,33 @@
     </div>
     <img src="assets/images/fabian-at-work.jpg" alt="Fabian Scholl bei der Arbeit" loading="lazy">
   </section>
-  <!-- CONTACT_FOOTER_PLACEHOLDER: filled in Task 9 -->
+  <section id="kontakt">
+    <h2>Kontakt</h2>
+    <p>Lass uns über dein Projekt sprechen.</p>
+    <a class="btn whatsapp-cta" href="https://wa.me/491785003656" target="_blank" rel="noopener">Jetzt Termin sichern (WhatsApp)</a>
+    <form id="main-contact-form" action="https://formspree.io/f/REPLACE_ME" method="POST">
+      <div>
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div>
+        <label for="email">E-Mail</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div>
+        <label for="message">Nachricht</label>
+        <textarea id="message" name="message" required></textarea>
+      </div>
+      <button type="submit" class="btn">Nachricht senden</button>
+    </form>
+  </section>
+
+  <footer>
+    <p>&copy; 2026 Fabian Visuals — Bonn / Köln / Düsseldorf / Aachen</p>
+    <nav class="socials" aria-label="Social Media">
+      <a href="https://instagram.com/Fabian.Visuals" target="_blank" rel="noopener" aria-label="Instagram">IG</a>
+    </nav>
+  </footer>
   <script>
     document.getElementById('nav-toggle').addEventListener('click', function () {
       var list = document.getElementById('nav-list');
