@@ -93,3 +93,20 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 #hero h1 { font-size: clamp(2.5rem, 8vw, 5rem); max-width: 900px; }
 #hero p { margin-top: 24px; max-width: 560px; font-size: 1.125rem; }
 #hero .btn { margin-top: 40px; align-self: flex-start; }
+
+#kundenlogos { padding: 48px 24px; }
+#kundenlogos .logo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+}
+#kundenlogos img {
+  height: 40px;
+  width: auto;
+  filter: grayscale(100%) brightness(1.6);
+  opacity: 0.6;
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+#kundenlogos img:hover { filter: none; opacity: 1; }
