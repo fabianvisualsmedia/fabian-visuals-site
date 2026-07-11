@@ -39,9 +39,20 @@
     });
   }
 
+  function initCaseCardHover() {
+    if (prefersReducedMotion()) return;
+    document.querySelectorAll('.case-card').forEach(function (card) {
+      var yTo = gsap.quickTo(card, 'y', { duration: 0.25, ease: 'power2.out' });
+      var scaleTo = gsap.quickTo(card, 'scale', { duration: 0.25, ease: 'power2.out' });
+      card.addEventListener('mouseenter', function () { yTo(-4); scaleTo(1.02); });
+      card.addEventListener('mouseleave', function () { yTo(0); scaleTo(1); });
+    });
+  }
+
   function initMainPage() {
     initNavToggle();
     initScrollReveal();
+    initCaseCardHover();
   }
 
   return { prefersReducedMotion: prefersReducedMotion, initMainPage: initMainPage };
