@@ -12,6 +12,10 @@
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
+  function isTouchDevice() {
+    return window.matchMedia('(pointer: coarse)').matches;
+  }
+
   function initNavToggle() {
     var toggle = document.getElementById('nav-toggle');
     var list = document.getElementById('nav-list');
@@ -49,13 +53,29 @@
     });
   }
 
+  function initMagnetCursor() {
+    if (prefersReducedMotion() || isTouchDevice()) return;
+    var targets = [document.querySelector('#hero .btn'), document.querySelector('#kontakt .whatsapp-cta')].filter(Boolean);
+    targets.forEach(function (el) {
+      var xTo = gsap.quickTo(el, 'x', { duration: 0.4, ease: 'elastic.out(1,0.4)' });
+      var yTo = gsap.quickTo(el, 'y', { duration: 0.4, ease: 'elastic.out(1,0.4)' });
+      el.addEventListener('mousemove', function (e) {
+        var r = el.getBoundingClientRect();
+        xTo((e.clientX - r.left - r.width / 2) * 0.3);
+        yTo((e.clientY - r.top - r.height / 2) * 0.3);
+      });
+      el.addEventListener('mouseleave', function () { xTo(0); yTo(0); });
+    });
+  }
+
   function initMainPage() {
     initNavToggle();
     initScrollReveal();
     initCaseCardHover();
+    initMagnetCursor();
   }
 
-  return { prefersReducedMotion: prefersReducedMotion, initMainPage: initMainPage };
+  return { prefersReducedMotion: prefersReducedMotion, isTouchDevice: isTouchDevice, initMainPage: initMainPage };
 });
 
 if (typeof document !== 'undefined') {
