@@ -1,0 +1,93 @@
+:root {
+  --color-bg: #000000;
+  --color-fg: #FFFFFF;
+  --color-accent: #E1272C;
+  --font-headline: 'Benzin', 'Arial Black', sans-serif;
+  --font-body: 'Helvetica Neue', Arial, sans-serif;
+  --max-width: 1200px;
+}
+
+@font-face {
+  font-family: 'Benzin';
+  src: url('../assets/fonts/Benzin-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  overflow-x: hidden;
+}
+
+section { padding: 96px 24px; max-width: var(--max-width); margin: 0 auto; }
+
+h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-height: 1.05; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 14px 32px;
+  background: var(--color-accent);
+  color: var(--color-fg);
+  font-weight: 700;
+  border-radius: 4px;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(225,39,44,0.35); }
+.btn:focus-visible { outline: 3px solid var(--color-fg); outline-offset: 2px; }
+
+#site-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(6px);
+}
+#site-nav .logo { font-family: var(--font-headline); font-size: 1.25rem; }
+#site-nav ul { display: flex; gap: 32px; }
+#site-nav a { min-height: 44px; display: flex; align-items: center; }
+#site-nav a:hover { color: var(--color-accent); }
+#nav-toggle { display: none; }
+
+@media (max-width: 767px) {
+  #site-nav ul {
+    position: fixed;
+    top: 72px; left: 0; right: 0;
+    flex-direction: column;
+    gap: 0;
+    background: var(--color-bg);
+    transform: translateY(-150%);
+    transition: transform 300ms ease;
+  }
+  #site-nav ul.open { transform: translateY(0); }
+  #site-nav ul li { border-bottom: 1px solid rgba(255,255,255,0.1); width: 100%; }
+  #site-nav ul li a { padding: 16px 24px; width: 100%; }
+  #nav-toggle { display: block; min-width: 44px; min-height: 44px; color: var(--color-fg); font-size: 1.5rem; }
+}
+
+#hero {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 96px;
+  position: relative;
+  overflow: hidden;
+}
+#hero .hero-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.85)), url('../assets/images/hero-bg.jpg') center/cover;
+  z-index: -1;
+}
+#hero h1 { font-size: clamp(2.5rem, 8vw, 5rem); max-width: 900px; }
+#hero p { margin-top: 24px; max-width: 560px; font-size: 1.125rem; }
+#hero .btn { margin-top: 40px; align-self: flex-start; }
