@@ -68,11 +68,23 @@
     });
   }
 
+  function initHeroParallax() {
+    if (prefersReducedMotion()) return;
+    var bg = document.querySelector('#hero .hero-bg');
+    if (!bg) return;
+    gsap.to(bg, {
+      yPercent: 12,
+      ease: 'none',
+      scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: true }
+    });
+  }
+
   function initMainPage() {
     initNavToggle();
     initScrollReveal();
     initCaseCardHover();
     initMagnetCursor();
+    initHeroParallax();
   }
 
   return { prefersReducedMotion: prefersReducedMotion, isTouchDevice: isTouchDevice, initMainPage: initMainPage };
