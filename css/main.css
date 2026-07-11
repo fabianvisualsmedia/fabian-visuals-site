@@ -168,3 +168,9 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   color: rgba(255,255,255,0.5);
   font-style: italic;
 }
+
+#ueber-mich { display: flex; gap: 48px; align-items: center; flex-wrap: wrap; }
+#ueber-mich .text { flex: 1 1 480px; }
+#ueber-mich img { flex: 1 1 320px; border-radius: 4px; }
+#ueber-mich h2 { margin-bottom: 24px; }
+#ueber-mich p { color: rgba(255,255,255,0.8); font-size: 1.05rem; }
