@@ -50,3 +50,13 @@ h1, h2, h3 { font-family: var(--w-font-headline); font-weight: 600; line-height:
 #w-hero h1 { font-size: clamp(2rem, 6vw, 3.5rem); max-width: 640px; }
 #w-hero p { margin-top: 20px; max-width: 480px; }
 #w-hero .scroll-indicator { margin-top: 48px; font-size: 0.85rem; color: var(--w-color-text); opacity: 0.6; }
+
+#w-portfolio .w-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+#w-portfolio .w-gallery img { aspect-ratio: 1; object-fit: cover; border-radius: 2px; }
+@media (max-width: 767px) {
+  #w-portfolio .w-gallery { grid-template-columns: repeat(2, 1fr); }
+}
