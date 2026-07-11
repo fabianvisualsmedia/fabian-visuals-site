@@ -219,3 +219,4 @@ footer .socials a { min-width: 44px; min-height: 44px; display: inline-flex; ali
   transition: background 200ms ease, color 200ms ease;
 }
 .wedding-teaser:hover { background: #C9A876; color: var(--color-bg); }
+.wedding-teaser:focus-visible { outline: 3px solid var(--color-fg); outline-offset: 2px; }
