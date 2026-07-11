@@ -57,6 +57,37 @@
     </div>
   </section>
 
-  <!-- WEDDING_TESTIMONIALS_CONTACT_PLACEHOLDER: filled in Task 18 -->
+  <section id="w-testimonials" hidden>
+    <h2>Was Brautpaare sagen</h2>
+    <blockquote>Platzhalter für zukünftige Zitate.</blockquote>
+  </section>
+
+  <section id="w-contact">
+    <h2>Anfrage senden</h2>
+    <form id="wedding-contact-form" action="https://formspree.io/f/REPLACE_ME" method="POST">
+      <div>
+        <label for="w-date">Datum</label>
+        <input type="date" id="w-date" name="date" required>
+      </div>
+      <div>
+        <label for="w-location">Location</label>
+        <input type="text" id="w-location" name="location" required>
+      </div>
+      <div>
+        <label for="w-package">Gewünschtes Paket</label>
+        <select id="w-package" name="package" required>
+          <option value="">Bitte wählen</option>
+          <option value="elopement">Elopement / Micro-Wedding</option>
+          <option value="ganztags">Ganztags-Fotografie</option>
+          <option value="foto-film">Fotografie + Film</option>
+        </select>
+      </div>
+      <div>
+        <label for="w-message">Nachricht</label>
+        <textarea id="w-message" name="message" required></textarea>
+      </div>
+      <button type="submit" class="w-btn">Anfrage senden</button>
+    </form>
+  </section>
 </body>
 </html>

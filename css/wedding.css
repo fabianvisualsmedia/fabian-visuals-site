@@ -80,3 +80,24 @@ h1, h2, h3 { font-family: var(--w-font-headline); font-weight: 600; line-height:
 @media (max-width: 900px) {
   #w-packages .w-package-grid { grid-template-columns: 1fr; }
 }
+
+#w-testimonials[hidden] { display: none; }
+
+#w-contact form {
+  display: grid;
+  gap: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: left;
+}
+#w-contact label { font-size: 0.9rem; }
+#w-contact input, #w-contact select, #w-contact textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px;
+  background: #FFFFFF;
+  border: 1px solid rgba(58,53,48,0.25);
+  color: var(--w-color-text);
+  border-radius: 2px;
+}
+#w-contact textarea { min-height: 120px; }
