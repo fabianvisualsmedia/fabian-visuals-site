@@ -150,3 +150,15 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 @media (max-width: 767px) {
   #projekte .case-grid { grid-template-columns: 1fr; }
 }
+
+#prozess .process-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+#prozess .step .num { font-family: var(--font-headline); color: var(--color-accent); font-size: 1.5rem; }
+#prozess .step h3 { margin: 8px 0; font-size: 1.05rem; }
+#prozess .step p { color: rgba(255,255,255,0.75); font-size: 0.95rem; }
+@media (max-width: 900px) {
+  #prozess .process-grid { grid-template-columns: 1fr; gap: 32px; }
+}
