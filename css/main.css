@@ -110,3 +110,20 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   transition: opacity 200ms ease, filter 200ms ease;
 }
 #kundenlogos img:hover { filter: none; opacity: 1; }
+
+#leistungen h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); margin-bottom: 48px; }
+#leistungen .service-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+#leistungen .service-card .num {
+  font-family: var(--font-headline);
+  color: var(--color-accent);
+  font-size: 2rem;
+}
+#leistungen .service-card h3 { margin: 12px 0; font-size: 1.25rem; }
+#leistungen .service-card p { color: rgba(255,255,255,0.75); }
+@media (max-width: 900px) {
+  #leistungen .service-grid { grid-template-columns: 1fr; }
+}
