@@ -162,3 +162,9 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 @media (max-width: 900px) {
   #prozess .process-grid { grid-template-columns: 1fr; gap: 32px; }
 }
+
+#kundenstimmen { text-align: center; }
+#kundenstimmen p.placeholder-note {
+  color: rgba(255,255,255,0.5);
+  font-style: italic;
+}
