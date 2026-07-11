@@ -56,7 +56,9 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 #site-nav ul { display: flex; gap: 32px; }
 #site-nav a { min-height: 44px; display: flex; align-items: center; }
 #site-nav a:hover { color: var(--color-accent); }
+#site-nav a:focus-visible { outline: 3px solid var(--color-fg); outline-offset: 2px; }
 #nav-toggle { display: none; }
+#nav-toggle:focus-visible { outline: 3px solid var(--color-fg); outline-offset: 2px; }
 
 @media (max-width: 767px) {
   #site-nav ul {
