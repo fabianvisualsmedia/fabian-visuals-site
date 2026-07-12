@@ -204,6 +204,7 @@ footer {
 }
 footer .socials { display: flex; justify-content: center; gap: 20px; margin-top: 12px; }
 footer .socials a { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+footer .socials a:focus-visible { outline: 3px solid var(--color-fg); outline-offset: 2px; }
 
 .wedding-teaser {
   display: inline-flex;
