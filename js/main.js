@@ -79,12 +79,33 @@
     });
   }
 
+  function initCustomCursor() {
+    if (prefersReducedMotion() || isTouchDevice()) return;
+    var dot = document.querySelector('.cursor-dot');
+    var ring = document.querySelector('.cursor-ring');
+    if (!dot || !ring) return;
+    document.documentElement.classList.add('custom-cursor-active');
+    var dotX = gsap.quickTo(dot, 'x', { duration: 0.1, ease: 'power2.out' });
+    var dotY = gsap.quickTo(dot, 'y', { duration: 0.1, ease: 'power2.out' });
+    var ringX = gsap.quickTo(ring, 'x', { duration: 0.3, ease: 'power2.out' });
+    var ringY = gsap.quickTo(ring, 'y', { duration: 0.3, ease: 'power2.out' });
+    window.addEventListener('mousemove', function (e) {
+      dotX(e.clientX); dotY(e.clientY);
+      ringX(e.clientX); ringY(e.clientY);
+    });
+    document.querySelectorAll('a, button, .case-card').forEach(function (el) {
+      el.addEventListener('mouseenter', function () { ring.classList.add('is-active'); });
+      el.addEventListener('mouseleave', function () { ring.classList.remove('is-active'); });
+    });
+  }
+
   function initMainPage() {
     initNavToggle();
     initScrollReveal();
     initCaseCardHover();
     initMagnetCursor();
     initHeroParallax();
+    initCustomCursor();
   }
 
   return { prefersReducedMotion: prefersReducedMotion, isTouchDevice: isTouchDevice, initMainPage: initMainPage };
