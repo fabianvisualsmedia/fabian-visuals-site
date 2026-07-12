@@ -30,7 +30,7 @@
   function initScrollReveal() {
     if (prefersReducedMotion()) return;
     gsap.registerPlugin(ScrollTrigger);
-    var targets = document.querySelectorAll('#hero h1, #hero p, .service-card, .case-card, #prozess .step, #ueber-mich .text, #kundenstimmen h2');
+    var targets = document.querySelectorAll('#hero p, .service-card, .case-card, #prozess .step, #ueber-mich .text, #kundenstimmen h2');
     targets.forEach(function (el, i) {
       gsap.fromTo(el,
         { opacity: 0, y: 24 },
@@ -99,6 +99,26 @@
     });
   }
 
+  function initHeroTypewriter() {
+    var h1 = document.getElementById('hero-headline');
+    if (!h1) return;
+    var textEl = h1.querySelector('.typed-text');
+    var fullText = h1.getAttribute('aria-label') || '';
+    if (!textEl || !fullText) return;
+    if (prefersReducedMotion()) {
+      textEl.textContent = fullText;
+      return;
+    }
+    var i = 0;
+    function typeNext() {
+      if (i > fullText.length) return;
+      textEl.textContent = fullText.slice(0, i);
+      i++;
+      setTimeout(typeNext, 35);
+    }
+    typeNext();
+  }
+
   function initMainPage() {
     initNavToggle();
     initScrollReveal();
@@ -106,6 +126,7 @@
     initMagnetCursor();
     initHeroParallax();
     initCustomCursor();
+    initHeroTypewriter();
   }
 
   return { prefersReducedMotion: prefersReducedMotion, isTouchDevice: isTouchDevice, initMainPage: initMainPage };

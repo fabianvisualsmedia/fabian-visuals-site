@@ -260,3 +260,13 @@ html.custom-cursor-active .cursor-dot,
 html.custom-cursor-active .cursor-ring { opacity: 1; }
 html.custom-cursor-active .cursor-ring { opacity: 0.6; }
 html.custom-cursor-active .cursor-ring.is-active { opacity: 1; }
+
+.typed-cursor {
+  display: inline-block;
+  margin-left: 2px;
+  animation: blink-cursor 900ms steps(1) infinite;
+}
+@keyframes blink-cursor { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .typed-cursor { animation: none; opacity: 0; }
+}
