@@ -6,6 +6,8 @@
   <title>Fabian Visuals — Foto- & Videoproduktion in Bonn, Köln, Düsseldorf, Aachen</title>
   <meta name="description" content="Fabian Visuals produziert Commercials, Musikvideos und Social-Media-Content für Künstler und Unternehmen in Bonn, Köln, Düsseldorf und Aachen.">
   <link rel="stylesheet" href="css/reset.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/main.css">
   <link rel="icon" href="assets/icons/favicon.ico">
 </head>
@@ -22,11 +24,25 @@
       </ul>
     </nav>
   </header>
-  <section id="hero">
-    <div class="hero-bg"></div>
-    <h1 id="hero-headline" aria-label="FABIAN.VISUALS. WE CRAFT YOUR VISUALS"><span class="typed-text" aria-hidden="true"></span><span class="typed-cursor" aria-hidden="true">|</span></h1>
-    <p>Wir produzieren nicht nur Content für deinen Feed. Wir bauen die visuelle Welt, in der deine Kunden und Fans leben wollen.</p>
-    <a href="#kontakt" class="btn">Jetzt Termin sichern</a>
+  <section id="hero" data-hero-mode="commercial">
+    <div class="hero-bg hero-bg--commercial" aria-hidden="true"></div>
+    <div class="hero-bg hero-bg--wedding" aria-hidden="true"></div>
+    <div class="hero-content hero-content--commercial">
+      <h1 id="hero-headline" aria-label="FABIAN.VISUALS. WE CRAFT YOUR VISUALS"><span class="typed-text" aria-hidden="true"></span><span class="typed-cursor" aria-hidden="true">|</span></h1>
+      <p>Wir produzieren nicht nur Content für deinen Feed. Wir bauen die visuelle Welt, in der deine Kunden und Fans leben wollen.</p>
+      <a href="#kontakt" class="btn">Jetzt Termin sichern</a>
+    </div>
+    <div class="hero-content hero-content--wedding" aria-hidden="true" inert>
+      <h2>Eure Geschichte, festgehalten wie ein Film</h2>
+      <p>Cinematische Hochzeitsfotografie und -filme — für Paare, die ihren Tag so erleben wollen, wie er wirklich war.</p>
+      <a href="hochzeiten.html" class="btn btn--wedding">Hochzeitsfotografie ansehen</a>
+    </div>
+    <div class="hero-switch">
+      <span class="hero-switch-label" id="hero-switch-label">Hochzeiten ansehen</span>
+      <button type="button" class="hero-switch-toggle" role="switch" aria-checked="false" aria-labelledby="hero-switch-label">
+        <span class="hero-switch-knob" aria-hidden="true"></span>
+      </button>
+    </div>
   </section>
   <section id="kundenlogos" aria-label="Referenzkunden">
     <div class="logo-row">
