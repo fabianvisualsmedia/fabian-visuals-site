@@ -78,21 +78,120 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 
 #hero {
   min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
   padding-top: 96px;
   position: relative;
   overflow: hidden;
 }
 #hero .hero-bg {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.85)), url('../assets/images/hero-bg.jpg') center/cover;
   z-index: -1;
+  opacity: 1;
+  transition: opacity 700ms ease;
+}
+#hero .hero-bg--commercial {
+  background: linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.85)), url('../assets/images/hero-bg.jpg') center/cover;
+}
+#hero .hero-bg--wedding {
+  background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.75)), url('../assets/images/wedding/hero.jpg') center/cover;
+  opacity: 0;
+}
+#hero .hero-content {
+  position: absolute; inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 24px;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  opacity: 1;
+  transition: opacity 700ms ease;
+}
+#hero .hero-content--wedding {
+  opacity: 0;
+  pointer-events: none;
+}
+#hero[data-hero-mode="wedding"] .hero-bg--commercial,
+#hero[data-hero-mode="wedding"] .hero-content--commercial {
+  opacity: 0;
+  pointer-events: none;
+}
+#hero[data-hero-mode="wedding"] .hero-bg--wedding,
+#hero[data-hero-mode="wedding"] .hero-content--wedding {
+  opacity: 1;
+  pointer-events: auto;
 }
 #hero h1 { font-size: clamp(2.5rem, 8vw, 5rem); max-width: 900px; }
-#hero p { margin-top: 24px; max-width: 560px; font-size: 1.125rem; }
-#hero .btn { margin-top: 40px; align-self: flex-start; }
+#hero .hero-content--commercial p { margin-top: 24px; max-width: 560px; font-size: 1.125rem; }
+#hero .hero-content--commercial .btn { margin-top: 40px; align-self: flex-start; }
+#hero .hero-content--wedding h2 {
+  font-family: 'Playfair Display', Georgia, serif;
+  text-transform: none;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  max-width: 640px;
+  color: #FAF8F5;
+}
+#hero .hero-content--wedding p {
+  margin-top: 20px;
+  max-width: 480px;
+  font-size: 1.05rem;
+  font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 300;
+  color: rgba(250,248,245,0.85);
+}
+#hero .hero-content--wedding .btn { margin-top: 40px; align-self: flex-start; }
+.btn.btn--wedding { background: #C9A876; color: #3A3530; }
+.btn.btn--wedding:hover { box-shadow: 0 8px 20px rgba(201,168,118,0.35); }
+
+.hero-switch {
+  position: absolute;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.hero-switch-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+  transition: color 700ms ease;
+}
+.hero-switch-toggle {
+  width: 56px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  position: relative;
+  cursor: pointer;
+}
+.hero-switch-toggle::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 0;
+  width: 56px; height: 30px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.25);
+  transition: background 300ms ease;
+}
+.hero-switch-toggle:focus-visible { outline: 3px solid var(--color-fg); outline-offset: 3px; }
+.hero-switch-knob {
+  position: absolute;
+  top: 50%; left: 3px;
+  width: 24px; height: 24px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+#hero[data-hero-mode="wedding"] .hero-switch-toggle::before { background: #C9A876; }
+#hero[data-hero-mode="wedding"] .hero-switch-knob { transform: translateY(-50%) translateX(26px); }
 
 #kundenlogos { padding: 48px 24px; }
 #kundenlogos .logo-row {
@@ -269,4 +368,9 @@ html.custom-cursor-active .cursor-ring.is-active { opacity: 1; }
 @keyframes blink-cursor { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .typed-cursor { animation: none; opacity: 0; }
+  #hero .hero-bg,
+  #hero .hero-content,
+  .hero-switch-label,
+  .hero-switch-toggle::before,
+  .hero-switch-knob { transition: none; }
 }
