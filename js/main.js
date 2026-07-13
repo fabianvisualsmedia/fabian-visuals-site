@@ -34,7 +34,7 @@
   function initScrollReveal() {
     if (prefersReducedMotion()) return;
     gsap.registerPlugin(ScrollTrigger);
-    var targets = document.querySelectorAll('#hero p, .service-card, .case-card, #prozess .step, #ueber-mich .text, #kundenstimmen h2');
+    var targets = document.querySelectorAll('#hero .hero-content--commercial p, .service-card, .case-card, #prozess .step, #ueber-mich .text, #kundenstimmen h2');
     targets.forEach(function (el, i) {
       gsap.fromTo(el,
         { opacity: 0, y: 24 },
@@ -74,12 +74,32 @@
 
   function initHeroParallax() {
     if (prefersReducedMotion()) return;
-    var bg = document.querySelector('#hero .hero-bg');
+    var bg = document.querySelector('.hero-bg--commercial');
     if (!bg) return;
     gsap.to(bg, {
       yPercent: 12,
       ease: 'none',
       scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: true }
+    });
+  }
+
+  function initHeroModeSwitch() {
+    var hero = document.querySelector('#hero');
+    var toggle = document.querySelector('.hero-switch-toggle');
+    var label = document.getElementById('hero-switch-label');
+    var commercial = document.querySelector('.hero-content--commercial');
+    var wedding = document.querySelector('.hero-content--wedding');
+    if (!hero || !toggle || !label || !commercial || !wedding) return;
+    toggle.addEventListener('click', function () {
+      var mode = nextHeroMode(hero.getAttribute('data-hero-mode'));
+      var weddingActive = mode === 'wedding';
+      hero.setAttribute('data-hero-mode', mode);
+      toggle.setAttribute('aria-checked', String(weddingActive));
+      label.textContent = weddingActive ? 'Zurück zu Commercial' : 'Hochzeiten ansehen';
+      wedding.toggleAttribute('inert', !weddingActive);
+      wedding.setAttribute('aria-hidden', String(!weddingActive));
+      commercial.toggleAttribute('inert', weddingActive);
+      commercial.setAttribute('aria-hidden', String(weddingActive));
     });
   }
 
@@ -131,6 +151,7 @@
     initHeroParallax();
     initCustomCursor();
     initHeroTypewriter();
+    initHeroModeSwitch();
   }
 
   return { prefersReducedMotion: prefersReducedMotion, isTouchDevice: isTouchDevice, nextHeroMode: nextHeroMode, initMainPage: initMainPage };
