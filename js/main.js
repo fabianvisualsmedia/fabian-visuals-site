@@ -16,6 +16,10 @@
     return window.matchMedia('(pointer: coarse)').matches;
   }
 
+  function nextHeroMode(current) {
+    return current === 'wedding' ? 'commercial' : 'wedding';
+  }
+
   function initNavToggle() {
     var toggle = document.getElementById('nav-toggle');
     var list = document.getElementById('nav-list');
@@ -129,7 +133,7 @@
     initHeroTypewriter();
   }
 
-  return { prefersReducedMotion: prefersReducedMotion, isTouchDevice: isTouchDevice, initMainPage: initMainPage };
+  return { prefersReducedMotion: prefersReducedMotion, isTouchDevice: isTouchDevice, nextHeroMode: nextHeroMode, initMainPage: initMainPage };
 });
 
 if (typeof document !== 'undefined') {
