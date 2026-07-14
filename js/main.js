@@ -100,6 +100,11 @@
       wedding.setAttribute('aria-hidden', String(!weddingActive));
       commercial.toggleAttribute('inert', weddingActive);
       commercial.setAttribute('aria-hidden', String(weddingActive));
+      if (weddingActive) {
+        setTimeout(function () {
+          window.location.href = 'hochzeiten.html';
+        }, prefersReducedMotion() ? 0 : 700);
+      }
     });
   }
 
