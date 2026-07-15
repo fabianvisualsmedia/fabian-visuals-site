@@ -195,22 +195,41 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 #hero[data-hero-mode="wedding"] .hero-switch-toggle::before { background: #C9A876; }
 #hero[data-hero-mode="wedding"] .hero-switch-knob { transform: translateY(-50%) translateX(26px); }
 
-#kundenlogos { padding: 48px 24px; }
-#kundenlogos .logo-row {
+#kundenlogos {
+  max-width: none;
+  margin: 0;
+  padding: 48px 0;
+  overflow: hidden;
+}
+#kundenlogos .logo-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+#kundenlogos .logo-track {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 32px;
+  width: max-content;
+  animation: logo-scroll 28s linear infinite;
+}
+#kundenlogos .logo-marquee:hover .logo-track { animation-play-state: paused; }
+#kundenlogos .logo-card {
+  flex: none;
+  width: 168px;
+  height: 92px;
+  background: rgba(255,255,255,0.92);
+  border-radius: 8px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 48px;
+  padding: 18px 24px;
 }
-#kundenlogos img {
-  height: 40px;
-  width: auto;
-  filter: grayscale(100%) brightness(1.6);
-  opacity: 0.6;
-  transition: opacity 200ms ease, filter 200ms ease;
+#kundenlogos .logo-card img { max-width: 100%; max-height: 100%; object-fit: contain; }
+@keyframes logo-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
-#kundenlogos img:hover { filter: none; opacity: 1; }
 
 #leistungen h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); margin-bottom: 48px; }
 #leistungen .service-grid {
@@ -427,4 +446,5 @@ html.custom-cursor-active .cursor-ring.is-active { opacity: 1; }
   .hero-switch-label,
   .hero-switch-toggle::before,
   .hero-switch-knob { transition: none; }
+  #kundenlogos .logo-track { animation: none; }
 }
