@@ -78,7 +78,9 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 
 #hero {
   min-height: 100dvh;
-  padding-top: 96px;
+  max-width: none;
+  margin: 0;
+  padding: 96px 0 0;
   position: relative;
   overflow: hidden;
 }
