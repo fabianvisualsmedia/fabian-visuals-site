@@ -236,12 +236,18 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 }
 .case-card {
   position: relative;
+  border-radius: 4px;
+  background: #0d0d0d;
+}
+.case-card.is-expanded { grid-column: 1 / -1; }
+.case-media {
+  position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
   border-radius: 4px;
 }
-.case-card img { width: 100%; height: 100%; object-fit: cover; }
-.case-card .case-index {
+.case-media img { width: 100%; height: 100%; object-fit: cover; }
+.case-media .case-index {
   position: absolute;
   top: 16px; right: 16px;
   font-family: var(--font-headline);
@@ -252,13 +258,59 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   border-radius: 2px;
   z-index: 2;
 }
-.case-card .case-info {
+.case-media .case-info {
   position: absolute; left: 0; right: 0; bottom: 0;
   padding: 20px;
   background: linear-gradient(0deg, rgba(0,0,0,0.85), transparent);
 }
-.case-card .case-info h3 { font-size: 1.1rem; }
-.case-card .case-info .stats { color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-top: 4px; }
+.case-media .case-info h3 { font-size: 1.1rem; }
+.case-media .case-info .stats { color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-top: 4px; }
+
+.case-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  color: var(--color-fg);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.case-toggle:hover { color: var(--color-accent); }
+.case-toggle:focus-visible { outline: 3px solid var(--color-fg); outline-offset: -3px; }
+.case-toggle-icon { position: relative; width: 10px; height: 10px; flex: none; }
+.case-toggle-icon::before, .case-toggle-icon::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+}
+.case-toggle-icon::before { top: 50%; left: 0; width: 100%; height: 2px; transform: translateY(-50%); }
+.case-toggle-icon::after {
+  top: 0; left: 50%; width: 2px; height: 100%; transform: translateX(-50%);
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+.case-card.is-expanded .case-toggle-icon::after { transform: translateX(-50%) rotate(90deg); opacity: 0; }
+
+.case-detail {
+  height: 0;
+  overflow: hidden;
+  padding: 0 20px;
+}
+.case-card.is-expanded .case-detail { padding: 4px 20px 24px; }
+.case-detail p { color: rgba(255,255,255,0.8); font-size: 0.95rem; margin-bottom: 16px; }
+.case-detail-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.case-detail-gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; }
+.case-detail video { width: 100%; border-radius: 4px; margin-top: 16px; display: block; }
+
 @media (max-width: 767px) {
   #projekte .case-grid { grid-template-columns: 1fr; }
 }
