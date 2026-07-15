@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bensersiel Guide – Nordsee Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080808;
+    --surface: #111111;
+    --surface-2: #161616;
+    --border: #1e1e1e;
+    --accent: #c8a96e;
+    --accent-dim: #a0814a;
+    --text: #f0f0f0;
+    --muted: #888;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding-bottom: 60px;
+  }
+
+  header {
+    padding: 48px 24px 32px;
+    text-align: center;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,169,110,0.08) 0%, transparent 60%),
+      var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    font-size: 0.75rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 16px;
+  }
+  header h1 {
+    font-size: clamp(1.9rem, 6vw, 2.8rem); font-weight: 800; letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  header h1 em { font-style: normal; color: var(--accent); }
+  header p.sub { color: var(--muted); max-width: 480px; margin: 0 auto; font-size: 0.95rem; }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+
+  /* TABS */
+  .tabs {
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+    padding: 28px 0 8px;
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(8,8,8,0.92); backdrop-filter: blur(10px);
+  }
+  .tab {
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--muted); padding: 10px 18px; border-radius: 999px;
+    font-size: 0.82rem; letter-spacing: 0.03em; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .tab:hover { border-color: var(--accent-dim); color: var(--text); }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #080808; font-weight: 700; }
+
+  /* SECTION LABEL (for "alle" view) */
+  .group-label {
+    font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--accent); margin: 40px 0 16px; padding: 0 4px;
+  }
+  .group-label:first-of-type { margin-top: 28px; }
+
+  /* CARDS */
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 22px; display: flex; flex-direction: column; gap: 10px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .card:hover { border-color: var(--accent-dim); background: var(--surface-2); }
+  .card-top { display: flex; align-items: flex-start; gap: 10px; }
+  .card-icon { font-size: 1.5rem; line-height: 1; }
+  .card h3 { font-size: 1.05rem; font-weight: 700; }
+  .card .tag {
+    display: inline-block; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 999px;
+    padding: 2px 9px; margin-top: 4px;
+  }
+  .card p { color: var(--muted); font-size: 0.88rem; }
+  .card .addr {
+    color: var(--muted); font-size: 0.8rem; border-top: 1px dashed var(--border);
+    padding-top: 10px; margin-top: auto;
+  }
+  .navbtn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    margin-top: 4px; padding: 10px 14px;
+    background: var(--accent); color: #080808; font-weight: 700; font-size: 0.8rem;
+    letter-spacing: 0.03em; text-decoration: none; border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .navbtn:hover { background: #d4b87a; }
+
+  .hidden { display: none !important; }
+
+  .note {
+    max-width: 900px; margin: 48px auto 0; padding: 18px 22px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--muted); font-size: 0.85rem;
+  }
+  .note strong { color: var(--text); }
+
+  footer {
+    max-width: 900px; margin: 40px auto 0; padding: 24px 20px 0;
+    border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem;
+    text-align: center;
+  }
+
+  @media (max-width: 520px) {
+    header { padding: 36px 16px 24px; }
+    .tabs { padding: 20px 0 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Ostfriesland · Nordsee</p>
+  <h1>Dein <em>Bensersiel</em> Wochenende</h1>
+  <p class="sub">Die schönsten Orte, gutes Essen, Einkaufsmöglichkeiten und ein Ausflugsziel in der Nähe – alles mit direkter Navigation über Google Maps.</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-filter="alle">Alle</button>
+  <button class="tab" data-filter="sehen">Sehen &amp; Erleben</button>
+  <button class="tab" data-filter="essen">Restaurants</button>
+  <button class="tab" data-filter="einkaufen">Einkaufen</button>
+  <button class="tab" data-filter="ausflug">Ausflug: Aurich</button>
+</div>
+
+<div class="wrap">
+
+  <p class="group-label" data-group="sehen">Sehen &amp; Erleben – direkt in Bensersiel</p>
+  <div class="grid">
+
+    <div class="card" data-cat="sehen">
+      <div class="card-top">
+        <div class="card-icon">🏖️</div>
+        <div><h3>Strand &amp; Deich Bensersiel</h3><span class="tag">Highlight</span></div>
+      </div>
+      <p>Rund 800 m langer Sandstrand direkt am Deich, autofrei erreichbar, mit Strandkörben und Blick aufs Watt. Startpunkt für Deichspaziergänge.</p>
+      <div class="addr">📍 Am Strand 8, 26427 Bensersiel</div>
+      <a class="navbtn" data-addr="Am Strand 8, 26427 Bensersiel" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="sehen">
+      <div class="card-top">
+        <div class="card-icon">⛴️</div>
+        <div><h3>Fähre nach Langeoog</h3><span class="tag">Tagesausflug</span></div>
+      </div>
+      <p>Vom Hafen Bensersiel legt mehrmals täglich die Fähre zur autofreien Insel Langeoog ab. Auch Seehundbank- und Krabbenkutterfahrten starten hier.</p>
+      <div class="addr">📍 Fähranleger, Am Hafen 20a, 26427 Bensersiel</div>
+      <a class="navbtn" data-addr="Am Hafen 20a, 26427 Bensersiel" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="sehen">
+      <div class="card-top">
+        <div class="card-icon">🌊</div>
+        <div><h3>Nationalpark-Haus Wattenhuus</h3><span class="tag">Kostenlos</span></div>
+      </div>
+      <p>Ausstellung zum UNESCO-Weltnaturerbe Wattenmeer direkt am Hafen – gut für Kinder und bei schlechtem Wetter.</p>
+      <div class="addr">📍 Seestraße 1, 26427 Bensersiel</div>
+      <a class="navbtn" data-addr="Seestraße 1, 26427 Bensersiel" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="sehen">
+      <div class="card-top">
+        <div class="card-icon">💧</div>
+        <div><h3>Nordseetherme Bensersiel</h3><span class="tag">Schlechtwetter</span></div>
+      </div>
+      <p>Schwimmbad mit Sauna- und Ruhebereich – ideal, falls es mal regnet oder für einen entspannten Abend.</p>
+      <div class="addr">📍 Schulstraße 4, 26427 Bensersiel</div>
+      <a class="navbtn" data-addr="Schulstraße 4, 26427 Bensersiel" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="sehen">
+      <div class="card-top">
+        <div class="card-icon">🟠</div>
+        <div><h3>Bernstein Huus (Museum)</h3><span class="tag">Esens</span></div>
+      </div>
+      <p>Kleines Museum über die Entstehung des Bernsteins und Fossilienfunde – gute Schlechtwetter-Alternative in Esens.</p>
+      <div class="addr">📍 Herdestraße 10, 26427 Esens</div>
+      <a class="navbtn" data-addr="Herdestraße 10, 26427 Esens" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="sehen">
+      <div class="card-top">
+        <div class="card-icon">⛪</div>
+        <div><h3>Altstadt Esens &amp; St.-Magnus-Kirche</h3><span class="tag">10 Min.</span></div>
+      </div>
+      <p>Fast die gesamte Altstadt ist Fußgängerzone – Fachwerk, Rathaus, Marktplatz. Wochenmarkt Mi (Kirchplatz) und Sa (Marktplatz), je 7–12:30 Uhr.</p>
+      <div class="addr">📍 Marktplatz, 26427 Esens</div>
+      <a class="navbtn" data-addr="Marktplatz, 26427 Esens" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="sehen">
+      <div class="card-top">
+        <div class="card-icon">🦀</div>
+        <div><h3>Krabbenkutter „Edelweiss“</h3><span class="tag">Original</span></div>
+      </div>
+      <p>Fischer Jann Linneberg verkauft täglich 11–19 Uhr frisch gefangene Krabben, Aal, Scholle &amp; Steinbutt direkt vom Kutter.</p>
+      <div class="addr">📍 Oll Deep 2, 26427 Bensersiel</div>
+      <a class="navbtn" data-addr="Oll Deep 2, 26427 Bensersiel" href="#">🧭 Navigation starten</a>
+    </div>
+
+  </div>
+
+  <p class="group-label" data-group="essen">Restaurants</p>
+  <div class="grid">
+
+    <div class="card" data-cat="essen">
+      <div class="card-top">
+        <div class="card-icon">🐟</div>
+        <div><h3>Restaurant Fischerstuben</h3><span class="tag">Top bewertet</span></div>
+      </div>
+      <p>Bestbewertetes Restaurant am Ort (4,3★, #1 in Bensersiel). Empfehlung: Schollenfilet, auch mit Kindermenü.</p>
+      <div class="addr">📍 Hauptstraße 15, 26427 Esens (Bensersiel)</div>
+      <a class="navbtn" data-addr="Hauptstraße 15, 26427 Esens" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="essen">
+      <div class="card-top">
+        <div class="card-icon">🍤</div>
+        <div><h3>Bensersiel Fisch und Meer</h3><span class="tag">Preiswert</span></div>
+      </div>
+      <p>Selbstbedienung, frisch paniertes Fischfilet und norddeutsche Klassiker zu moderaten Preisen. Täglich 9:30–20 Uhr.</p>
+      <div class="addr">📍 Hauptstraße 7, 26427 Esens</div>
+      <a class="navbtn" data-addr="Hauptstraße 7, 26427 Esens" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="essen">
+      <div class="card-top">
+        <div class="card-icon">🎣</div>
+        <div><h3>Der Seewolf</h3><span class="tag">Fisch-Imbiss</span></div>
+      </div>
+      <p>Fisch-Restaurant/Imbiss im Nordseegartenpark – entspannt für zwischendurch.</p>
+      <div class="addr">📍 Alter Sielweg 13a, 26427 Bensersiel</div>
+      <a class="navbtn" data-addr="Alter Sielweg 13a, 26427 Bensersiel" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="essen">
+      <div class="card-top">
+        <div class="card-icon">⚓</div>
+        <div><h3>Haven Bensersiel</h3><span class="tag">Hafenblick</span></div>
+      </div>
+      <p>Direkt am Fähranleger gelegen – Fischgerichte, Burger, Flammkuchen mit Blick auf die Boote.</p>
+      <div class="addr">📍 Am Hafen 20a, 26427 Bensersiel</div>
+      <a class="navbtn" data-addr="Am Hafen 20a, 26427 Bensersiel" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="essen">
+      <div class="card-top">
+        <div class="card-icon">☕</div>
+        <div><h3>Café Waterkant</h3><span class="tag">Meerblick</span></div>
+      </div>
+      <p>Café/Restaurant/Biergarten direkt am Hafen – gut für Kaffee &amp; Kuchen oder ein entspanntes Abendessen mit Aussicht.</p>
+      <div class="addr">📍 Am Hafen 4, 26427 Esens-Bensersiel</div>
+      <a class="navbtn" data-addr="Am Hafen 4, 26427 Esens-Bensersiel" href="#">🧭 Navigation starten</a>
+    </div>
+
+  </div>
+
+  <p class="group-label" data-group="einkaufen">Einkaufen</p>
+  <div class="grid">
+
+    <div class="card" data-cat="einkaufen">
+      <div class="card-top">
+        <div class="card-icon">🛒</div>
+        <div><h3>Markant Markt Ihnen &amp; Folkerts</h3><span class="tag">Supermarkt</span></div>
+      </div>
+      <p>Supermarkt im Ortskern für den täglichen Bedarf. Mo–Fr 7–19 Uhr, Sa 7–18 Uhr, So 8–18 Uhr.</p>
+      <div class="addr">📍 Alter Sielweg 7, 26427 Bensersiel</div>
+      <a class="navbtn" data-addr="Alter Sielweg 7, 26427 Bensersiel" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="einkaufen">
+      <div class="card-top">
+        <div class="card-icon">🏝️</div>
+        <div><h3>Shop im Strandportal</h3><span class="tag">Souvenirs</span></div>
+      </div>
+      <p>Kiosk mit Postfiliale, Strandartikeln und Souvenirs direkt an der Strandpromenade.</p>
+      <div class="addr">📍 Am Strand 8, 26427 Bensersiel</div>
+      <a class="navbtn" data-addr="Am Strand 8, 26427 Bensersiel" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="einkaufen">
+      <div class="card-top">
+        <div class="card-icon">🛍️</div>
+        <div><h3>Fußgängerzone Esens</h3><span class="tag">10 Min.</span></div>
+      </div>
+      <p>Kleine Boutiquen, Bäckereien und Geschäfte in der Altstadt – Bensersiel selbst hat kaum eigenes Shopping, hier wird man fündig.</p>
+      <div class="addr">📍 Osterstraße, 26427 Esens</div>
+      <a class="navbtn" data-addr="Osterstraße, 26427 Esens" href="#">🧭 Navigation starten</a>
+    </div>
+
+  </div>
+
+  <p class="group-label" data-group="ausflug">Ausflug: Aurich (~32 Fahrminuten)</p>
+  <div class="grid">
+
+    <div class="card" data-cat="ausflug">
+      <div class="card-top">
+        <div class="card-icon">🏙️</div>
+        <div><h3>Fußgängerzone &amp; Carolinenhof</h3><span class="tag">Shopping</span></div>
+      </div>
+      <p>Aurich ist die nächstgrößere Stadt (~28 km / 32 Min.). Die Fußgängerzone zieht sich über Burg-, Hafen-, Oster- und Norderstraße, dazu das Einkaufszentrum Carolinenhof mit Fachgeschäften und Gastronomie.</p>
+      <div class="addr">📍 Marktplatz, 26603 Aurich</div>
+      <a class="navbtn" data-addr="Marktplatz, 26603 Aurich" href="#">🧭 Navigation starten</a>
+    </div>
+
+    <div class="card" data-cat="ausflug">
+      <div class="card-top">
+        <div class="card-icon">🏰</div>
+        <div><h3>Auricher Schloss &amp; Schlossgarten</h3><span class="tag">Sehenswürdigkeit</span></div>
+      </div>
+      <p>Schloss im englischen Tudorstil von 1855 direkt am Beginn der Fußgängerzone, dahinter der Schlossgarten mit klassizistischem Teehäuschen (Kunstgalerie).</p>
+      <div class="addr">📍 Schlossplatz, 26603 Aurich</div>
+      <a class="navbtn" data-addr="Schlossplatz, 26603 Aurich" href="#">🧭 Navigation starten</a>
+    </div>
+
+  </div>
+
+  <div class="note">
+    <strong>Hinweis:</strong> Adressen und Öffnungszeiten wurden recherchiert (Stand Juli 2026), können sich aber kurzfristig ändern – bei Restaurants lohnt sich in der Hauptsaison eine Tischreservierung. Tipp: Wittmund (Kreisstadt) liegt mit ~20 Min. noch näher, ist aber deutlich kleiner als Aurich.
+  </div>
+
+</div>
+
+<footer>
+  Gebaut für dein Wochenende in Bensersiel · Tippe auf „Navigation starten“, um direkt in Google Maps loszunavigieren.
+</footer>
+
+<script>
+  document.querySelectorAll('.navbtn').forEach(function (btn) {
+    var addr = btn.getAttribute('data-addr');
+    btn.href = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(addr);
+    btn.target = '_blank';
+    btn.rel = 'noopener';
+  });
+
+  var tabs = document.querySelectorAll('.tab');
+  var cards = document.querySelectorAll('.card');
+  var labels = document.querySelectorAll('.group-label');
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      var filter = tab.getAttribute('data-filter');
+
+      cards.forEach(function (card) {
+        card.classList.toggle('hidden', filter !== 'alle' && card.getAttribute('data-cat') !== filter);
+      });
+      labels.forEach(function (label) {
+        label.classList.toggle('hidden', filter !== 'alle' && label.getAttribute('data-group') !== filter);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
