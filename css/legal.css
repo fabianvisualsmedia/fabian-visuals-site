@@ -1,0 +1,12 @@
+.legal {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 160px 24px 96px;
+  font-family: var(--font-body);
+  line-height: 1.7;
+}
+.legal h1 { font-family: var(--font-headline); text-transform: uppercase; margin-bottom: 32px; }
+.legal h2 { font-family: var(--font-headline); text-transform: uppercase; font-size: 1.1rem; margin: 40px 0 12px; }
+.legal p { margin-bottom: 16px; }
+.legal a { color: var(--color-accent); }
+.legal a:focus-visible { outline: 3px solid var(--color-fg); outline-offset: 2px; }
