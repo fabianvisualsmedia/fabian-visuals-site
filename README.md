@@ -8,16 +8,20 @@ Statische HTML/CSS/JS-Website (kein Build-Schritt). Ersetzt die vorherige Wix-Se
 
 Dann im Browser öffnen: http://localhost:8080/index.html oder /hochzeiten.html
 
-## Vor dem Live-Schalten
+## Deployment (Cloudflare Pages via GitHub)
 
-- [ ] Formspree-Account anlegen, `REPLACE_ME_MAIN` (Hauptseite in `index.html`) und `REPLACE_ME_WEDDING` (Hochzeiten in `hochzeiten.html`) durch echte Formular-URLs ersetzen
-- [ ] Benzin-Font-Dateien (`Benzin-Bold.woff2`) in `assets/fonts/` ablegen, Lizenz geklärt
-- [ ] `assets/icons/favicon.ico` ablegen (F + Rec-Dot Icon nach Branding, siehe `Konzept.md`) — Ordner ist aktuell leer
-- [ ] Echte Fotos/Logos in `assets/images/` ablegen — aktuell fehlen:
-  - `hero-bg.jpg` (Hauptseite Hero-Hintergrund)
-  - `logos/one-studio.png` und `logos/zaves.png` (die anderen zwei Referenzlogos, `heizungsfuchs24.png` und `maass-raum-coaching.png`, liegen schon vor)
-  - `portfolio/fotoshooting.jpg`, `portfolio/musikvideo.jpg`, `portfolio/dj-set.jpg`, `portfolio/musikvideo-2.jpg`
-  - `fabian-at-work.jpg` (Über-mich-Sektion Hauptseite)
-  - `wedding/hero.jpg`, `wedding/01.jpg` bis `wedding/06.jpg`, `wedding/fabian-at-work.jpg` (komplette Hochzeitsseite)
-- [ ] Echte Case-Grid-Kennzahlen eintragen (aktuell Platzhalter-Zahlen)
-- [ ] Hosting wählen (Netlify, Vercel oder FTP) und Domain verbinden
+1. Push diesen Code zu GitHub (z. B. `fabianscholl/fabian-visuals-site` — Achtung: dort liegt aktuell noch ein veralteter 3-Commit-Stand ohne Dual-Mode/Wedding-Seite; der muss bewusst überschrieben oder durch ein neues Repo ersetzt werden, nicht stillschweigend).
+2. Im Cloudflare-Dashboard: Workers & Pages → Create → Pages → Connect to Git → Repo auswählen.
+3. Build-Einstellungen: **Framework preset: None**, **Build command: (leer lassen)**, **Build output directory: `/`**. Es gibt keinen Build-Schritt — reines statisches Dateisystem.
+4. Deployen. Cloudflare liefert `index.html` auf der Domain-Wurzel aus; `hochzeiten.html`, `impressum.html`, `datenschutz.html` sind direkt über ihren Dateinamen erreichbar.
+5. Custom Domain (`fabianvisuals.de`) unter dem Pages-Projekt-Tab "Custom domains" hinzufügen und den dortigen DNS-Anweisungen folgen.
+
+## Vor dem Live-Schalten (offene Punkte)
+
+- [ ] Formspree-Account anlegen, `REPLACE_ME_MAIN` (Hauptseite in `index.html`) und `REPLACE_ME_WEDDING` (Hochzeiten in `hochzeiten.html`) durch echte Formular-Endpunkt-URLs ersetzen
+- [ ] Benzin-Font-Datei (`Benzin-Bold.woff2`) in `assets/fonts/` ablegen, Lizenz vorher klären — `css/main.css:12` referenziert die Datei bereits, `assets/fonts/` existiert aktuell noch nicht (bis dahin greift der Fallback `'Arial Black', sans-serif`)
+- [ ] Echte Case-Grid-Kennzahlen eintragen (aktuell Platzhalter-Zahlen wie „2 Drehtage · 4 Reels · 80k Views")
+- [ ] `git remote` setzen und auf GitHub pushen (siehe Deployment-Schritte oben) — aktuell hat dieses Repo keinen Remote
+- [ ] Branch `animations-round-2` nach `main` mergen (aktueller Stand ist der Feature-Branch, nicht `main`)
+- [ ] Domain `fabianvisuals.de` auf Cloudflare Pages verbinden
+- [ ] Rechtstexte in `impressum.html`/`datenschutz.html` von Fabian gegenlesen lassen (Basisdaten aus dem Second-Brain-Kontext übernommen, kein Ersatz für Rechtsberatung)
