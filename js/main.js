@@ -27,6 +27,7 @@
     toggle.addEventListener('click', function () {
       var expanded = toggle.getAttribute('aria-expanded') === 'true';
       toggle.setAttribute('aria-expanded', String(!expanded));
+      toggle.setAttribute('aria-label', expanded ? 'Menü öffnen' : 'Menü schließen');
       list.classList.toggle('open');
     });
   }

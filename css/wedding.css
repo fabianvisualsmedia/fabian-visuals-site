@@ -151,3 +151,7 @@ h1, h2, h3 { font-family: var(--w-font-headline); font-weight: 600; line-height:
   background: var(--w-color-text);
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
+.w-footer { text-align: center; padding: 48px 24px; color: var(--w-color-text); }
+.w-footer .legal-links { margin-top: 8px; font-size: 0.85rem; }
+.w-footer .legal-links a { color: var(--w-color-text); text-decoration: underline; }
+.w-footer .legal-links a:focus-visible { outline: 3px solid var(--w-color-text); outline-offset: 2px; }
