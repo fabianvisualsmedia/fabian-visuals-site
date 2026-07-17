@@ -10,11 +10,11 @@ Dann im Browser öffnen: http://localhost:8080/index.html oder /hochzeiten.html
 
 ## Deployment (Cloudflare Pages via GitHub)
 
-1. Push diesen Code zu GitHub (z. B. `fabianscholl/fabian-visuals-site` — Achtung: dort liegt aktuell noch ein veralteter 3-Commit-Stand ohne Dual-Mode/Wedding-Seite; der muss bewusst überschrieben oder durch ein neues Repo ersetzt werden, nicht stillschweigend).
-2. Im Cloudflare-Dashboard: Workers & Pages → Create → Pages → Connect to Git → Repo auswählen.
-3. Build-Einstellungen: **Framework preset: None**, **Build command: (leer lassen)**, **Build output directory: `/`**. Es gibt keinen Build-Schritt — reines statisches Dateisystem.
-4. Deployen. Cloudflare liefert `index.html` auf der Domain-Wurzel aus; `hochzeiten.html`, `impressum.html`, `datenschutz.html` sind direkt über ihren Dateinamen erreichbar.
-5. Custom Domain (`fabianvisuals.de`) unter dem Pages-Projekt-Tab "Custom domains" hinzufügen und den dortigen DNS-Anweisungen folgen.
+**Status: live.** Repo ist unter `github.com/fabianvisualsmedia/fabian-visuals-site` (main), Cloudflare Pages-Projekt `fabian-visuals-site` ist bereits mit diesem Repo verbunden (Git-Integration existierte schon) und deployt automatisch bei jedem Push nach `main`. Aktuell erreichbar unter https://fabian-visuals-site.pages.dev — Build-Einstellungen bereits korrekt (kein Build-Command, kein Framework-Preset, Root als Output-Dir).
+
+Cloudflare strippt `.html`-Endungen automatisch (308-Redirect `/impressum.html` → `/impressum`, `/hochzeiten.html` → `/hochzeiten` usw.) — funktioniert, kein Handlungsbedarf.
+
+Offen: Custom Domain `fabianvisuals.de` unter dem Pages-Projekt-Tab "Custom domains" hinzufügen und den dortigen DNS-Anweisungen folgen.
 
 ## Vor dem Live-Schalten (offene Punkte)
 
@@ -22,5 +22,6 @@ Dann im Browser öffnen: http://localhost:8080/index.html oder /hochzeiten.html
 - [ ] Benzin-Font-Datei (`Benzin-Bold.woff2`) in `assets/fonts/` ablegen, Lizenz noch nicht vorhanden — `css/main.css:12` referenziert die Datei bereits, `assets/fonts/` existiert aktuell noch nicht (bis dahin greift der Fallback `'Arial Black', sans-serif`). Kostenlose Alternativen geprüft, siehe Chat/Notiz zu Archivo Black / Anton — Entscheidung steht noch aus.
 - [x] Case-Grid auf echte Kunden umgestellt: 1Studio (Content Creation), Heizungsfuchs24 (Channel Growth), Fouza (Rapvideo)
 - [ ] Case-Grid-Bilder sind Platzhalter aus dem bestehenden Asset-Pool (`fotoshooting/`, `musikvideo/`, `musikvideo-2/` — nicht zwingend die echten 1Studio/Heizungsfuchs24/Fouza-Aufnahmen), durch echtes Bildmaterial ersetzen sobald verfügbar. `assets/images/portfolio/dj-set/` wird aktuell nicht mehr referenziert.
-- [ ] Domain `fabianvisuals.de` auf Cloudflare Pages verbinden
+- [ ] Domain `fabianvisuals.de` auf Cloudflare Pages verbinden (Deployment selbst läuft bereits live über `fabian-visuals-site.pages.dev`)
 - [ ] Rechtstexte in `impressum.html`/`datenschutz.html` von Fabian gegenlesen lassen (Basisdaten aus dem Second-Brain-Kontext übernommen, kein Ersatz für Rechtsberatung)
+- [ ] Beide im Chat geteilten Cloudflare-API-Tokens im Dashboard rotieren (Settings → API Tokens) — waren im Klartext in der Konversation
