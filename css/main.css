@@ -283,6 +283,7 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   background: linear-gradient(0deg, rgba(0,0,0,0.85), transparent);
 }
 .case-media .case-info h3 { font-size: 1.1rem; }
+.case-media .case-info .case-category { color: var(--color-accent); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
 .case-media .case-info .stats { color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-top: 4px; }
 
 .case-toggle {

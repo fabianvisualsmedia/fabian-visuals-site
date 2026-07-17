@@ -18,10 +18,9 @@ Dann im Browser öffnen: http://localhost:8080/index.html oder /hochzeiten.html
 
 ## Vor dem Live-Schalten (offene Punkte)
 
-- [ ] Formspree-Account anlegen, `REPLACE_ME_MAIN` (Hauptseite in `index.html`) und `REPLACE_ME_WEDDING` (Hochzeiten in `hochzeiten.html`) durch echte Formular-Endpunkt-URLs ersetzen
-- [ ] Benzin-Font-Datei (`Benzin-Bold.woff2`) in `assets/fonts/` ablegen, Lizenz vorher klären — `css/main.css:12` referenziert die Datei bereits, `assets/fonts/` existiert aktuell noch nicht (bis dahin greift der Fallback `'Arial Black', sans-serif`)
-- [ ] Echte Case-Grid-Kennzahlen eintragen (aktuell Platzhalter-Zahlen wie „2 Drehtage · 4 Reels · 80k Views")
-- [ ] `git remote` setzen und auf GitHub pushen (siehe Deployment-Schritte oben) — aktuell hat dieses Repo keinen Remote
-- [ ] Branch `animations-round-2` nach `main` mergen (aktueller Stand ist der Feature-Branch, nicht `main`)
+- [x] Formspree-Endpunkte gesetzt: `maqrekge` (Hauptseite) / `xqerpjvq` (Hochzeiten)
+- [ ] Benzin-Font-Datei (`Benzin-Bold.woff2`) in `assets/fonts/` ablegen, Lizenz noch nicht vorhanden — `css/main.css:12` referenziert die Datei bereits, `assets/fonts/` existiert aktuell noch nicht (bis dahin greift der Fallback `'Arial Black', sans-serif`). Kostenlose Alternativen geprüft, siehe Chat/Notiz zu Archivo Black / Anton — Entscheidung steht noch aus.
+- [x] Case-Grid auf echte Kunden umgestellt: 1Studio (Content Creation), Heizungsfuchs24 (Channel Growth), Fouza (Rapvideo)
+- [ ] Case-Grid-Bilder sind Platzhalter aus dem bestehenden Asset-Pool (`fotoshooting/`, `musikvideo/`, `musikvideo-2/` — nicht zwingend die echten 1Studio/Heizungsfuchs24/Fouza-Aufnahmen), durch echtes Bildmaterial ersetzen sobald verfügbar. `assets/images/portfolio/dj-set/` wird aktuell nicht mehr referenziert.
 - [ ] Domain `fabianvisuals.de` auf Cloudflare Pages verbinden
 - [ ] Rechtstexte in `impressum.html`/`datenschutz.html` von Fabian gegenlesen lassen (Basisdaten aus dem Second-Brain-Kontext übernommen, kein Ersatz für Rechtsberatung)
