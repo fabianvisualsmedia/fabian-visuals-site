@@ -143,12 +143,15 @@
       var btn = item.querySelector('.service-toggle');
       var detail = item.querySelector('.service-detail');
       gsap.killTweensOf(detail);
-      item.classList.toggle('is-open', isOpen);
       btn.setAttribute('aria-expanded', String(isOpen));
       detail.hidden = false;
+      if (isOpen) item.classList.add('is-open');
       if (prefersReducedMotion()) {
         detail.style.height = isOpen ? 'auto' : '0';
-        if (!isOpen) detail.hidden = true;
+        if (!isOpen) {
+          item.classList.remove('is-open');
+          detail.hidden = true;
+        }
         if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
         return;
       }
@@ -161,6 +164,7 @@
         gsap.to(detail, {
           height: 0, duration: 0.3, ease: 'power2.inOut',
           onComplete: function () {
+            item.classList.remove('is-open');
             detail.hidden = true;
             if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
           }
