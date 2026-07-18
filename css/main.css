@@ -268,7 +268,7 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 #leistungen .service-toggle:focus-visible { outline: 3px solid var(--color-fg); outline-offset: -3px; }
 #leistungen .service-toggle .num { font-family: var(--font-headline); color: var(--color-accent); font-size: 1.5rem; flex: none; }
 #leistungen .service-detail { overflow: hidden; height: 0; padding: 0; }
-#leistungen .service-item.is-open .service-detail { padding: 0 0 24px 44px; }
+#leistungen .service-item.is-open .service-detail { padding: 0 0 24px 44px; height: auto; }
 #leistungen .service-detail p { color: rgba(255,255,255,0.75); max-width: 44ch; }
 #leistungen .service-collage { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; height: 420px; }
 #leistungen .service-collage img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }

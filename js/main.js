@@ -142,6 +142,7 @@
     function setOpen(item, isOpen) {
       var btn = item.querySelector('.service-toggle');
       var detail = item.querySelector('.service-detail');
+      gsap.killTweensOf(detail);
       item.classList.toggle('is-open', isOpen);
       btn.setAttribute('aria-expanded', String(isOpen));
       detail.hidden = false;
