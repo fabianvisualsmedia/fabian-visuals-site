@@ -98,21 +98,40 @@
   </section>
   <section id="leistungen">
     <h2>Unsere Leistungen</h2>
-    <div class="service-grid">
-      <div class="service-card">
-        <div class="num">01</div>
-        <h3>Commercials &amp; Werbung</h3>
-        <p>Wir schaffen visuelle Storytelling-Formate für deine Markenbotschaft. Von der Konzeption bis zum Schnitt begleiten wir dich mit professioneller Produktion und kreativer Leidenschaft — für TV, YouTube und Social Ads.</p>
+    <div class="service-layout">
+      <div class="service-accordion">
+        <div class="service-item is-open">
+          <button type="button" class="service-toggle" aria-expanded="true" aria-controls="service-detail-1">
+            <span class="num">01</span>
+            <span class="service-title">Commercials &amp; Werbung</span>
+          </button>
+          <div class="service-detail" id="service-detail-1">
+            <p>Wir schaffen visuelle Storytelling-Formate für deine Markenbotschaft. Von der Konzeption bis zum Schnitt begleiten wir dich mit professioneller Produktion und kreativer Leidenschaft — für TV, YouTube und Social Ads.</p>
+          </div>
+        </div>
+        <div class="service-item">
+          <button type="button" class="service-toggle" aria-expanded="false" aria-controls="service-detail-2">
+            <span class="num">02</span>
+            <span class="service-title">Musikvideos</span>
+          </button>
+          <div class="service-detail" id="service-detail-2" hidden>
+            <p>Wir verwandeln deine Musik in visuelle Erlebnisse. Mit kreativer Leidenschaft und technischer Präzision produzieren wir hochwertige Musikvideos, die deine Künstleridentität widerspiegeln.</p>
+          </div>
+        </div>
+        <div class="service-item">
+          <button type="button" class="service-toggle" aria-expanded="false" aria-controls="service-detail-3">
+            <span class="num">03</span>
+            <span class="service-title">Social Media &amp; Strategie</span>
+          </button>
+          <div class="service-detail" id="service-detail-3" hidden>
+            <p>Wir entwickeln strategische Content-Pläne, die deine Zielgruppe erreichen. Von hochwertigen Reels bis zur Analyse deiner Insights — damit du verstehst, was funktioniert.</p>
+          </div>
+        </div>
       </div>
-      <div class="service-card">
-        <div class="num">02</div>
-        <h3>Musikvideos</h3>
-        <p>Wir verwandeln deine Musik in visuelle Erlebnisse. Mit kreativer Leidenschaft und technischer Präzision produzieren wir hochwertige Musikvideos, die deine Künstleridentität widerspiegeln.</p>
-      </div>
-      <div class="service-card">
-        <div class="num">03</div>
-        <h3>Social Media &amp; Strategie</h3>
-        <p>Wir entwickeln strategische Content-Pläne, die deine Zielgruppe erreichen. Von hochwertigen Reels bis zur Analyse deiner Insights — damit du verstehst, was funktioniert.</p>
+      <div class="service-collage" aria-hidden="true">
+        <img src="assets/images/portfolio/fotoshooting/hero.jpg" alt="">
+        <img src="assets/images/portfolio/musikvideo/hero.jpg" alt="">
+        <img src="assets/images/portfolio/musikvideo-2/hero.jpg" alt="">
       </div>
     </div>
   </section>

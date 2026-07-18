@@ -135,6 +135,47 @@
     });
   }
 
+  function initServiceAccordion() {
+    var items = document.querySelectorAll('#leistungen .service-item');
+    if (!items.length) return;
+
+    function setOpen(item, isOpen) {
+      var btn = item.querySelector('.service-toggle');
+      var detail = item.querySelector('.service-detail');
+      item.classList.toggle('is-open', isOpen);
+      btn.setAttribute('aria-expanded', String(isOpen));
+      detail.hidden = false;
+      if (prefersReducedMotion()) {
+        detail.style.height = isOpen ? 'auto' : '0';
+        if (!isOpen) detail.hidden = true;
+        if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+        return;
+      }
+      if (isOpen) {
+        gsap.fromTo(detail, { height: 0 }, {
+          height: 'auto', duration: 0.4, ease: 'power2.inOut',
+          onComplete: function () { if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh(); }
+        });
+      } else {
+        gsap.to(detail, {
+          height: 0, duration: 0.3, ease: 'power2.inOut',
+          onComplete: function () {
+            detail.hidden = true;
+            if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+          }
+        });
+      }
+    }
+
+    items.forEach(function (item) {
+      item.querySelector('.service-toggle').addEventListener('click', function () {
+        var alreadyOpen = item.classList.contains('is-open');
+        items.forEach(function (other) { if (other !== item) setOpen(other, false); });
+        setOpen(item, !alreadyOpen);
+      });
+    });
+  }
+
   function initMagnetCursor() {
     if (prefersReducedMotion() || isTouchDevice()) return;
     var targets = [document.querySelector('#hero .btn'), document.querySelector('#kontakt .whatsapp-cta')].filter(Boolean);
@@ -251,6 +292,7 @@
     initScrollReveal();
     initCaseCardHover();
     initCaseExpand();
+    initServiceAccordion();
     initMagnetCursor();
     initHeroParallax();
     initCustomCursor();
