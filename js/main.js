@@ -72,14 +72,22 @@
       detail.toggleAttribute('inert', !isOpen);
     }
 
+    function refreshScrollTrigger() {
+      if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+    }
+
     function expand(card) {
       var detail = card.querySelector('.case-detail');
       card.classList.add('is-expanded');
       setOpenState(card, true);
       if (prefersReducedMotion()) {
         detail.style.height = 'auto';
+        refreshScrollTrigger();
       } else {
-        gsap.fromTo(detail, { height: 0 }, { height: 'auto', duration: 0.4, ease: 'power2.inOut' });
+        gsap.fromTo(detail, { height: 0 }, {
+          height: 'auto', duration: 0.4, ease: 'power2.inOut',
+          onComplete: refreshScrollTrigger
+        });
       }
     }
 
@@ -89,12 +97,14 @@
       if (prefersReducedMotion()) {
         card.classList.remove('is-expanded');
         detail.style.height = '';
+        refreshScrollTrigger();
       } else {
         gsap.to(detail, {
           height: 0, duration: 0.3, ease: 'power2.inOut',
           onComplete: function () {
             card.classList.remove('is-expanded');
             detail.style.height = '';
+            refreshScrollTrigger();
           }
         });
       }
