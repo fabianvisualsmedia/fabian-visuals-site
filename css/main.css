@@ -60,7 +60,7 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   background: rgba(0,0,0,0.85);
   backdrop-filter: blur(6px);
 }
-#site-nav .logo { display: flex; align-items: center; min-height: 44px; }
+#site-nav .logo { display: flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; }
 #site-nav .logo img { height: 32px; width: auto; display: block; }
 #site-nav .nav-cta { margin-left: 24px; padding: 10px 24px; font-size: 0.9rem; }
 #site-nav ul { display: flex; gap: 32px; }
