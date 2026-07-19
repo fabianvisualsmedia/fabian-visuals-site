@@ -45,7 +45,7 @@
   function initScrollReveal() {
     if (prefersReducedMotion()) return;
     gsap.registerPlugin(ScrollTrigger);
-    var targets = document.querySelectorAll('#hero .hero-content--commercial p, .service-item, .case-card, #ueber-mich .text, #kundenstimmen h2');
+    var targets = document.querySelectorAll('#hero .hero-content--commercial p, .service-item, .case-card, #ueber-mich .text, #kundenstimmen h2, footer');
     targets.forEach(function (el, i) {
       gsap.fromTo(el,
         { opacity: 0, y: 24 },

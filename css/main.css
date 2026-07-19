@@ -426,17 +426,36 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 #kontakt textarea { min-height: 120px; }
 #kontakt input:focus-visible, #kontakt textarea:focus-visible { outline: 2px solid var(--color-accent); }
 footer {
-  padding: 32px 24px;
+  position: relative;
+  background: #FFFFFF;
+  color: #000000;
   text-align: center;
-  color: rgba(255,255,255,0.5);
+  padding: 80px 24px;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.85rem;
 }
-footer .socials { display: flex; justify-content: center; gap: 20px; margin-top: 12px; }
-footer .socials a { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
-footer .socials a:focus-visible { outline: 3px solid var(--color-fg); outline-offset: 2px; }
+footer .footer-logo { height: 28px; width: auto; margin-bottom: 16px; }
+footer .footer-center p { color: rgba(0,0,0,0.7); }
+footer .footer-social {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #000000;
+  font-weight: 700;
+  text-decoration: underline;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+footer .footer-social--left { left: 24px; }
+footer .footer-social--right { right: 24px; }
+footer .footer-social:focus-visible { outline: 3px solid #000000; outline-offset: 2px; }
 .legal-links { margin-top: 8px; }
-.legal-links a { color: var(--color-fg); text-decoration: underline; }
-.legal-links a:focus-visible { outline: 3px solid var(--color-fg); outline-offset: 2px; }
+.legal-links a { color: #000000; text-decoration: underline; }
+.legal-links a:focus-visible { outline: 3px solid #000000; outline-offset: 2px; }
 
 .wedding-teaser {
   display: inline-flex;
@@ -452,7 +471,12 @@ footer .socials a:focus-visible { outline: 3px solid var(--color-fg); outline-of
   transition: background 200ms ease, color 200ms ease;
 }
 .wedding-teaser:hover { background: #C9A876; color: var(--color-bg); }
-.wedding-teaser:focus-visible { outline: 3px solid var(--color-fg); outline-offset: 2px; }
+.wedding-teaser:focus-visible { outline: 3px solid #000000; outline-offset: 2px; }
+
+@media (max-width: 600px) {
+  footer { flex-direction: column; gap: 24px; padding: 48px 24px 96px; }
+  footer .footer-social { position: static; transform: none; }
+}
 
 .cursor-dot, .cursor-ring {
   position: fixed;
