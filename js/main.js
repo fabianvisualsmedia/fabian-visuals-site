@@ -60,7 +60,7 @@
 
   function initCaseCardHover() {
     if (prefersReducedMotion()) return;
-    document.querySelectorAll('.case-media').forEach(function (media) {
+    document.querySelectorAll('.case-media:not(.case-media--placeholder)').forEach(function (media) {
       var yTo = gsap.quickTo(media, 'y', { duration: 0.25, ease: 'power2.out' });
       var scaleTo = gsap.quickTo(media, 'scale', { duration: 0.25, ease: 'power2.out' });
       media.addEventListener('mouseenter', function () { yTo(-4); scaleTo(1.02); });
@@ -268,7 +268,7 @@
       dotX(e.clientX); dotY(e.clientY);
       ringX(e.clientX); ringY(e.clientY);
     });
-    document.querySelectorAll('a, button, .case-card').forEach(function (el) {
+    document.querySelectorAll('a, button, .case-card:not(.case-card--placeholder)').forEach(function (el) {
       el.addEventListener('mouseenter', function () { ring.classList.add('is-active'); });
       el.addEventListener('mouseleave', function () { ring.classList.remove('is-active'); });
     });

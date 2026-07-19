@@ -61,7 +61,7 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   backdrop-filter: blur(6px);
   transition: background 400ms ease, backdrop-filter 400ms ease;
 }
-#site-nav.nav-scrolled { background: transparent; backdrop-filter: none; }
+#site-nav.nav-scrolled { background: rgba(0, 0, 0, 0.15); backdrop-filter: blur(2px); }
 #site-nav .logo { display: flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; }
 #site-nav .logo img { height: 32px; width: auto; display: block; transition: height 400ms ease; }
 #site-nav.nav-scrolled .logo img { height: 22px; }
