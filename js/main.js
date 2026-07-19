@@ -35,7 +35,7 @@
   function initScrollReveal() {
     if (prefersReducedMotion()) return;
     gsap.registerPlugin(ScrollTrigger);
-    var targets = document.querySelectorAll('#hero .hero-content--commercial p, .service-card, .case-card, #ueber-mich .text, #kundenstimmen h2');
+    var targets = document.querySelectorAll('#hero .hero-content--commercial p, .service-item, .case-card, #ueber-mich .text, #kundenstimmen h2');
     targets.forEach(function (el, i) {
       gsap.fromTo(el,
         { opacity: 0, y: 24 },
@@ -279,6 +279,15 @@
     var dot = document.querySelector('#prozess .process-dot');
     var steps = document.querySelectorAll('#prozess .step');
     if (!track || !line || !dot || !steps.length) return;
+    // On tall viewports the track can be shorter than (or equal to) the
+    // viewport itself, which collapses the scrub range to zero or negative.
+    // In that case the pin/scrub timeline never advances, so fall back to a
+    // static, fully-visible state instead of leaving the steps permanently
+    // hidden at opacity:0.
+    if (track.getBoundingClientRect().height <= window.innerHeight) {
+      gsap.set(steps, { opacity: 1, y: 0 });
+      return;
+    }
     gsap.set(steps, { opacity: 0, y: 24 });
     var totalDuration = steps.length * 0.5;
     var tl = gsap.timeline({
