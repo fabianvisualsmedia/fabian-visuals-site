@@ -97,6 +97,7 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   padding: 96px 0 0;
   position: relative;
   overflow: hidden;
+  transform-origin: center top;
 }
 #hero .hero-bg {
   position: absolute; inset: 0;

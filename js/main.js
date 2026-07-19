@@ -217,6 +217,18 @@
     });
   }
 
+  function initHeroShrink() {
+    if (prefersReducedMotion()) return;
+    var hero = document.querySelector('#hero');
+    if (!hero) return;
+    gsap.to(hero, {
+      scale: 0.92,
+      borderRadius: '24px',
+      ease: 'none',
+      scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: true }
+    });
+  }
+
   function initHeroModeSwitch() {
     var hero = document.querySelector('#hero');
     var toggle = document.querySelector('.hero-switch-toggle');
@@ -323,6 +335,7 @@
     initServiceAccordion();
     initMagnetCursor();
     initHeroParallax();
+    initHeroShrink();
     initCustomCursor();
     initHeroTypewriter();
     initHeroModeSwitch();
