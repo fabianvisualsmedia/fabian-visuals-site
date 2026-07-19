@@ -153,5 +153,5 @@ h1, h2, h3 { font-family: var(--w-font-headline); font-weight: 600; line-height:
 }
 .w-footer { text-align: center; padding: 48px 24px; color: var(--w-color-text); }
 .w-footer .legal-links { margin-top: 8px; font-size: 0.85rem; }
-.w-footer .legal-links a { color: var(--w-color-text); font-weight: 600; }
+.w-footer .legal-links a { color: var(--w-color-text); font-weight: 600; text-decoration: underline; }
 .w-footer .legal-links a:focus-visible { outline: 3px solid var(--w-color-text); outline-offset: 2px; }
