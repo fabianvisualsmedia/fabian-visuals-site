@@ -21,7 +21,9 @@ Offen: Custom Domain `fabianvisuals.de` unter dem Pages-Projekt-Tab "Custom doma
 - [x] Formspree-Endpunkte gesetzt: `maqrekge` (Hauptseite) / `xqerpjvq` (Hochzeiten)
 - [ ] Benzin-Font-Datei (`Benzin-Bold.woff2`) in `assets/fonts/` ablegen, Lizenz noch nicht vorhanden — `css/main.css:12` referenziert die Datei bereits, `assets/fonts/` existiert aktuell noch nicht (bis dahin greift der Fallback `'Arial Black', sans-serif`). Kostenlose Alternativen geprüft, siehe Chat/Notiz zu Archivo Black / Anton — Entscheidung steht noch aus.
 - [x] Case-Grid auf echte Kunden umgestellt: 1Studio (Content Creation), Heizungsfuchs24 (Channel Growth), Fouza (Rapvideo)
-- [ ] Case-Grid-Bilder sind Platzhalter aus dem bestehenden Asset-Pool (`fotoshooting/`, `musikvideo/`, `musikvideo-2/` — nicht zwingend die echten 1Studio/Heizungsfuchs24/Fouza-Aufnahmen), durch echtes Bildmaterial ersetzen sobald verfügbar. `assets/images/portfolio/dj-set/` wird aktuell nicht mehr referenziert.
+- [ ] Case-Grid final entscheiden: Kategorien (aktuell Musikvideos/DJ-Sets/Taschen-Fotos), Titel, echte Fotos/Videos nachreichen
+- [ ] TikTok-URL im Footer bestätigen (aktuell Platzhalter `tiktok.com/@fabian.visuals`, geraten nach IG-Handle-Muster)
+- [ ] Client-Logos mit weißem Hintergrund geprüft (siehe Task 4 Report) — ggf. freistellen für den jetzt hintergrundlosen Marquee-Look
 - [ ] Domain `fabianvisuals.de` auf Cloudflare Pages verbinden (Deployment selbst läuft bereits live über `fabian-visuals-site.pages.dev`)
 - [ ] Rechtstexte in `impressum.html`/`datenschutz.html` von Fabian gegenlesen lassen (Basisdaten aus dem Second-Brain-Kontext übernommen, kein Ersatz für Rechtsberatung)
 - [ ] Beide im Chat geteilten Cloudflare-API-Tokens im Dashboard rotieren (Settings → API Tokens) — waren im Klartext in der Konversation
