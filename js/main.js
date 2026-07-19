@@ -274,19 +274,21 @@
 
   function initProcessPin() {
     if (prefersReducedMotion()) return;
-    var section = document.querySelector('#prozess');
+    var track = document.querySelector('#prozess .process-track');
+    var line = document.querySelector('#prozess .process-line');
+    var dot = document.querySelector('#prozess .process-dot');
     var steps = document.querySelectorAll('#prozess .step');
-    if (!section || !steps.length) return;
+    if (!track || !line || !dot || !steps.length) return;
     gsap.set(steps, { opacity: 0, y: 24 });
     var tl = gsap.timeline({
       scrollTrigger: {
-        trigger: section,
+        trigger: track,
         start: 'top top',
-        end: '+=100%',
-        scrub: 1,
-        pin: true
+        end: 'bottom bottom',
+        scrub: 1
       }
     });
+    tl.to(dot, { top: '100%', ease: 'none' }, 0);
     steps.forEach(function (step, i) {
       tl.to(step, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, i * 0.5);
     });
