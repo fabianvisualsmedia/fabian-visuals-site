@@ -382,7 +382,7 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   #prozess .process-layout { grid-template-columns: 1fr; gap: 32px; }
   #prozess .process-pinned { position: static; }
   #prozess .process-line { display: none; }
-  #prozess .process-steps { gap: 32px; padding: 8px 0; }
+  #prozess .process-steps { gap: 280px; padding: 8px 0; }
 }
 
 #kundenstimmen { text-align: center; }
