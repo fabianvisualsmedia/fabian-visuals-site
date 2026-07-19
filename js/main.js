@@ -280,6 +280,7 @@
     var steps = document.querySelectorAll('#prozess .step');
     if (!track || !line || !dot || !steps.length) return;
     gsap.set(steps, { opacity: 0, y: 24 });
+    var totalDuration = steps.length * 0.5;
     var tl = gsap.timeline({
       scrollTrigger: {
         trigger: track,
@@ -288,7 +289,7 @@
         scrub: 1
       }
     });
-    tl.to(dot, { top: '100%', ease: 'none' }, 0);
+    tl.to(dot, { top: '100%', ease: 'none', duration: totalDuration }, 0);
     steps.forEach(function (step, i) {
       tl.to(step, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, i * 0.5);
     });

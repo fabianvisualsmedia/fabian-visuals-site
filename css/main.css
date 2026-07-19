@@ -374,7 +374,7 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 #prozess .process-track { position: relative; display: flex; gap: 32px; }
 #prozess .process-line { position: relative; width: 2px; background: rgba(255,255,255,0.15); flex: none; }
 #prozess .process-dot { position: absolute; left: 50%; top: 0; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--color-fg); }
-#prozess .process-steps { flex: 1; display: flex; flex-direction: column; gap: 96px; padding: 8px 0; }
+#prozess .process-steps { flex: 1; display: flex; flex-direction: column; gap: 360px; padding: 240px 0 8px; }
 #prozess .step .num { font-family: var(--font-headline); color: var(--color-accent); font-size: 1.5rem; }
 #prozess .step h3 { margin: 8px 0; font-size: 1.05rem; }
 #prozess .step p { color: rgba(255,255,255,0.75); font-size: 0.95rem; }
@@ -382,7 +382,7 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   #prozess .process-layout { grid-template-columns: 1fr; gap: 32px; }
   #prozess .process-pinned { position: static; }
   #prozess .process-line { display: none; }
-  #prozess .process-steps { gap: 32px; }
+  #prozess .process-steps { gap: 32px; padding: 8px 0; }
 }
 
 #kundenstimmen { text-align: center; }
