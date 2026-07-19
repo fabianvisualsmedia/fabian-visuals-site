@@ -59,9 +59,12 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   padding: 20px 24px;
   background: rgba(0,0,0,0.85);
   backdrop-filter: blur(6px);
+  transition: background 400ms ease, backdrop-filter 400ms ease;
 }
+#site-nav.nav-scrolled { background: transparent; backdrop-filter: none; }
 #site-nav .logo { display: flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; }
-#site-nav .logo img { height: 32px; width: auto; display: block; }
+#site-nav .logo img { height: 32px; width: auto; display: block; transition: height 400ms ease; }
+#site-nav.nav-scrolled .logo img { height: 22px; }
 #site-nav .nav-cta { margin-left: 24px; padding: 10px 24px; font-size: 0.9rem; }
 #site-nav ul { display: flex; gap: 32px; }
 #site-nav a { min-height: 44px; display: flex; align-items: center; }
@@ -495,4 +498,7 @@ html.custom-cursor-active .cursor-ring.is-active { opacity: 1; }
   .hero-switch-knob { transition: none; }
   #hero .hero-bg-video { display: none; }
   #kundenlogos .logo-track { animation: none; }
+  #site-nav,
+  #site-nav.nav-scrolled .logo img,
+  #site-nav .logo img { transition: none; }
 }

@@ -32,6 +32,16 @@
     });
   }
 
+  function initNavScrollState() {
+    var nav = document.getElementById('site-nav');
+    if (!nav) return;
+    function update() {
+      nav.classList.toggle('nav-scrolled', window.scrollY > window.innerHeight * 0.8);
+    }
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+  }
+
   function initScrollReveal() {
     if (prefersReducedMotion()) return;
     gsap.registerPlugin(ScrollTrigger);
@@ -306,6 +316,7 @@
 
   function initMainPage() {
     initNavToggle();
+    initNavScrollState();
     initScrollReveal();
     initCaseCardHover();
     initCaseExpand();
