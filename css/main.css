@@ -1,6 +1,7 @@
 :root {
-  --color-bg: #000000;
-  --color-fg: #FFFFFF;
+  --color-bg: #FFFFFF;
+  --color-bg-alt: #F2F2F2;
+  --color-fg: #000000;
   --color-accent: #E1272C;
   --font-headline: 'Benzin', 'Arial Black', sans-serif;
   --font-body: 'Helvetica Neue', Arial, sans-serif;
@@ -50,6 +51,9 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 .btn--pill:hover { background: var(--color-fg); color: var(--color-bg); box-shadow: none; transform: none; }
 
 #site-nav {
+  --color-bg: #000000;
+  --color-fg: #FFFFFF;
+  color: var(--color-fg);
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 100;
@@ -94,6 +98,10 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 }
 
 #hero {
+  --color-bg: #000000;
+  --color-fg: #FFFFFF;
+  background: var(--color-bg);
+  color: var(--color-fg);
   min-height: 100dvh;
   max-width: none;
   margin: 0;
@@ -496,13 +504,14 @@ footer .footer-social:focus-visible { outline: 3px solid #000000; outline-offset
   transform: translate(-50%, -50%);
   opacity: 0;
 }
-.cursor-dot { width: 8px; height: 8px; background: var(--color-accent); }
+.cursor-dot { width: 8px; height: 8px; background: #FFFFFF; mix-blend-mode: difference; }
 .cursor-ring {
   width: 36px; height: 36px;
-  border: 1px solid var(--color-fg);
+  border: 1px solid #FFFFFF;
+  mix-blend-mode: difference;
   transition: width 200ms ease, height 200ms ease, border-color 200ms ease;
 }
-.cursor-ring.is-active { width: 56px; height: 56px; border-color: var(--color-accent); }
+.cursor-ring.is-active { width: 56px; height: 56px; }
 
 /* IMPORTANT: cursor:none is gated behind this class, added by JS only when the
    effect actually initializes (not a blanket pointer:fine media query) — this
