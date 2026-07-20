@@ -61,10 +61,13 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   backdrop-filter: blur(6px);
   transition: background 400ms ease, backdrop-filter 400ms ease;
 }
-#site-nav.nav-scrolled { background: rgba(0, 0, 0, 0.15); backdrop-filter: blur(2px); }
+#site-nav.nav-scrolled { background: transparent; backdrop-filter: none; }
+#site-nav.nav-scrolled ul a,
+#site-nav.nav-scrolled .nav-cta { text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+#site-nav.nav-scrolled .nav-cta { background: rgba(0,0,0,0.35); }
 #site-nav .logo { display: flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; }
 #site-nav .logo img { height: 32px; width: auto; display: block; transition: height 400ms ease; }
-#site-nav.nav-scrolled .logo img { height: 22px; }
+#site-nav.nav-scrolled .logo img { height: 16px; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6)); }
 #site-nav .nav-cta { margin-left: 24px; padding: 10px 24px; font-size: 0.9rem; }
 #site-nav ul { display: flex; gap: 32px; }
 #site-nav a { min-height: 44px; display: flex; align-items: center; }
@@ -431,21 +434,23 @@ footer {
   background: #FFFFFF;
   color: #000000;
   text-align: center;
-  padding: 80px 24px;
-  min-height: 320px;
+  padding: 96px 48px;
+  min-height: 360px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: 1rem;
 }
-footer .footer-logo { height: 28px; width: auto; margin-bottom: 16px; }
-footer .footer-center p { color: rgba(0,0,0,0.7); }
+footer .footer-logo { height: 52px; width: auto; margin-bottom: 28px; }
+footer .footer-center p { color: rgba(0,0,0,0.7); margin-top: 14px; }
+footer .footer-center p:first-of-type { margin-top: 0; }
 footer .footer-social {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   color: #000000;
   font-weight: 700;
+  font-size: 1.05rem;
   text-decoration: underline;
   min-height: 44px;
   padding: 0 6px;
@@ -453,8 +458,8 @@ footer .footer-social {
   align-items: center;
   justify-content: center;
 }
-footer .footer-social--left { left: 24px; }
-footer .footer-social--right { right: 24px; }
+footer .footer-social--left { left: 40px; }
+footer .footer-social--right { right: 40px; }
 footer .footer-social:focus-visible { outline: 3px solid #000000; outline-offset: 2px; }
 .legal-links { margin-top: 8px; }
 .legal-links a { color: #000000; text-decoration: underline; }
