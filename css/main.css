@@ -262,6 +262,14 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   padding: 18px 24px;
 }
 #kundenlogos .logo-card img { max-width: 100%; max-height: 100%; object-fit: contain; }
+/* one-studio.png is white artwork baked onto a black background (not real
+   transparency). Keying the black out via Pillow would leave invisible
+   white-on-white marks against this now-white section, so instead give this
+   card an intentional dark chip so it reads as a badge rather than a bug. */
+#kundenlogos .logo-card:has(img[src*="one-studio"]) {
+  background: #000;
+  border-radius: 8px;
+}
 @keyframes logo-scroll {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
