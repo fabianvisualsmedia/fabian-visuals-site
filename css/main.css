@@ -376,20 +376,21 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   #projekte .case-grid { grid-template-columns: 1fr; }
 }
 
-#prozess { padding-top: 160px; padding-bottom: 160px; }
+#prozess { padding-top: 160px; padding-bottom: 160px; padding-left: 72px; padding-right: 72px; }
 #prozess .process-layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 64px; }
-#prozess .process-pinned { align-self: start; position: sticky; top: 120px; padding-left: 8px; }
-#prozess .process-logo { height: 28px; width: auto; margin-bottom: 24px; }
-#prozess .process-pinned h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 16px; }
-#prozess .process-pinned p { color: rgba(255,255,255,0.75); max-width: 30ch; }
+#prozess .process-pinned { align-self: start; position: sticky; top: 120px; }
+#prozess .process-logo { height: 20px; width: auto; margin-bottom: 20px; }
+#prozess .process-pinned h2 { font-size: clamp(1.25rem, 2vw, 1.5rem); margin-bottom: 14px; }
+#prozess .process-pinned p { color: rgba(255,255,255,0.75); max-width: 30ch; font-size: 0.9rem; }
 #prozess .process-track { position: relative; display: flex; gap: 32px; }
 #prozess .process-line { position: relative; width: 2px; background: rgba(255,255,255,0.15); flex: none; }
 #prozess .process-dot { position: absolute; left: 50%; top: 0; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--color-fg); }
 #prozess .process-steps { flex: 1; display: flex; flex-direction: column; gap: 360px; padding: 240px 0 8px; }
-#prozess .step .num { font-family: var(--font-headline); color: var(--color-accent); font-size: 1.5rem; }
-#prozess .step h3 { margin: 8px 0; font-size: 1.05rem; }
-#prozess .step p { color: rgba(255,255,255,0.75); font-size: 0.95rem; }
+#prozess .step .num { font-family: var(--font-headline); color: var(--color-accent); font-size: 1.15rem; }
+#prozess .step h3 { margin: 6px 0; font-size: 0.9rem; }
+#prozess .step p { color: rgba(255,255,255,0.75); font-size: 0.85rem; max-width: 40ch; }
 @media (max-width: 900px) {
+  #prozess { padding-left: 24px; padding-right: 24px; }
   #prozess .process-layout { grid-template-columns: 1fr; gap: 32px; }
   #prozess .process-pinned { position: static; }
   #prozess .process-line { display: none; }
