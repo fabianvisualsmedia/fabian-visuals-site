@@ -308,10 +308,12 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 .case-card {
   position: relative;
   border-radius: 4px;
-  background: #0d0d0d;
+  background: var(--color-bg-alt);
 }
 .case-card.is-expanded { grid-column: 1 / -1; }
 .case-media {
+  --color-fg: #FFFFFF;
+  color: var(--color-fg);
   position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
@@ -319,7 +321,7 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
 }
 .case-media img { width: 100%; height: 100%; object-fit: cover; }
 .case-media--placeholder {
-  background: #16161a;
+  background: #0d0d0d;
   display: flex;
   align-items: flex-end;
 }
@@ -353,7 +355,7 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   padding: 10px;
   background: transparent;
   border: none;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(0,0,0,0.1);
   color: var(--color-fg);
   font-size: 0.85rem;
   cursor: pointer;
@@ -379,7 +381,7 @@ h1, h2, h3 { font-family: var(--font-headline); text-transform: uppercase; line-
   padding: 0 20px;
 }
 .case-card.is-expanded .case-detail { padding: 4px 20px 24px; }
-.case-detail p { color: rgba(255,255,255,0.8); font-size: 0.95rem; margin-bottom: 16px; }
+.case-detail p { color: rgba(0,0,0,0.8); font-size: 0.95rem; margin-bottom: 16px; }
 .case-detail-gallery {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
