@@ -497,7 +497,7 @@ footer .footer-social:focus-visible { outline: 3px solid #000000; outline-offset
   border-radius: 4px;
   transition: background 200ms ease, color 200ms ease;
 }
-.wedding-teaser:hover { background: #C9A876; color: var(--color-bg); }
+.wedding-teaser:hover { background: #C9A876; color: #3A3530; }
 .wedding-teaser:focus-visible { outline: 3px solid #000000; outline-offset: 2px; }
 
 @media (max-width: 600px) {
