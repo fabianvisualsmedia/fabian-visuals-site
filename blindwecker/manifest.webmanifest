@@ -1,0 +1,18 @@
+{
+  "name": "Blindwecker",
+  "short_name": "Blindwecker",
+  "description": "Zufallswecker: Schlafdauer einsprechen, die Weckzeit wird gewürfelt und bleibt geheim.",
+  "id": "/blindwecker/",
+  "start_url": "/blindwecker/",
+  "scope": "/blindwecker/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "de",
+  "background_color": "#050509",
+  "theme_color": "#050509",
+  "icons": [
+    { "src": "/blindwecker/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/blindwecker/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/blindwecker/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

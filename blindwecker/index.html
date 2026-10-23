@@ -1,0 +1,1229 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Zufallswecker: Schlafdauer, Fenster und Limit einsprechen, die Weckzeit wird gewürfelt und bleibt geheim.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#050509">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Blindwecker">
+<link rel="manifest" href="/blindwecker/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/blindwecker/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/blindwecker/icons/apple-touch-icon.png">
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Blindwecker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Urbanist:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Nacht-Phone auf grauer Bühne, gleiche Familie wie Rauchfrei/Tagwerk. Gepunktetes schwarzes Feld, Punkt-Mond der sich mit der Nacht füllt, "??:??" als Herzstück, Lineal-Regler, Glas-Tabbar. Mondblau = Nacht, Signalgelb = Limit, Sonnenaufgang = Klingeln. Bewusst dunkler Look. */
+:root {
+  --stage: #cfd0d8;
+  --ink: #050509;
+  --sheet: #0a0a10;
+  --fg: #f3f2f8;
+  --muted: rgba(243,242,248,.58);
+  --line: rgba(255,255,255,.12);
+  --signal: #e7fe55;
+  --moon: #e6e6ee;
+  --err: #ff9fb0;
+  --f-num: "Doto", ui-monospace, "SF Mono", Menlo, monospace;
+  --f-body: "Urbanist", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--stage); }
+body { margin: 0; background: var(--stage); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.4; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+svg { display: block; }
+
+.wrap { display: flex; justify-content: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 48px; }
+.phone {
+  position: relative; width: 100%; max-width: 430px; min-width: 0; border-radius: 54px; padding: 14px 16px 22px;
+  background-color: var(--ink); background-image: radial-gradient(rgba(255,255,255,.085) 1px, transparent 1.3px); background-size: 13px 13px;
+  box-shadow: 0 0 0 9px #9d9da6, 0 0 0 10px #85858e, 0 50px 90px -30px rgba(0,0,0,.5);
+  display: flex; flex-direction: column; gap: 14px;
+}
+.island { width: 108px; height: 31px; border-radius: 20px; background: #000; margin: 0 auto; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px; }
+.island i { width: 7px; height: 7px; border-radius: 50%; background: #2a2a2e; }
+.island i.on { background: var(--signal); box-shadow: 0 0 10px var(--signal); }
+#view { display: flex; flex-direction: column; gap: 14px; min-height: 560px; }
+
+.top { display: flex; align-items: center; gap: 8px; }
+.round { width: 44px; height: 44px; flex: none; border-radius: 50%; background: rgba(255,255,255,.07); border: 1px solid var(--line); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.glassbtn { flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(10,10,14,.8); font-size: 14px; font-weight: 500; }
+.glassbtn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.glassbtn i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.3); flex: none; }
+.glassbtn i.on { background: var(--signal); box-shadow: 0 0 8px var(--signal); }
+.clock { font: 500 12px var(--f-mono); }
+
+.head { padding: 4px 6px 0; display: flex; flex-direction: column; gap: 4px; }
+.head h1 { font: 500 32px/1.06 var(--f-body); letter-spacing: -.025em; margin: 0; text-wrap: balance; }
+.head .sub { color: var(--muted); font-size: 13.5px; margin: 0; }
+.label { font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 14px 6px 0; display: flex; align-items: center; gap: 12px; }
+.label::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+.label b { font: 500 13px var(--f-mono); color: var(--fg); letter-spacing: 0; text-transform: none; order: 2; }
+.dn { font-family: var(--f-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* hero */
+.hero { position: relative; isolation: isolate; overflow: hidden; border-radius: 44px; padding: 18px 18px 20px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+  background: radial-gradient(90% 70% at 50% 0%, #1e1e25 0%, #101014 60%, #0b0b0e 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), inset 0 1.5px 0 rgba(255,255,255,.16), 0 30px 50px -26px rgba(0,0,0,.95); }
+.hero.armed { background: radial-gradient(90% 70% at 50% 0%, #26262e 0%, #111115 60%, #0b0b0e 100%); }
+.hero > * { position: relative; z-index: 1; }
+.hero .htop { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13.5px; color: rgba(255,255,255,.9); }
+.pill { display: inline-flex; align-items: center; gap: 6px; font: 500 10.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; padding: 5px 10px; border-radius: 999px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.14); white-space: nowrap; }
+.pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 6px var(--signal); }
+.orbwrap { position: relative; width: min(270px, 74vw); aspect-ratio: 1; max-width: 100%; }
+.orbwrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.orbwrap .center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.hugenum { font: 900 88px/1 var(--f-num); font-variant-numeric: tabular-nums; letter-spacing: .02em; color: #fff; text-shadow: 0 0 16px rgba(255,255,255,.22); }
+.hugenum.q { font-size: 76px; }
+.unitlbl { font-size: 14px; color: var(--muted); margin-top: 8px; }
+.hero .foot { font-size: 14px; color: var(--muted); text-wrap: balance; }
+.hero .foot b { font: 500 16px var(--f-mono); color: var(--fg); }
+
+/* voice */
+.voicebar { display: flex; gap: 6px; align-items: center; padding: 5px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+.voicebar .mic { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; background: rgba(255,255,255,.08); color: var(--fg); }
+.voicebar .inp { border: 0; background: transparent; padding: 10px 4px; border-radius: 0; }
+.voicebar .inp:focus-visible { outline: none; }
+.voicebar:focus-within { border-color: rgba(255,255,255,.4); }
+.group { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.glabel { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 0 6px; font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.glabel b { font: 500 15px var(--f-mono); color: var(--fg); letter-spacing: 0; text-transform: none; }
+.more { border-top: 1px solid var(--line); padding-top: 6px; }
+.more summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 10px 6px; font-weight: 600; font-size: 14.5px; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary span { font: 400 12px var(--f-body); color: var(--muted); margin-left: auto; margin-right: 10px; }
+.more summary svg { transition: transform .25s; }
+.more[open] summary svg { transform: rotate(180deg); }
+.more .inner { display: flex; flex-direction: column; gap: 10px; padding-bottom: 4px; }
+.inp { flex: 1; width: 100%; min-width: 0; background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.16); color: var(--fg); border-radius: 22px; padding: 12px 16px; font-size: 16px; }
+.inp::placeholder { color: rgba(255,255,255,.42); }
+.go { width: 44px; height: 44px; flex: none; border-radius: 50%; border: 0; background: var(--fg); color: var(--ink); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.vhint { margin: -4px 8px 0; font-size: 12.5px; color: var(--muted); }
+.voicebar .mic { border: 0; cursor: pointer; padding: 0; transition: background .2s, color .2s; }
+.voicebar .mic.rec { background: #ff4d5e; color: #fff; box-shadow: 0 0 0 6px rgba(255,77,94,.18); }
+.tones { display: flex; flex-direction: column; gap: 8px; }
+.tone { display: flex; align-items: center; gap: 8px; }
+.tpick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer; padding: 12px 14px; border-radius: 22px; border: 1px solid var(--line); background: rgba(255,255,255,.04); }
+.tpick i { width: 18px; height: 18px; flex: none; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.4); }
+.tpick[aria-pressed="true"] { border-color: rgba(255,255,255,.55); background: rgba(255,255,255,.09); }
+.tpick[aria-pressed="true"] i { border: 5px solid var(--fg); }
+.tpick span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.tpick b { font-weight: 600; font-size: 14.5px; }
+.tpick small { font-size: 12px; color: var(--muted); }
+.tplay { width: 48px; height: 48px; flex: none; border-radius: 50%; border: 1px solid var(--line); background: rgba(255,255,255,.07); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.tplay.playing, .cta.playing { background: var(--fg); color: var(--ink); }
+.tonerow { display: flex; align-items: center; gap: 8px; padding: 10px 6px 0; }
+.tonerow .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.tonerow .grow span { font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.tonerow .grow b { font-weight: 600; font-size: 14.5px; }
+.tonerow .cta { width: auto; }
+@media (prefers-reduced-motion: no-preference) { .voicebar .mic.rec { animation: blink 1.2s ease-in-out infinite; } }
+.vchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.vchips { padding: 0 4px; }
+.vchips:empty { display: none; }
+.vchips span { font: 500 11px var(--f-mono); padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.1); color: var(--fg); }
+.vchips span.bad { background: rgba(255,159,176,.14); color: var(--err); }
+.examples { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-inline: -14px; padding-inline: 14px; }
+.examples::-webkit-scrollbar { display: none; }
+.examples button { flex: none; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); border-radius: 999px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; color: rgba(255,255,255,.8); white-space: nowrap; }
+
+/* chips */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 2px; }
+.chip { flex: none; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); border-radius: 999px; padding: 9px 14px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--ink); border-color: var(--fg); }
+.chip.num { font: 500 13px var(--f-mono); }
+
+/* panels */
+.panel { background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 28px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.row .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.row .grow b { font-weight: 600; font-size: 14.5px; }
+.row .grow span { font-size: 12px; color: var(--muted); }
+.tgl { width: 52px; height: 32px; flex: none; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.1); position: relative; cursor: pointer; padding: 0; transition: background .2s; }
+.tgl::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .25s cubic-bezier(.3,1.4,.5,1); }
+.tgl[aria-checked="true"] { background: var(--signal); border-color: transparent; }
+.tgl[aria-checked="true"]::after { transform: translateX(20px); background: var(--ink); }
+input[type="time"].inp { flex: none; width: 118px; padding: 9px 12px; min-height: 42px; font-family: var(--f-mono); }
+.inp:disabled { opacity: .35; }
+
+/* ruler slider */
+.rswrap { position: relative; }
+.rswrap::before { content: ""; position: absolute; left: 50%; top: 0; z-index: 2; transform: translateX(-6px); border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid var(--rc, var(--moon)); pointer-events: none; }
+.rswrap::after { content: ""; position: absolute; left: 50%; top: 6px; z-index: 2; width: 3px; height: 34px; margin-left: -1.5px; border-radius: 2px; background: var(--rc, var(--moon)); box-shadow: 0 0 12px var(--rc, var(--moon)); pointer-events: none; }
+.rswrap.lim { --rc: var(--signal); }
+.rs { height: 62px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; cursor: grab;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
+.rs::-webkit-scrollbar { display: none; }
+.rs .track { display: flex; height: 100%; width: max-content; }
+.rs .pad { flex: none; height: 100%; }
+.rs .s { flex: none; width: var(--sp); height: 100%; position: relative; scroll-snap-align: center; cursor: pointer; }
+.rs .s::after { content: ""; position: absolute; left: 50%; top: 14px; width: 1.5px; height: 14px; margin-left: -.75px; background: rgba(255,255,255,.45); border-radius: 1px; }
+.rs .s.major::after { height: 24px; top: 9px; background: rgba(255,255,255,.95); }
+.rs .s em { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); font: 500 10px var(--f-mono); font-style: normal; color: rgba(255,255,255,.75); white-space: nowrap; }
+
+/* preview timeline */
+.preview { position: relative; isolation: isolate; overflow: hidden; border-radius: 34px; padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 12px;
+  background: radial-gradient(120% 80% at 50% 120%, #2b2f9a 0%, rgba(43,47,154,0) 60%), #0d0e1c; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), inset 0 1.5px 0 rgba(255,255,255,.18); }
+.tl { position: relative; height: 46px; }
+.tl .base { position: absolute; left: 0; right: 0; top: 22px; border-top: 1.5px dotted rgba(255,255,255,.35); }
+.tl .sleep { position: absolute; top: 21px; height: 3px; background: rgba(185,198,255,.5); border-radius: 2px; }
+.tl .band { position: absolute; top: 10px; height: 26px; border-radius: 999px; background: linear-gradient(90deg, rgba(185,198,255,.35), rgba(208,122,208,.55)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+.tl .cut { position: absolute; top: 10px; height: 26px; border-radius: 0 999px 999px 0; background: repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 3px, transparent 3px 7px); }
+.tl .lim { position: absolute; top: 2px; bottom: 2px; width: 2px; margin-left: -1px; background: var(--signal); box-shadow: 0 0 8px var(--signal); border-radius: 2px; }
+.tl .tgt { position: absolute; top: 6px; bottom: 6px; width: 1.5px; margin-left: -.75px; background: rgba(255,255,255,.9); }
+.tl .now { position: absolute; top: 16px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px rgba(255,255,255,.7); }
+.tl .q { position: absolute; top: 12px; width: 22px; height: 22px; margin-left: -11px; border-radius: 50%; display: grid; place-items: center; font: 900 12px var(--f-num); background: var(--ink); border: 1px solid rgba(255,255,255,.5); }
+.tlcells { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tlcells div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tlcells div:nth-child(2) { text-align: center; }
+.tlcells div:last-child { text-align: right; }
+.tlcells b { font: 500 17px/1.1 var(--f-mono); }
+.tlcells span { font: 500 9.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.tlnote { font-size: 12.5px; color: var(--muted); margin: 0 6px; }
+.tlnote.warn { color: var(--signal); }
+.tlnote.bad { color: var(--err); }
+
+/* CTA */
+.cta { display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 999px; padding: 16px 18px; font-size: 16px; font-weight: 600; cursor: pointer; background: var(--fg); color: var(--ink); width: 100%; }
+.cta.big { background: linear-gradient(100deg, #e7fe55 0%, #f6ffb8 100%); color: #0b0c05; box-shadow: 0 16px 34px -18px rgba(231,254,85,.8); }
+.cta.ghost { background: rgba(255,255,255,.07); color: var(--fg); border: 1px solid var(--line); }
+.cta.small { padding: 11px 14px; font-size: 13.5px; }
+.cta.danger { background: transparent; color: var(--err); border: 1px solid rgba(255,140,160,.32); }
+.cta.danger.armed { background: #d93a5a; color: #fff; border-color: transparent; }
+.cta:disabled { opacity: .4; cursor: default; }
+.btnrow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.note { font-size: 12px; color: var(--muted); text-align: center; margin: 0 10px; text-wrap: balance; }
+.status { text-align: center; font: 500 10px var(--f-mono); color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin: 6px 0 0; }
+
+/* checks */
+.checks { display: flex; flex-direction: column; gap: 8px; }
+.ck { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
+.ck i { width: 22px; height: 22px; flex: none; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.08); border: 1px solid var(--line); }
+.ck.ok i { background: var(--moon); color: var(--ink); border-color: transparent; }
+.ck.warn i { background: var(--signal); color: var(--ink); border-color: transparent; }
+.ck span { min-width: 0; }
+
+/* stats */
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.stats div { background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 22px; padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.stats .dn { font-size: 21px; line-height: 1.1; }
+.stats span { font-size: 11.5px; color: var(--muted); }
+
+/* scatter */
+.scatter { position: relative; isolation: isolate; overflow: hidden; border-radius: 34px; padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 8px;
+  background: #0f0f13; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), inset 0 1.5px 0 rgba(255,255,255,.16); }
+.scatter h2 { margin: 0; font: 500 15px var(--f-body); }
+.scatter p { margin: 0; font-size: 12px; color: var(--muted); }
+.srow { display: grid; grid-template-columns: 56px 1fr; gap: 10px; align-items: center; height: 26px; }
+.srow time { font: 500 10.5px var(--f-mono); color: var(--muted); white-space: nowrap; }
+.strack { position: relative; height: 100%; }
+.strack::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.25); }
+.strack .w { position: absolute; top: 8px; height: 10px; border-radius: 999px; background: rgba(255,255,255,.14); }
+.strack .d { position: absolute; top: 6px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(255,255,255,.6); }
+.strack .d.cheat { background: var(--err); box-shadow: 0 0 8px var(--err); }
+.strack .d.miss { background: transparent; border: 1.5px dashed rgba(255,255,255,.6); box-shadow: none; }
+.saxis { display: grid; grid-template-columns: 56px 1fr; gap: 10px; }
+.saxis div { display: flex; justify-content: space-between; font: 500 9.5px var(--f-mono); color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+.legend i.c { background: var(--err); }
+.legend i.m { background: transparent; border: 1.5px dashed rgba(255,255,255,.6); }
+
+/* list */
+.list { display: flex; flex-direction: column; }
+.item { display: flex; align-items: center; gap: 12px; padding: 11px 2px; border-top: 1px solid rgba(255,255,255,.09); min-width: 0; }
+.item time { font: 500 15px var(--f-mono); flex: none; min-width: 52px; }
+.item .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.item .grow b { font-weight: 500; font-size: 14px; }
+.item .grow span { font-size: 12px; color: var(--muted); }
+.tag { font: 500 10px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
+.tag.c { color: var(--err); border-color: rgba(255,159,176,.4); }
+.del { border: 0; background: none; color: rgba(255,255,255,.45); cursor: pointer; padding: 6px; display: grid; place-items: center; }
+.del:hover { color: var(--fg); }
+.empty { text-align: center; color: var(--muted); padding: 18px 10px; font-size: 14px; margin: 0; text-wrap: balance; }
+
+/* tab bar */
+.tabbar { position: sticky; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 8; display: flex; justify-content: center; margin-top: 6px; pointer-events: none; }
+.tb-glass { pointer-events: auto; position: relative; width: min(260px, 100%); display: grid; grid-template-columns: repeat(3, 1fr); padding: 7px; border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.07)); -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid rgba(255,255,255,.2); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -8px 18px -10px rgba(255,255,255,.18), 0 20px 44px -14px rgba(0,0,0,.75); }
+.tb-glass button { position: relative; z-index: 1; height: 54px; border: 0; background: transparent; display: grid; place-items: center; color: rgba(255,255,255,.85); cursor: pointer; padding: 0; transition: color .3s; }
+.tb-glass button[aria-selected="true"] { color: #121216; }
+.tb-ind { position: absolute; top: 7px; left: 7px; height: 54px; width: calc((100% - 14px) / 3); transform: translateX(calc(var(--i, 0) * 100%)); pointer-events: none; }
+.tb-ind::before { content: ""; position: absolute; inset: 0; margin: auto; width: 52px; height: 52px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #ffffff, #ecebf1 55%, #c9c9d4); box-shadow: 0 8px 18px rgba(0,0,0,.4), inset 0 -3px 6px rgba(0,0,0,.12), inset 0 2px 2px rgba(255,255,255,.9); }
+
+/* overlays */
+.scrim { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.6); display: flex; align-items: flex-end; justify-content: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.sheet { width: 100%; max-width: 430px; max-height: 94vh; overflow: auto; border-radius: 38px 38px 0 0; overscroll-behavior: contain;
+  padding: 18px 16px calc(26px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 16px;
+  background-color: var(--sheet); background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1.3px); background-size: 13px 13px; box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
+.sheet > * { flex-shrink: 0; }
+.sheet.full { height: calc(100% - 12px); max-height: none; justify-content: space-between; }
+.sheet.sunrise { background: #f4f4f7; color: #0a0a0d; }
+.sunrise .pill { background: rgba(0,0,0,.06); border-color: rgba(0,0,0,.12); color: #0a0a0d; }
+.sunrise .hugenum { color: #0a0a0d; text-shadow: none; }
+.sunrise .ringtop p, .sunrise .note { color: rgba(10,10,13,.62); }
+.sunrise .math { background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.1); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.sunrise .math .lbl { color: rgba(10,10,13,.6); }
+.sunrise .inp { background: #fff; border-color: rgba(0,0,0,.18); color: #0a0a0d; }
+.sunrise .go, .sunrise .cta { background: #0a0a0d; color: #fff; }
+.sunrise .cta.ghost { background: transparent; color: #0a0a0d; border: 1px solid rgba(0,0,0,.2); }
+.sunrise .hold .fill { background: rgba(255,255,255,.28); }
+.sheet.dawn { background: radial-gradient(90% 50% at 50% 0%, #22222a 0%, #0c0c0f 70%); }
+.grab { width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.25); margin: 0 auto; }
+.ringtop { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding-top: 10px; }
+.ringtop .hugenum { font-size: 104px; }
+.ringtop h2 { margin: 0; font: 500 30px/1.1 var(--f-body); letter-spacing: -.02em; text-wrap: balance; }
+.ringtop p { margin: 0; color: rgba(255,255,255,.9); font-size: 15px; }
+.math { display: flex; flex-direction: column; gap: 10px; align-items: stretch; background: rgba(10,6,30,.45); border: 1px solid rgba(255,255,255,.18); border-radius: 30px; padding: 16px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.math .q { text-align: center; font: 900 44px/1 var(--f-num); letter-spacing: .02em; }
+.math .lbl { text-align: center; font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.8); }
+.math form { display: flex; gap: 8px; }
+.math .inp { text-align: center; font: 900 24px var(--f-num); }
+.hold { position: relative; overflow: hidden; }
+.hold .fill { position: absolute; inset: 0; transform-origin: left; transform: scaleX(0); background: rgba(0,0,0,.16); pointer-events: none; }
+.hold span { position: relative; }
+.result { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.result .hugenum { font-size: 80px; }
+.rgrid b { font-family: var(--f-mono) !important; font-weight: 500 !important; }
+.rgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.rgrid div { background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.14); border-radius: 20px; padding: 10px; text-align: center; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rgrid b { font: 900 18px var(--f-num); letter-spacing: .02em; }
+.rgrid span { font: 500 9px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.75); }
+
+.night { position: fixed; inset: 0; z-index: 30; background: #000; cursor: pointer; display: block; }
+.night .nc { position: absolute; text-align: center; color: rgba(185,198,255,.28); transition: left 2s, top 2s; }
+.night .nc b { display: block; font: 900 54px/1 var(--f-num); letter-spacing: .03em; }
+.night .nc span { font: 500 10px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; }
+
+.toast { position: fixed; left: 50%; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 16px); z-index: 40; padding: 10px 18px; border-radius: 999px; background: var(--fg); color: var(--ink); font-weight: 600; font-size: 14px; opacity: 0; pointer-events: none; transition: .25s; max-width: calc(100% - 32px); text-align: center; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.unlock { position: fixed; inset: 0; z-index: 35; background: rgba(5,5,9,.86); display: grid; place-content: center; gap: 14px; text-align: center; padding: 24px; cursor: pointer; }
+.unlock b { font: 500 26px/1.15 var(--f-body); letter-spacing: -.02em; }
+.unlock span { color: var(--muted); font-size: 14px; }
+
+@media (max-width: 480px) {
+  html, body { background: var(--ink); }
+  .wrap { padding-left: 0; padding-right: 0; padding-block: 0; }
+  .phone { border-radius: 0; max-width: none; box-shadow: none; padding-top: 18px; min-height: 100vh; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .island { display: none; }
+}
+@media (max-width: 370px) { .hugenum { font-size: 72px; } .hugenum.q { font-size: 60px; } .ringtop .hugenum { font-size: 80px; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .tb-ind { transition: transform .6s cubic-bezier(.34,1.5,.5,1); }
+  .tb-ind.squish::before { animation: squish .6s cubic-bezier(.3,.8,.3,1); }
+  .tb-glass button[aria-selected="true"] svg { animation: iconpop .5s cubic-bezier(.2,1.6,.4,1); }
+  #view.slide-r { animation: slideR .45s cubic-bezier(.2,.8,.2,1); }
+  #view.slide-l { animation: slideL .45s cubic-bezier(.2,.8,.2,1); }
+  .enter > * { animation: rise .6s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 40ms); }
+  .scrim.anim { animation: fade .25s ease-out both; }
+  .scrim.anim .sheet { animation: up .42s cubic-bezier(.2,.9,.2,1) both; }
+  .pill i, .glassbtn i.on, .island i.on { animation: blink 1.6s ease-in-out infinite; }
+  .ringing .hugenum { animation: pulse 1.2s ease-in-out infinite; }
+  .shake { animation: shake .4s; }
+  .chip, .cta, .round, .go, .examples button { transition: transform .15s cubic-bezier(.2,.8,.2,1), background .25s, color .2s; }
+  .chip:active, .cta:active, .round:active, .go:active, .examples button:active { transform: scale(.95); }
+}
+@keyframes squish { 25% { transform: scale(1.32, .82); } 55% { transform: scale(.94, 1.06); } 100% { transform: none; } }
+@keyframes iconpop { 0% { transform: scale(.6); } 60% { transform: scale(1.15); } }
+@keyframes slideR { from { transform: translateX(36px); opacity: 0; } }
+@keyframes slideL { from { transform: translateX(-36px); opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(16px) scale(.97); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes up { from { transform: translateY(60px); opacity: .4; } }
+@keyframes blink { 50% { opacity: .35; } }
+@keyframes pulse { 50% { transform: scale(1.05); text-shadow: 0 0 40px rgba(255,255,255,.8); } }
+@keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <main class="phone" id="app">
+    <div class="island" aria-hidden="true"><i id="islandDot"></i></div>
+    <div class="top">
+      <button class="round" id="nightBtn" aria-label="Nachtmodus" title="Nachtmodus">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/></svg>
+      </button>
+      <div class="glassbtn" id="stateBtn"><i></i><span>Kein Wecker aktiv</span></div>
+      <div class="round"><span class="clock" id="clock">--:--</span></div>
+    </div>
+    <section id="view"></section>
+    <p class="status" id="status">Lädt …</p>
+    <nav class="tabbar" aria-label="Navigation"><div class="tb-glass" role="tablist">
+      <span class="tb-ind" id="tbInd" aria-hidden="true"></span>
+      <button role="tab" data-tab="wecker" aria-selected="true" aria-label="Wecker"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.2 2M4.5 5.5 7 3.5M19.5 5.5 17 3.5"/></svg></button>
+      <button role="tab" data-tab="verlauf" aria-selected="false" aria-label="Verlauf"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 20h18"/><path d="M6.5 16.5V11M12 16.5V6M17.5 16.5v-4"/><circle cx="12" cy="4" r=".6" fill="currentColor"/></svg></button>
+      <button role="tab" data-tab="setup" aria-selected="false" aria-label="Einstellungen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+    </div></nav>
+  </main>
+</div>
+<div id="sheetRoot"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+
+  // ---------- constants ----------
+  const MIN = 60000, H = 3600000, D = 86400000;
+  const WINS = [15, 30, 45, 60, 90];
+  const BUFFERS = [0, 10, 15, 20, 30];
+  const SOUNDS = [["sunrise", "Sonnenaufgang", "Warmes Pad, aufsteigende Glocken"], ["marimba", "Marimba", "Holzig, melodisch, freundlich"], ["birds", "Vogelmorgen", "Zwitschern über leisem Pad"],
+    ["pulse", "Studio-Puls", "Kick und Akkorde, 112 BPM"], ["classic", "Klassisch", "Digitaler Piepser, 4× pro Sekunde"], ["alarm", "Feueralarm", "Sirene für Tiefschläfer"]];
+  const soundName = k => (SOUNDS.find(x => x[0] === k) || SOUNDS[0])[1];
+  const RAMPS = [[0, "Sofort laut"], [30, "30 s Anstieg"], [90, "90 s Anstieg"]];
+  const CHALLENGES = [["math", "Rechenaufgabe"], ["hold", "3 s halten"], ["none", "Aus"]];
+  const MOODS = ["Zombie", "Zäh", "Okay", "Fit", "Hellwach"];
+  const EXAMPLES = ["Stell mir einen Wecker für 7 Stunden", "7,5 Stunden, plus minus 30 Minuten, maximal 8", "Zwischen 6 und 8 Stunden", "Weck mich gegen 6:30 Uhr, spätestens 7 Uhr"];
+  const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+  const TABS = ["wecker", "verlauf", "setup"];
+
+  const svg = (d, w = 16, sw = 1.7) => `<svg width="${w}" height="${w}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const I = {
+    x: svg('<path d="m4 4 8 8M12 4l-8 8"/>', 14), check: svg('<path d="m3.5 8.5 3 3 6-7"/>', 13, 2), warn: svg('<path d="M8 4.5v4.5M8 11.5v.2"/>', 13, 2),
+    go: svg('<path d="M3 8h10M9 4l4 4-4 4"/>', 18, 1.9),
+    mic: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>',
+    dice: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.3" fill="currentColor"/><circle cx="15" cy="15" r="1.3" fill="currentColor"/><circle cx="15" cy="9" r="1.3" fill="currentColor"/><circle cx="9" cy="15" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></svg>'
+  };
+
+  // ---------- helpers ----------
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const pad = n => String(n).padStart(2, "0");
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const hm = t => { const d = new Date(t); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
+  const hmMin = m => pad(Math.floor(m / 60) % 24) + ":" + pad(m % 60);
+  const durShort = min => (min = Math.max(0, min), Math.floor(min / 60)) + ":" + pad(Math.round(min % 60));
+  const durLong = min => { min = Math.max(0, Math.round(min)); const h = Math.floor(min / 60), m = min % 60; return (h ? h + " Std" : "") + (m ? (h ? " " : "") + m + " min" : h ? "" : "0 min"); };
+  const dayLbl = t => { const d = new Date(t); return WD[d.getDay()] + " " + d.getDate() + "." + (d.getMonth() + 1) + "."; };
+  const toMin = s => { const [h, m] = String(s || "0:0").split(":").map(Number); return (h || 0) * 60 + (m || 0); };
+  const setText = (id, v) => { const el = document.getElementById(id); if (el && el.textContent !== String(v)) el.textContent = v; };
+  function toast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2400); }
+
+  // ---------- state ----------
+  const defCfg = () => ({ dur: 420, win: 30, max: 480, dist: "even", buffer: 15, latestOn: false, latest: "07:30", earliestOn: false, earliest: "05:00", sound: "sunrise", ramp: 30, challenge: "math", snooze: true });
+  const blank = () => ({ v: 1, updatedAt: 0, cfg: defCfg(), history: [] });
+  function normalize(s) {
+    if (!s || typeof s !== "object") return blank();
+    s.cfg = Object.assign(defCfg(), s.cfg || {});
+    s.history = Array.isArray(s.history) ? s.history : [];
+    return s;
+  }
+  const LS = "fv-blindwecker-v1", LSA = "fv-blindwecker-armed";
+  let S = blank();
+  try { const r = localStorage.getItem(LS); if (r) S = normalize(JSON.parse(r)); } catch (e) {}
+  // Der scharfe Wecker bleibt bewusst auf diesem Gerät: klingeln kann er nur hier.
+  let A = null;
+  try { const r = localStorage.getItem(LSA); if (r) A = JSON.parse(r); } catch (e) {}
+  const saveArmed = () => { try { A ? localStorage.setItem(LSA, JSON.stringify(A)) : localStorage.removeItem(LSA); } catch (e) {} };
+
+  let docRef = null, writing = Promise.resolve(), saveT = 0, mode = "local";
+  function save() {
+    S.updatedAt = Date.now();
+    if (S.history.length > 400) S.history = S.history.slice(-400);
+    try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {}
+    clearTimeout(saveT); saveT = setTimeout(push, 600);
+  }
+  function push() {
+    if (!docRef) return;
+    const body = { state: clone(S) };
+    writing = writing.then(() => docRef.set(body)).then(() => { mode = "sync"; setStatus(); })
+      .catch(e => setStatus(e && e.code === "quota_exceeded" ? "Speicher voll" : "Speichern hakt · lokal gesichert"));
+  }
+  function setStatus(msg) { setText("status", msg || (mode === "sync" ? "Einstellungen & Verlauf synchron" : "Auf diesem Gerät gespeichert")); }
+  async function connect() {
+    setStatus();
+    const c = window.claude; if (!c || !c.use) return;
+    try {
+      const [db, user] = await Promise.all([c.use("db"), c.use("user")]);
+      if (!db || !user) return;
+      const id = await user.id(); if (!id) return;
+      docRef = db.doc("data/users/" + id + "/blindwecker");
+      const snap = await docRef.get();
+      const remote = snap.exists && snap.data() ? snap.data().state : null;
+      mode = "sync";
+      if (remote && (remote.updatedAt || 0) >= (S.updatedAt || 0)) { S = normalize(clone(remote)); try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} if (!A) render(); }
+      else if (S.updatedAt) push();
+      setStatus();
+    } catch (e) { setStatus("Sync getrennt · lokal weiter"); }
+  }
+
+  // ---------- window math ----------
+  function nextAt(minOfDay, after) {
+    const d = new Date(after); d.setHours(Math.floor(minOfDay / 60), minOfDay % 60, 0, 0);
+    let t = d.getTime(); while (t <= after) t += D; return t;
+  }
+  function calcWindow(cfg, now = Date.now()) {
+    const sleep = now + cfg.buffer * MIN;
+    const target = sleep + cfg.dur * MIN;
+    let lo = target - cfg.win * MIN;
+    const hi = target + cfg.win * MIN;
+    let cap = Math.min(hi, sleep + cfg.max * MIN), capBy = cap < hi ? "max" : "";
+    if (cfg.latestOn) { const t = nextAt(toMin(cfg.latest), sleep); if (t < cap) { cap = t; capBy = "time"; } }
+    let raise = "";
+    if (cfg.earliestOn) { const t = nextAt(toMin(cfg.earliest), sleep); if (t > lo && t - sleep < 16 * H) { lo = t; raise = "time"; } }
+    if (lo < sleep + 30 * MIN) { lo = sleep + 30 * MIN; raise = raise || "min"; }
+    return { now, sleep, target, lo, hi, cap, capBy, raise, ok: cap - lo >= 5 * MIN };
+  }
+  function pick(w, dist) {
+    const a = w.lo, b = w.cap, r = Math.random();
+    if (dist !== "mid") return Math.round(a + r * (b - a));
+    // Dreiecksverteilung mit Spitze beim Ziel: meistens nah dran, manchmal am Rand.
+    const c = clamp(w.target, a, b), fc = (c - a) / (b - a || 1);
+    return Math.round(r < fc ? a + Math.sqrt(r * (b - a) * (c - a)) : b - Math.sqrt((1 - r) * (b - a) * (b - c)));
+  }
+
+  // ---------- speech parser ----------
+function parseSpeech(raw) {
+  const NUMW = { "fünfundvierzig":45,"fuenfundvierzig":45,"fünfunddreißig":35,"fünfundzwanzig":25,"dreißig":30,"dreissig":30,"vierzig":40,"fünfzig":50,"fuenfzig":50,"zwanzig":20,"neunzig":90,"fünfzehn":15,"fuenfzehn":15,"zwölf":12,"zwoelf":12,"zehn":10,"neun":9,"acht":8,"sieben":7,"sechs":6,"fünf":5,"fuenf":5,"vier":4,"drei":3,"zwei":2,"zwo":2,"elf":11,"einer":1,"einen":1,"eine":1,"eins":1,"ein":1 };
+  let s = " " + String(raw || "").toLowerCase().replace(/[„“"!?]/g, " ") + " ";
+  s = s.replace(/\+\s*\/?\s*-|plus\s*minus|plusminus/g, " ± ");
+  s = s.replace(/anderthalb/g, " 1.5 ").replace(/([a-zäöüß]+)einhalb/g, "$1 einhalb");
+  s = s.replace(/(^|[^a-zäöüß])(?:eine?\s+)?halbe?n?\s+stunde/g, "$1 30 minuten ").replace(/(^|[^a-zäöüß])dreiviertel\s*stunde/g, "$1 45 minuten ").replace(/(^|[^a-zäöüß])(?:eine?\s+)?viertel\s*stunde/g, "$1 15 minuten ");
+  const keys = Object.keys(NUMW).sort((a, b) => b.length - a.length).join("|");
+  s = s.replace(new RegExp(`(^|[^a-zäöüß])(${keys})(?=$|[^a-zäöüß])`, "g"), (m, p, w) => p + NUMW[w]);
+  s = s.replace(/(\d+)\s+einhalb/g, (m, n) => (+n + .5) + "").replace(/(\d+)\s+dreiviertel/g, (m, n) => (+n + .75) + "");
+  s = s.replace(/(\d),(\d)/g, "$1.$2");
+  s = s.replace(/halb\s+(\d{1,2})(?!\s*(?:stunde|std|h\b))/g, (m, n) => ((+n + 23) % 24) + ":30 uhr");
+  s = s.replace(/(\d{1,2})\s*uhr\s*(\d{1,2})(?!\s*(?:stunde|std|min))/g, (m, h, mm) => h + ":" + String(mm).padStart(2, "0") + " uhr");
+  const out = {};
+  const MAXK = /(max(?:imal|\.)?|höchstens|hoechstens|limit|obergrenze|nicht länger als|nicht mehr als|spätestens nach|spaetestens nach)\s*$/;
+  const WINK = /(±|spielraum|toleranz|fenster|abweichung|random|zufällig|zufaellig|variabel)\s*$/;
+  const BUFK = /(einschlafen|einschlafzeit|einschlafpuffer)\s*$/;
+  // zwischen X und Y stunden
+  const zw = s.match(/zwischen\s*(\d+(?:\.\d+)?)\s*(?:stunden?|std\.?|h)?\s*und\s*(\d+(?:\.\d+)?)\s*(?:stunden?|std\.?|h)/);
+  if (zw) { const a = +zw[1] * 60, b = +zw[2] * 60; const lo = Math.min(a, b), hi = Math.max(a, b); out.dur = (lo + hi) / 2; out.win = (hi - lo) / 2; out.max = hi; s = s.replace(zw[0], " "); }
+  // absolute times
+  const timeRe = /(\d{1,2})(?::(\d{2}))?\s*uhr|(\d{1,2}):(\d{2})(?!\s*(?:stunden?|std|h\b))/g;
+  let m;
+  const times = [];
+  while ((m = timeRe.exec(s))) {
+    const h = +(m[1] ?? m[3]), mm = +(m[2] ?? m[4] ?? 0);
+    if (h > 23 || mm > 59) continue;
+    const before = s.slice(Math.max(0, m.index - 30), m.index);
+    times.push({ i: m.index, len: m[0].length, v: h * 60 + mm, before });
+  }
+  for (const t of times) {
+    if (/(spätestens|spaetestens|bis|nicht nach|vor)\s*(um\s*)?$/.test(t.before) && !/nicht vor\s*(um\s*)?$/.test(t.before)) out.latest = t.v;
+    else if (/(frühestens|fruehestens|nicht vor|ab)\s*(um\s*)?$/.test(t.before)) out.earliest = t.v;
+    else out.target = t.v;
+  }
+  for (const t of times.slice().reverse()) s = s.slice(0, t.i) + " ".repeat(t.len) + s.slice(t.i + t.len);
+  // bare numbers after keywords
+  s = s.replace(/(max(?:imal|\.)?|höchstens|hoechstens|limit|nicht länger als|nicht mehr als|für|fuer|schlafen|wecker auf)\s*(\d+(?:\.\d+)?)(?!\s*(?:[\d.:]|min|stunde|std|h\b|uhr))/g, "$1 $2 stunden");
+  s = s.replace(/(±|spielraum|toleranz|fenster)\s*(\d+(?:\.\d+)?)(?!\s*(?:[\d.:]|min|stunde|std|h\b|uhr))/g, (x, k, n) => k + " " + n + (+n <= 3 ? " stunden" : " minuten"));
+  const durRe = /(\d+(?:\.\d+)?)\s*(?:stunden?|std\.?|h)(?![a-zäöü])(?:\s*(?:und\s*)?(\d+)\s*(?:minuten|min)\b)?|(\d+)\s*(?:minuten|min)\b/g;
+  const found = [];
+  while ((m = durRe.exec(s))) {
+    const v = m[3] ? +m[3] : Math.round(+m[1] * 60 + (m[2] ? +m[2] : 0));
+    found.push({ v, before: s.slice(Math.max(0, m.index - 30), m.index), after: s.slice(m.index + m[0].length, m.index + m[0].length + 30) });
+  }
+  for (const f of found) {
+    const aft = /^\s*(?:davor|danach|früher|frueher|später|spaeter|vorher|nachher|drumherum|rum|herum|abweichung|spielraum|puffer|toleranz)/.test(f.after) || /^\s*(?:davor\s*(?:oder|und|\/)\s*danach)/.test(f.after);
+    if (MAXK.test(f.before)) out.max = f.v;
+    else if (BUFK.test(f.before) || /^\s*(?:zum\s*)?einschlaf/.test(f.after)) out.buffer = f.v;
+    else if (WINK.test(f.before) || aft) out.win = Math.max(out.win || 0, f.v);
+    else if (out.dur == null && f.v >= 120) out.dur = f.v;
+    else if (out.dur != null && f.v < 120 && out.win == null) out.win = f.v;
+    else if (out.dur != null && f.v > out.dur && out.max == null) out.max = f.v;
+  }
+  out.arm = /weck|stell|alarm|los|schlaf/.test(s);
+  return out;
+}
+
+  function applyParsed(p) {
+    const c = S.cfg, delta = Math.max(0, c.max - c.dur), now = Date.now();
+    if (p.buffer != null) c.buffer = clamp(Math.round(p.buffer), 0, 90);
+    if (p.dur != null) c.dur = clamp(Math.round(p.dur), 60, 900);
+    else if (p.target != null) { const sleep = now + c.buffer * MIN; c.dur = clamp(Math.round((nextAt(p.target, sleep) - sleep) / MIN), 60, 900); }
+    if (p.win != null) c.win = clamp(Math.round(p.win), 5, 180);
+    c.max = p.max != null ? Math.max(Math.round(p.max), c.dur) : clamp(c.dur + delta, c.dur, 960);
+    if (p.latest != null) { c.latestOn = true; c.latest = hmMin(p.latest); }
+    if (p.earliest != null) { c.earliestOn = true; c.earliest = hmMin(p.earliest); }
+    save();
+  }
+  function parsedChips(p) {
+    const out = [];
+    if (p.dur != null) out.push(durShort(p.dur) + " Std");
+    if (p.target != null) out.push("Ziel " + hmMin(p.target));
+    if (p.win != null) out.push("± " + durLong(p.win));
+    if (p.max != null) out.push("max " + durShort(p.max) + " Std");
+    if (p.latest != null) out.push("spätestens " + hmMin(p.latest));
+    if (p.earliest != null) out.push("frühestens " + hmMin(p.earliest));
+    if (p.buffer != null) out.push(durLong(p.buffer) + " einschlafen");
+    return out;
+  }
+
+  // ---------- audio ----------
+  // Klingeltöne liegen als nahtlose 16-s-Loops in sounds/. Falls eine Datei nicht lädt, springt ein Synth-Ton ein.
+  function tone(ctx, out, t, f, d, type, g, f2) {
+    const o = ctx.createOscillator(), v = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.linearRampToValueAtTime(f2, t + d);
+    v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(g, t + .02); v.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(v); v.connect(out); o.start(t); o.stop(t + d + .05);
+  }
+  const BARS = {
+    sunrise: { len: 2400, fn: (c, o, t) => [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25].forEach((f, i) => { tone(c, o, t + i * .22, f, 1.1, "sine", .34); tone(c, o, t + i * .22, f / 2, .9, "triangle", .14); }) },
+    classic: { len: 1400, fn: (c, o, t) => { for (let i = 0; i < 4; i++) tone(c, o, t + i * .16, 1000, .09, "square", .22); } },
+    alarm: { len: 1300, fn: (c, o, t) => { for (let i = 0; i < 3; i++) tone(c, o, t + i * .42, 520, .38, "sawtooth", .2, 1250); } }
+  };
+  function trimBounds(b) {
+    const d = b.getChannelData(0), th = 1e-3; let i = 0, j = d.length - 1;
+    while (i < d.length && Math.abs(d[i]) < th) i++;
+    while (j > i && Math.abs(d[j]) < th) j--;
+    return [i / b.sampleRate, (j + 1) / b.sampleRate];
+  }
+  const audio = {
+    ctx: null, master: null, iv: 0, src: null, token: null, bufs: {}, loading: {},
+    unlock() {
+      try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+      try {
+        if (!this.ctx) {
+          const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+          this.ctx = new AC(); this.master = this.ctx.createGain(); this.master.gain.value = 0; this.master.connect(this.ctx.destination);
+          // Fast lautloser Dauerton hält die Audio-Session wach, damit der Wecker später ohne Tippen klingeln darf.
+          const o = this.ctx.createOscillator(), g = this.ctx.createGain(); g.gain.value = .00001; o.connect(g); g.connect(this.ctx.destination); o.start();
+          this.ctx.onstatechange = () => updateChecks();
+        }
+        if (this.ctx.state !== "running") this.ctx.resume().then(updateChecks, () => {});
+      } catch (e) { return false; }
+      return true;
+    },
+    get ok() { return !!this.ctx && this.ctx.state === "running"; },
+    load(kind) {
+      if (this.bufs[kind]) return Promise.resolve(this.bufs[kind]);
+      if (!this.ctx) return Promise.resolve(null);
+      if (!this.loading[kind]) this.loading[kind] = fetch("/blindwecker/sounds/" + kind + ".mp3")
+        .then(r => { if (!r.ok) throw new Error("load"); return r.arrayBuffer(); })
+        .then(b => new Promise((res, rej) => this.ctx.decodeAudioData(b, res, rej)))
+        .then(buf => { this.bufs[kind] = buf; return buf; })
+        .catch(() => { delete this.loading[kind]; return null; });
+      return this.loading[kind];
+    },
+    start(kind, ramp) {
+      if (!this.unlock()) return;
+      this.stop();
+      const token = this.token = {};
+      const g = this.master.gain, t = this.ctx.currentTime;
+      g.cancelScheduledValues(t); g.setValueAtTime(ramp ? .06 : 1, t); if (ramp) g.linearRampToValueAtTime(1, t + ramp);
+      const vib = () => { if (navigator.vibrate) navigator.vibrate([400, 200, 400]); };
+      const synth = () => {
+        const bar = BARS[kind] || BARS.sunrise;
+        const play = () => { try { bar.fn(this.ctx, this.master, this.ctx.currentTime + .05); } catch (e) {} vib(); };
+        play(); this.iv = setInterval(play, bar.len);
+      };
+      const playBuf = buf => {
+        const src = this.ctx.createBufferSource(), [a, z] = trimBounds(buf);
+        src.buffer = buf; src.loop = true; src.loopStart = a; src.loopEnd = z;
+        src.connect(this.master); src.start(0, a); this.src = src;
+        vib(); this.iv = setInterval(vib, 1600);
+      };
+      if (this.bufs[kind]) playBuf(this.bufs[kind]);
+      else this.load(kind).then(buf => { if (this.token !== token) return; buf ? playBuf(buf) : synth(); });
+    },
+    stop() {
+      this.token = null; clearInterval(this.iv); this.iv = 0;
+      if (this.src) { try { this.src.stop(); } catch (e) {} this.src = null; }
+      if (this.master) { const t = this.ctx.currentTime; this.master.gain.cancelScheduledValues(t); this.master.gain.setValueAtTime(0, t); }
+      if (navigator.vibrate) navigator.vibrate(0);
+    }
+  };
+  let previewKind = null, previewT = 0;
+  const PLAY = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.6-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5Z" fill="currentColor"/></svg>';
+  const STOP = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor"/></svg>';
+  function preview(kind) {
+    clearTimeout(previewT);
+    if (ringing) return;
+    if (previewKind === kind) { audio.stop(); previewKind = null; }
+    else { audio.start(kind, 0); previewKind = kind; previewT = setTimeout(() => { if (!ringing) audio.stop(); previewKind = null; updatePreview(); }, 10000); }
+    updatePreview();
+  }
+  function updatePreview() {
+    document.querySelectorAll('[data-act="preview"]').forEach(b => {
+      const on = previewKind === b.dataset.v;
+      b.classList.toggle("playing", on);
+      if (b.dataset.label) b.innerHTML = (on ? STOP : PLAY) + "<span>" + (on ? "Stopp" : esc(b.dataset.label)) + "</span>";
+      else b.innerHTML = on ? STOP : PLAY;
+      b.setAttribute("aria-pressed", on);
+    });
+  }
+
+  // ---------- wake lock ----------
+  let wl = null, wlOk = false;
+  async function lockScreen() {
+    if (!("wakeLock" in navigator)) { wlOk = false; updateChecks(); return; }
+    try {
+      if (wl && !wl.released) { wlOk = true; updateChecks(); return; }
+      wl = await navigator.wakeLock.request("screen"); wlOk = true;
+      wl.addEventListener("release", () => { wlOk = false; updateChecks(); });
+    } catch (e) { wlOk = false; }
+    updateChecks();
+  }
+  function releaseScreen() { try { wl && wl.release(); } catch (e) {} wl = null; wlOk = false; }
+
+  // ---------- graphics ----------
+  const calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function orbProg() {
+    if (A) { const p = (Date.now() - A.sleep) / (A.target - A.sleep); return clamp(p, 0, 1); }
+    return clamp(S.cfg.dur / 720, 0, 1);
+  }
+  // Punkt-Ziffernblatt: Ring aus Punkten, füllt sich im Uhrzeigersinn. Mitte bleibt frei für die Zahl.
+  let orbRAF = 0;
+  function drawOrb(t) {
+    const c = document.getElementById("orb");
+    if (!c) { orbRAF = 0; return; }
+    const dpr = window.devicePixelRatio || 1, Sz = c.clientWidth || 260;
+    if (c.width !== Math.round(Sz * dpr) || c.height !== c.width) c.width = c.height = Math.round(Sz * dpr);
+    const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, Sz, Sz);
+    const prog = orbProg(), cx = Sz / 2, cy = Sz / 2, pulse = .85 + .15 * Math.sin((t || 0) / 900);
+    const rings = [.47, .425], N = [60, 54];
+    rings.forEach((rr, k) => {
+      for (let i = 0; i < N[k]; i++) {
+        const f = i / N[k], a = f * 6.283 - 1.5708, on = f < prog;
+        const major = k === 0 && i % 5 === 0;
+        g.globalAlpha = on ? (k === 0 ? .95 : .55) * (f > prog - .02 ? pulse : 1) : (major ? .32 : .14);
+        g.fillStyle = "#fff";
+        g.beginPath(); g.arc(cx + Math.cos(a) * Sz * rr, cy + Math.sin(a) * Sz * rr, (major ? 2.6 : 1.9) * (Sz / 260), 0, 6.283); g.fill();
+      }
+    });
+    g.globalAlpha = 1;
+    orbRAF = calm ? 0 : requestAnimationFrame(drawOrb);
+  }
+  function startOrb() { if (!orbRAF) orbRAF = requestAnimationFrame(drawOrb); }
+
+  // ---------- ruler slider ----------
+  function rslider(id, min, max, step, value, sp, major, lab, cls) {
+    let h = "";
+    for (let v = min, i = 0; v <= max + 1e-9; v += step, i++) { const mj = i % major === 0; h += `<div class="s${mj ? " major" : ""}" data-v="${v}">${mj && lab ? `<em>${lab(v)}</em>` : ""}</div>`; }
+    return `<div class="rswrap ${cls || ""}"><div class="rs" id="${id}" data-min="${min}" data-max="${max}" data-step="${step}" data-sp="${sp}" data-val="${value}" style="--sp:${sp}px" role="slider" aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${value}" tabindex="0"><div class="track"><i class="pad"></i>${h}<i class="pad"></i></div></div></div>`;
+  }
+  let rsDrag = null;
+  function initSliders(root) {
+    root.querySelectorAll(".rs").forEach(el => {
+      const min = +el.dataset.min, max = +el.dataset.max, step = +el.dataset.step, sp = +el.dataset.sp;
+      const half = (el.clientWidth || 300) / 2 - sp / 2;
+      el.querySelectorAll(".pad").forEach(p => p.style.width = half + "px");
+      const toLeft = v => Math.round((clamp(v, min, max) - min) / step) * sp;
+      el._set = v => { el.scrollLeft = toLeft(v); };
+      el.scrollLeft = toLeft(+el.dataset.val);
+      let last = min + Math.round((+el.dataset.val - min) / step) * step;
+      const read = () => clamp(min + Math.round(el.scrollLeft / sp) * step, min, max);
+      el.addEventListener("scroll", () => { const v = read(); if (v !== last) { last = v; el.setAttribute("aria-valuenow", v); sliderInput(el.id, v, min, step); } }, { passive: true });
+      el.addEventListener("click", e => { const s = e.target.closest(".s"); if (s) el.scrollTo({ left: toLeft(+s.dataset.v), behavior: "smooth" }); });
+      el.addEventListener("keydown", e => {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        e.preventDefault(); el.scrollTo({ left: toLeft(read() + (e.key === "ArrowRight" ? step : -step)), behavior: "smooth" });
+      });
+      el.addEventListener("pointerdown", e => { if (e.pointerType !== "mouse") return; rsDrag = { el, x: e.clientX, l: el.scrollLeft, snap: () => el.scrollTo({ left: toLeft(read()), behavior: "smooth" }) }; el.style.scrollSnapType = "none"; });
+    });
+  }
+  window.addEventListener("pointermove", e => { if (rsDrag) rsDrag.el.scrollLeft = rsDrag.l - (e.clientX - rsDrag.x); });
+  window.addEventListener("pointerup", () => { if (!rsDrag) return; const d = rsDrag; rsDrag = null; d.el.style.scrollSnapType = ""; d.snap(); });
+  const snap = (v, min, step) => min + Math.round((v - min) / step) * step;
+  function sliderInput(id, v, min, step) {
+    const c = S.cfg;
+    if (id === "rsDur") {
+      if (snap(c.dur, min, step) === v) return;
+      const delta = Math.max(0, c.max - c.dur);
+      c.dur = v; c.max = clamp(v + delta, v, 960);
+      const m = document.getElementById("rsMax"); if (m && m._set) m._set(c.max);
+    } else if (id === "rsMax") {
+      if (snap(c.max, min, step) === v) return;
+      if (v < c.dur) { c.max = c.dur; const m = document.getElementById("rsMax"); clearTimeout(sliderInput.t); sliderInput.t = setTimeout(() => m && m._set && m._set(c.dur), 250); }
+      else c.max = v;
+    }
+    save(); updateLive();
+  }
+  const hLab = v => (v % 60 ? "" : v / 60 + "h");
+
+  // ---------- views ----------
+  let tab = "wecker", prevTab = "wecker", animateNext = true, ringing = false;
+
+  function previewHtml(w) {
+    const c = S.cfg;
+    const limT = w.sleep + c.max * MIN;
+    const end = Math.max(w.hi, Math.min(limT, w.hi + 40 * MIN), w.cap) + 12 * MIN;
+    const P = t => clamp((t - w.now) / (end - w.now) * 100, 0, 100).toFixed(2) + "%";
+    const capped = w.cap < w.hi;
+    let note;
+    if (!w.ok) note = `<p class="tlnote bad">Das Limit liegt vor dem frühesten Weckzeitpunkt. Limit hochsetzen oder Fenster vergrößern.</p>`;
+    else if (w.capBy === "max") note = `<p class="tlnote warn">Dein Limit kappt ${durLong((w.hi - w.cap) / MIN)} vom Fenster. Nach ${durShort(c.max)} Std Schlaf klingelt er auf jeden Fall.</p>`;
+    else if (w.capBy === "time") note = `<p class="tlnote warn">Spätestens um ${esc(c.latest)} Uhr ist Schluss. Das kappt ${durLong((w.hi - w.cap) / MIN)} vom Fenster.</p>`;
+    else if (w.raise === "time") note = `<p class="tlnote warn">Frühestens ${esc(c.earliest)} Uhr hebt den Start des Fensters an.</p>`;
+    else note = `<p class="tlnote">Einschlafen ab etwa ${hm(w.sleep)}. Gewürfelt wird erst beim Scharfstellen, die Zeit bekommst du nie zu sehen.</p>`;
+    return `<div class="tl" aria-hidden="true">
+        <div class="base"></div>
+        <div class="sleep" style="left:0;width:${P(w.sleep)}"></div>
+        ${w.ok ? `<div class="band" style="left:${P(w.lo)};width:calc(${P(w.cap)} - ${P(w.lo)})"></div>` : ""}
+        ${capped ? `<div class="cut" style="left:${P(w.cap)};width:calc(${P(w.hi)} - ${P(w.cap)})"></div>` : ""}
+        <div class="tgt" style="left:${P(w.target)}"></div>
+        <div class="lim" style="left:${P(w.capBy ? w.cap : limT)}"></div>
+        <div class="now" style="left:1.5%"></div>
+        ${w.ok ? `<div class="q" style="left:calc((${P(w.lo)} + ${P(w.cap)}) / 2)">?</div>` : ""}
+      </div>
+      <div class="tlcells">
+        <div><b>${w.ok ? hm(w.lo) : "--:--"}</b><span>Frühestens</span></div>
+        <div><b>${hm(w.target)}</b><span>Ziel</span></div>
+        <div><b>${w.ok ? hm(w.cap) : "--:--"}</b><span>Spätestens</span></div>
+      </div>${note}`;
+  }
+
+  function capNote(w) {
+    const c = S.cfg;
+    if (!w.ok) return ["bad", "Das Limit liegt vor dem frühesten Weckzeitpunkt. Limit hoch oder Fenster größer."];
+    if (w.capBy === "max") return ["warn", `Limit kappt ${durLong((w.hi - w.cap) / MIN)} vom Fenster. Nach ${durShort(c.max)} Std klingelt er auf jeden Fall.`];
+    if (w.capBy === "time") return ["warn", `Spätestens ${c.latest} Uhr kappt ${durLong((w.hi - w.cap) / MIN)} vom Fenster.`];
+    if (w.raise === "time") return ["warn", `Frühestens ${c.earliest} Uhr hebt den Start an.`];
+    return ["", `Limit greift nicht, dein Fenster endet vorher. Einschlafen ab ca. ${hm(w.sleep)}.`];
+  }
+  function updateLive() {
+    if (A || tab !== "wecker") return;
+    const c = S.cfg, w = calcWindow(c);
+    setText("heroDur", durShort(c.dur));
+    setText("lblDur", durShort(c.dur) + " Std");
+    setText("lblWin", "± " + durLong(c.win));
+    setText("lblMax", durShort(c.max) + " Std");
+    setText("heroLo", w.ok ? hm(w.lo) : "--:--");
+    setText("heroHi", w.ok ? hm(w.cap) : "--:--");
+    const n = document.getElementById("capNote"); if (n) { const [k, txt] = capNote(w); n.className = "tlnote " + k; n.textContent = txt; }
+    const b = document.getElementById("armBtn"); if (b) b.disabled = !w.ok;
+  }
+
+  let moreOpen = false;
+  function viewSetup() {
+    const c = S.cfg, w = calcWindow(c), [nk, nt] = capNote(w);
+    const wins = WINS.includes(c.win) ? WINS : WINS.concat(c.win).sort((a, b) => a - b);
+    return `
+      <div class="head"><h1>Wie lange willst du schlafen?</h1></div>
+      <div class="hero">
+        <div class="orbwrap"><canvas id="orb"></canvas><div class="center"><div class="hugenum" id="heroDur">${durShort(c.dur)}</div><div class="unitlbl">Stunden Schlaf</div></div></div>
+        <div class="foot">Klingelt zwischen <b id="heroLo">${w.ok ? hm(w.lo) : "--:--"}</b> und <b id="heroHi">${w.ok ? hm(w.cap) : "--:--"}</b></div>
+      </div>
+      <form class="voicebar" id="voiceForm" autocomplete="off">
+        <button type="button" class="mic" id="micBtn" data-act="mic" aria-label="Einsprechen">${I.mic}</button>
+        <input class="inp" id="voiceInp" type="text" enterkeyhint="go" placeholder="„7 Stunden, plus minus 30, max 8“" aria-label="Wecker per Sprache oder Text stellen">
+        <button class="go" type="submit" aria-label="Wecker stellen">${I.go}</button>
+      </form>
+      <div class="vchips" id="vchips"></div>
+      <p class="vhint" id="vhint">${SPEECH ? "Mikro antippen und sagen: „Wecker für 7 Stunden, maximal 8“" : "Einsprechen: ins Feld tippen, dann das Mikro auf der iPhone-Tastatur."}</p>
+      <div class="group">
+        <div class="glabel"><span>Schlafdauer</span><b id="lblDur">${durShort(c.dur)} Std</b></div>
+        ${rslider("rsDur", 120, 720, 15, c.dur, 12, 4, hLab)}
+      </div>
+      <div class="group">
+        <div class="glabel"><span>Zufallsfenster</span><b id="lblWin">± ${durLong(c.win)}</b></div>
+        <div class="chips">${wins.map(v => `<button class="chip num" data-act="win" data-v="${v}" aria-pressed="${c.win === v}">±${v < 60 || v % 60 ? v + "m" : v / 60 + "h"}</button>`).join("")}</div>
+      </div>
+      <div class="group">
+        <div class="glabel"><span>Limit · spätestens nach</span><b id="lblMax">${durShort(c.max)} Std</b></div>
+        ${rslider("rsMax", 120, 960, 15, c.max, 12, 4, hLab, "lim")}
+        <p class="tlnote ${nk}" id="capNote">${esc(nt)}</p>
+      </div>
+      <button class="cta big" id="armBtn" data-act="arm" ${w.ok ? "" : "disabled"}>${I.dice}<span>Würfeln & scharf stellen</span></button>
+      <details class="more" id="more" ${moreOpen ? "open" : ""}>
+        <summary>Mehr Optionen<span>${[c.dist === "mid" ? "Mitte" : "", c.latestOn ? "bis " + esc(c.latest) : "", c.earliestOn ? "ab " + esc(c.earliest) : ""].filter(Boolean).join(" · ")}</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></summary>
+        <div class="inner">
+          <div class="glabel"><span>Verteilung</span></div>
+          <div class="chips"><button class="chip" data-act="dist" data-v="even" aria-pressed="${c.dist !== "mid"}">Gleichmäßig</button><button class="chip" data-act="dist" data-v="mid" aria-pressed="${c.dist === "mid"}">Eher um die Mitte</button></div>
+          <div class="panel">
+            <div class="row"><div class="grow"><b>Spätestens um</b><span>Fester Riegel, z. B. vor dem Dreh</span></div>
+              <input class="inp" type="time" id="latestT" value="${esc(c.latest)}" ${c.latestOn ? "" : "disabled"} aria-label="Spätestens um">
+              <button class="tgl" role="switch" data-act="tgl" data-k="latestOn" aria-checked="${c.latestOn}" aria-label="Spätestens-Uhrzeit an oder aus"></button></div>
+            <div class="row"><div class="grow"><b>Frühestens um</b><span>Nie vor dieser Uhrzeit</span></div>
+              <input class="inp" type="time" id="earliestT" value="${esc(c.earliest)}" ${c.earliestOn ? "" : "disabled"} aria-label="Frühestens um">
+              <button class="tgl" role="switch" data-act="tgl" data-k="earliestOn" aria-checked="${c.earliestOn}" aria-label="Frühestens-Uhrzeit an oder aus"></button></div>
+          </div>
+        </div>
+      </details>
+      <div class="tonerow"><div class="grow"><span>Weckton</span><b>${soundName(c.sound)}</b></div>
+        <button class="cta ghost small" id="toneTest" data-act="preview" data-v="${c.sound}" data-label="Testen">${PLAY}<span>Testen</span></button>
+        <button class="cta ghost small" data-act="goto" data-v="setup">Ändern</button></div>
+      ${installNudge()}
+      <p class="note">App offen und iPhone am Ladekabel lassen, sonst kann der Browser nicht klingeln.</p>`;
+  }
+
+  function checksHtml() {
+    const iosLike = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    return `
+      <div class="ck ${audio.ok ? "ok" : "warn"}"><i>${audio.ok ? I.check : I.warn}</i><span>${audio.ok ? "Ton ist scharf" : "Ton blockiert. Einmal irgendwo tippen."}</span></div>
+      <div class="ck ${wlOk ? "ok" : "warn"}"><i>${wlOk ? I.check : I.warn}</i><span>${wlOk ? "Bildschirm bleibt an" : (iosLike ? "Bildschirm kann sperren. Auto-Sperre auf „Nie“ stellen (Einstellungen › Anzeige & Helligkeit)." : "Bildschirm kann sperren. Bildschirmsperre für heute Nacht ausschalten.")}</span></div>
+      <div class="ck"><i>${I.warn}</i><span>Lautstärke hoch, Ladekabel dran, App im Vordergrund lassen</span></div>`;
+  }
+  function updateChecks() { const el = document.getElementById("checks"); if (el) el.innerHTML = checksHtml(); const d = document.getElementById("islandDot"); if (d) d.classList.toggle("on", !!A); }
+
+  function viewArmed() {
+    const slept = Math.max(0, Date.now() - A.sleep);
+    return `
+      <div class="head"><h1>${A.cheated ? "Gespickt." : "Gute Nacht."}</h1><p class="sub">${A.cheated ? "Wird im Verlauf vermerkt." : "Gewürfelt und versteckt. Nicht grübeln, schlafen."}</p></div>
+      <div class="hero armed">
+        <div class="htop"><span>Wecker aktiv</span><span class="pill"><i></i>${A.snoozed ? "Snooze läuft" : "Blind"}</span></div>
+        <div class="orbwrap"><canvas id="orb"></canvas><div class="center"><div class="hugenum q">${A.cheated ? hm(A.alarmAt) : "??:??"}</div><div class="unitlbl">${A.cheated ? "Weckzeit" : "Du erfährst es, wenn's klingelt"}</div></div></div>
+        <div class="foot">Irgendwo zwischen <b>${hm(A.lo)}</b> und <b>${hm(A.cap)}</b><br>Einschlafen ab <b>${hm(A.sleep)}</b></div>
+      </div>
+      <div class="stats">
+        <div><span class="dn">${durShort(A.cfg.dur)} ± ${A.cfg.win}</span><span>Ziel in Std · Fenster in min</span></div>
+        <div><span class="dn">${durShort(A.cfg.max)}</span><span>Limit${A.cfg.latestOn ? " · bis " + esc(A.cfg.latest) : ""}</span></div>
+      </div>
+      <div class="label">Damit er sicher klingelt</div>
+      <div class="panel checks" id="checks">${checksHtml()}</div>
+      <button class="cta" data-act="night">Nachtmodus · Bildschirm schwarz</button>
+      <button class="cta ghost small" data-act="preview" data-v="${A.cfg.sound}" data-label="Ton testen · ${soundName(A.cfg.sound)}">${PLAY}<span>Ton testen · ${soundName(A.cfg.sound)}</span></button>
+      <div class="btnrow">
+        <button class="cta ghost small" data-act="test2" ${A.cheated ? "disabled" : ""} data-two="cheat">Spicken</button>
+        <button class="cta danger small" data-act="test2" data-two="cancel">Wecker aus</button>
+      </div>
+      <p class="note">Nach 45 Sekunden ohne Tippen wird der Bildschirm von selbst schwarz.</p>`;
+  }
+
+  function viewVerlauf() {
+    const H2 = S.history.slice().sort((a, b) => b.woke - a.woke);
+    if (!H2.length) return `
+      <div class="head"><h1>Deine Nächte</h1><p class="sub">Hier siehst du, wie der Zufall gestreut hat.</p></div>
+      <div class="scatter"><h2>Noch keine Nacht</h2><p>Stell heute Abend deinen ersten Blindwecker. Morgen früh landet hier ein Punkt: wo im Fenster er geklingelt hat, wie lange du geschlafen hast und wie du dich gefühlt hast.</p></div>`;
+    const real = H2.filter(e => !e.missed);
+    const avgSleep = real.length ? real.reduce((a, e) => a + (e.woke - e.sleep), 0) / real.length / MIN : 0;
+    const avgDev = real.length ? real.reduce((a, e) => a + Math.abs(e.alarmAt - e.target), 0) / real.length / MIN : 0;
+    const honest = H2.length ? Math.round(H2.filter(e => !e.cheated).length / H2.length * 100) : 100;
+    const rows = H2.slice(0, 10);
+    const X = m => clamp((m + 90) / 180 * 100, 0, 100).toFixed(1) + "%";
+    return `
+      <div class="head"><h1>Deine Nächte</h1><p class="sub">${H2.length} ${H2.length === 1 ? "Nacht" : "Nächte"} mit Blindwecker</p></div>
+      <div class="stats">
+        <div><span class="dn">${H2.length}</span><span>Nächte</span></div>
+        <div><span class="dn">${durShort(avgSleep)}</span><span>Ø geschlafen</span></div>
+        <div><span class="dn">±${Math.round(avgDev)}</span><span>Ø Minuten neben dem Ziel</span></div>
+        <div><span class="dn">${honest}%</span><span>Ohne Spicken</span></div>
+      </div>
+      <div class="scatter">
+        <h2>Wo der Zufall hingefallen ist</h2>
+        <p>Mitte = dein Ziel. Balken = mögliches Fenster, Punkt = echte Weckzeit.</p>
+        ${rows.map(e => { const lo = (e.lo - e.target) / MIN, hi = (e.cap - e.target) / MIN, d = (e.alarmAt - e.target) / MIN;
+          return `<div class="srow"><time>${dayLbl(e.woke)}</time><div class="strack"><i class="w" style="left:${X(lo)};width:calc(${X(hi)} - ${X(lo)})"></i><i class="d${e.cheated ? " cheat" : ""}${e.missed ? " miss" : ""}" style="left:${X(d)}"></i></div></div>`; }).join("")}
+        <div class="saxis"><span></span><div><span>−90</span><span>−45</span><span>Ziel</span><span>+45</span><span>+90 min</span></div></div>
+        <div class="legend"><span><i></i>Geweckt</span><span><i class="c"></i>Gespickt</span><span><i class="m"></i>Verpasst</span></div>
+      </div>
+      <div class="label">Alle Nächte</div>
+      <div class="list">${H2.map(e => `
+        <div class="item"><time>${hm(e.alarmAt)}</time>
+          <div class="grow"><b>${e.missed ? "Verpasst, App war zu" : durLong((e.woke - e.sleep) / MIN) + " geschlafen"}</b><span>${dayLbl(e.woke)} · Ziel ${durShort(e.dur)} ± ${e.win} min${e.mood != null ? " · " + MOODS[e.mood] : ""}</span></div>
+          ${e.cheated ? '<span class="tag c">Gespickt</span>' : ""}${e.snoozed ? '<span class="tag">Snooze</span>' : ""}
+          <button class="del" data-act="del" data-id="${esc(e.id)}" aria-label="Nacht löschen">${I.x}</button>
+        </div>`).join("")}</div>`;
+  }
+
+  function viewSettings() {
+    const c = S.cfg;
+    return `
+      <div class="head"><h1>Einstellungen</h1><p class="sub">Gilt ab dem nächsten Wecker.</p></div>
+      <div class="panel" id="installBox">${installHtml()}</div>
+      <div class="label">Einschlafzeit</div>
+      <div class="chips">${BUFFERS.map(v => `<button class="chip" data-act="buffer" data-v="${v}" aria-pressed="${c.buffer === v}">${v ? v + " min" : "Sofort"}</button>`).join("")}</div>
+      <p class="note" style="text-align:left;margin:0 6px">Die Schlafdauer zählt ab Scharfstellen plus dieser Zeit.</p>
+      <div class="label">Weckton · antippen zum Auswählen</div>
+      <div class="tones">${SOUNDS.map(([k, n, d]) => `<div class="tone">
+        <button class="tpick" data-act="sound" data-v="${k}" aria-pressed="${c.sound === k}"><i aria-hidden="true"></i><span><b>${n}</b><small>${d}</small></span></button>
+        <button class="tplay" data-act="preview" data-v="${k}" aria-label="${n} anhören">${PLAY}</button></div>`).join("")}</div>
+      <div class="chips">${RAMPS.map(([k, n]) => `<button class="chip" data-act="ramp" data-v="${k}" aria-pressed="${c.ramp === k}">${n}</button>`).join("")}</div>
+      <div class="label">Ausschalten nur mit</div>
+      <div class="chips">${CHALLENGES.map(([k, n]) => `<button class="chip" data-act="challenge" data-v="${k}" aria-pressed="${c.challenge === k}">${n}</button>`).join("")}</div>
+      <div class="panel">
+        <div class="row"><div class="grow"><b>Ein Snooze erlaubt</b><span>Neu gewürfelt, 3 bis 9 Minuten, nie über dein Limit</span></div>
+          <button class="tgl" role="switch" data-act="tgl" data-k="snooze" aria-checked="${c.snooze}" aria-label="Snooze an oder aus"></button></div>
+      </div>
+      <div class="label">So klingelt's sicher am iPhone</div>
+      <div class="panel checks">
+        <div class="ck"><i>1</i><span>Seite offen lassen, nicht wegwischen. Ein Browser kann nur klingeln, solange er läuft.</span></div>
+        <div class="ck"><i>2</i><span>Auto-Sperre auf „Nie“ oder der Nachtmodus der App hält den Bildschirm an.</span></div>
+        <div class="ck"><i>3</i><span>Lautstärke hoch und Ladekabel dran. Fokus „Schlafen“ blockiert den Ton nicht.</span></div>
+        <div class="ck"><i>4</i><span>Für wichtige Termine trotzdem einen normalen Backup-Wecker auf dein Limit stellen.</span></div>
+      </div>
+      <div class="label">Daten</div>
+      <button class="cta danger small" data-act="test2" data-two="wipe">Verlauf löschen</button>`;
+  }
+
+  function render() {
+    const v = document.getElementById("view");
+    let html;
+    if (tab === "wecker") { html = A ? viewArmed() : viewSetup(); v.dataset.mode = A ? "armed" : "setup"; }
+    else if (tab === "verlauf") { html = viewVerlauf(); v.dataset.mode = ""; }
+    else { html = viewSettings(); v.dataset.mode = ""; }
+    v.innerHTML = html;
+    v.classList.remove("slide-r", "slide-l", "enter");
+    if (animateNext) {
+      void v.offsetWidth;
+      const dir = TABS.indexOf(tab) - TABS.indexOf(prevTab);
+      v.classList.add("enter"); if (dir) v.classList.add(dir > 0 ? "slide-r" : "slide-l");
+      [...v.children].forEach((el, i) => el.style.setProperty("--i", Math.min(i, 10)));
+    }
+    animateNext = false; prevTab = tab;
+    initSliders(v);
+    startOrb();
+    updateTop();
+    document.querySelectorAll(".tb-glass [role=tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+    document.getElementById("tbInd").style.setProperty("--i", TABS.indexOf(tab));
+  }
+  function updateTop() {
+    const b = document.getElementById("stateBtn");
+    b.innerHTML = A ? `<i class="on"></i><span>${A.cheated ? "Wecker " + hm(A.alarmAt) : "Wecker aktiv · ??:??"}</span>` : `<i></i><span>Kein Wecker aktiv</span>`;
+    updateChecks();
+  }
+  function go(t) { if (t === tab) return; tab = t; animateNext = true; render(); const ind = document.getElementById("tbInd"); ind.classList.remove("squish"); void ind.offsetWidth; ind.classList.add("squish"); window.scrollTo({ top: 0 }); }
+
+  // ---------- arm / ring ----------
+  function arm() {
+    audio.unlock(); audio.load(S.cfg.sound);
+    const w = calcWindow(S.cfg);
+    if (!w.ok) { const b = document.getElementById("armBtn"); if (b) { b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake"); } toast("Fenster passt nicht ins Limit"); return; }
+    const at = pick(w, S.cfg.dist);
+    A = { start: w.now, sleep: w.sleep, target: w.target, lo: w.lo, cap: w.cap, alarmAt: at, firstAlarm: at, cfg: clone(S.cfg), snoozed: 0, cheated: false };
+    saveArmed(); lockScreen(); animateNext = true; tab = "wecker"; render(); lastAct = Date.now();
+    toast("Gewürfelt. Gute Nacht.");
+  }
+  function disarm() { audio.stop(); A = null; ringing = false; saveArmed(); releaseScreen(); closeNight(); animateNext = true; render(); }
+  function logNight(extra) {
+    const e = { id: "n" + Date.now().toString(36), start: A.start, sleep: A.sleep, target: A.target, lo: A.lo, cap: A.cap, alarmAt: A.firstAlarm || A.alarmAt,
+      woke: Date.now(), dur: A.cfg.dur, win: A.cfg.win, max: A.cfg.max, cheated: !!A.cheated, snoozed: !!A.snoozed, missed: false, mood: null };
+    Object.assign(e, extra || {});
+    S.history.push(e); save(); return e;
+  }
+
+  let sheet = null;
+  const sheetRoot = () => document.getElementById("sheetRoot");
+  function closeSheet() { sheet = null; sheetRoot().innerHTML = ""; }
+  function startRing() {
+    if (ringing || !A) return;
+    clearTimeout(previewT); previewKind = null;
+    ringing = true; closeNight();
+    audio.start(A.cfg.sound, A.cfg.ramp);
+    const a = 12 + Math.floor(Math.random() * 38), b = 12 + Math.floor(Math.random() * 38);
+    sheet = { kind: "ring", a, b };
+    renderRing();
+  }
+  function renderRing() {
+    const c = A.cfg, slept = (Date.now() - A.sleep) / MIN;
+    const left = (A.cap - Date.now()) / MIN;
+    const canSnooze = c.snooze && !A.snoozed && left >= 3;
+    let ch;
+    if (c.challenge === "math") ch = `<div class="math"><div class="lbl">Zum Ausschalten lösen</div><div class="q">${sheet.a} + ${sheet.b}</div>
+        <form id="mathForm" autocomplete="off"><input class="inp" id="mathInp" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="Ergebnis"><button class="go" type="submit" aria-label="Prüfen">${I.go}</button></form></div>`;
+    else if (c.challenge === "hold") ch = `<button class="cta hold" id="holdBtn"><i class="fill"></i><span>3 Sekunden halten zum Ausschalten</span></button>`;
+    else ch = `<button class="cta" data-act="wake">Ich bin wach</button>`;
+    sheetRoot().innerHTML = `<div class="scrim anim ringing"><div class="sheet full sunrise" role="alertdialog" aria-label="Wecker klingelt">
+      <div class="ringtop"><span class="pill"><i></i>Blindwecker</span><div class="hugenum" id="ringClock">${hm(Date.now())}</div>
+        <h2>Guten Morgen. Aufstehen.</h2><p>${durLong(slept)} geschlafen</p></div>
+      <div style="display:flex;flex-direction:column;gap:10px">${ch}
+        ${canSnooze ? `<button class="cta ghost" data-act="snooze">Noch mal würfeln · 3–9 min</button>` : c.snooze && !A.snoozed ? `<p class="note">Kein Snooze: dein Limit ist erreicht.</p>` : ""}
+        ${audio.ok ? "" : `<p class="note">Kein Ton? Einmal irgendwo tippen.</p>`}</div>
+    </div></div>`;
+    if (c.challenge === "hold") bindHold();
+  }
+  function bindHold() {
+    const b = document.getElementById("holdBtn"); if (!b) return;
+    let t0 = 0, raf = 0;
+    const fill = b.querySelector(".fill");
+    const step = () => { const p = (performance.now() - t0) / 3000; fill.style.transform = `scaleX(${Math.min(1, p)})`; if (p >= 1) { t0 = 0; wake(); return; } raf = requestAnimationFrame(step); };
+    const down = e => { e.preventDefault(); t0 = performance.now(); raf = requestAnimationFrame(step); };
+    const up = () => { cancelAnimationFrame(raf); if (t0) fill.style.transform = "scaleX(0)"; t0 = 0; };
+    b.addEventListener("pointerdown", down); b.addEventListener("pointerup", up); b.addEventListener("pointerleave", up); b.addEventListener("pointercancel", up);
+  }
+  function wake() {
+    audio.stop(); ringing = false;
+    const e = logNight();
+    A = null; saveArmed(); releaseScreen();
+    sheet = { kind: "result", id: e.id };
+    const slept = (e.woke - e.sleep) / MIN;
+    sheetRoot().innerHTML = `<div class="scrim anim"><div class="sheet full dawn">
+      <div class="result"><span class="pill">Aufgelöst</span><div class="hugenum">${hm(e.alarmAt)}</div><div class="unitlbl">So spät hat er geklingelt${e.snoozed ? " (vor dem Snooze)" : ""}</div></div>
+      <div class="rgrid"><div><b>${durShort(slept)}</b><span>Geschlafen</span></div><div><b>${(e.alarmAt >= e.target ? "+" : "−") + Math.round(Math.abs(e.alarmAt - e.target) / MIN)}</b><span>Min zum Ziel</span></div><div><b>${hm(e.lo)}–${hm(e.cap)}</b><span>Fenster</span></div></div>
+      <div class="panel"><b style="font-weight:600">Wie fühlst du dich?</b><div class="chips">${MOODS.map((m, i) => `<button class="chip" data-act="mood" data-v="${i}">${m}</button>`).join("")}</div></div>
+      <button class="cta" data-act="done">Fertig</button>
+    </div></div>`;
+    animateNext = true; render();
+  }
+  function snooze() {
+    if (!A) return;
+    audio.stop(); ringing = false;
+    const left = (A.cap - Date.now()) / MIN, mx = Math.min(9, left);
+    A.alarmAt = Date.now() + Math.round((3 + Math.random() * (mx - 3)) * MIN);
+    A.snoozed = 1; saveArmed(); closeSheet(); animateNext = true; render(); toast("Neu gewürfelt. Augen zu.");
+  }
+
+  // ---------- night mode ----------
+  let night = null, lastAct = Date.now();
+  function openNight() {
+    if (night) return;
+    night = document.createElement("div"); night.className = "night"; night.setAttribute("role", "button"); night.setAttribute("aria-label", "Nachtmodus beenden");
+    night.innerHTML = `<div class="nc"><b id="nightClock">${hm(Date.now())}</b><span>${A ? "Wecker aktiv · tippen zum Aufwecken" : "Kein Wecker aktiv"}</span></div>`;
+    night.addEventListener("click", () => { closeNight(); lastAct = Date.now(); });
+    document.body.appendChild(night); moveNight();
+  }
+  function moveNight() { if (!night) return; const n = night.firstElementChild; n.style.left = (8 + Math.random() * 44) + "%"; n.style.top = (15 + Math.random() * 60) + "%"; }
+  function closeNight() { if (night) { night.remove(); night = null; } }
+
+  // ---------- events ----------
+  const twoArmed = {};
+  document.addEventListener("click", e => {
+    const t = e.target.closest("[data-act],[data-tab]"); if (!t) return;
+    if (t.dataset.tab && t.getAttribute("role") === "tab") { go(t.dataset.tab); return; }
+    const act = t.dataset.act, v = t.dataset.v, c = S.cfg;
+    if (act === "arm") arm();
+    else if (act === "win") { c.win = +v; save(); document.querySelectorAll('[data-act="win"]').forEach(b => b.setAttribute("aria-pressed", b === t)); updateLive(); }
+    else if (act === "dist") { c.dist = v; save(); document.querySelectorAll('[data-act="dist"]').forEach(b => b.setAttribute("aria-pressed", b === t)); const p = document.querySelector(".hero .pill"); if (p) p.textContent = v === "mid" ? "Eher Mitte" : "Gleichmäßig"; }
+    else if (act === "tgl") {
+      const k = t.dataset.k; c[k] = !c[k]; save(); t.setAttribute("aria-checked", c[k]);
+      const inp = document.getElementById(k === "latestOn" ? "latestT" : k === "earliestOn" ? "earliestT" : ""); if (inp) inp.disabled = !c[k];
+      updateLive();
+    }
+    else if (act === "buffer" || act === "sound" || act === "ramp" || act === "challenge") {
+      c[act] = act === "buffer" || act === "ramp" ? +v : v; save();
+      document.querySelectorAll(`[data-act="${act}"]`).forEach(b => b.setAttribute("aria-pressed", b === t));
+      if (act === "sound") { const tg = document.getElementById("toneTest"); if (tg) tg.dataset.v = v; }
+    }
+    else if (act === "preview") preview(v);
+    else if (act === "mic") startMic();
+    else if (act === "install") doInstall();
+    else if (act === "goto") go(v);
+    else if (act === "ex") { const i = document.getElementById("voiceInp"); if (i) { i.value = v; i.dispatchEvent(new Event("input")); i.focus(); } }
+    else if (act === "night") openNight();
+    else if (act === "wake") wake();
+    else if (act === "snooze") snooze();
+    else if (act === "mood") { const e2 = S.history.find(x => x.id === sheet?.id); if (e2) { e2.mood = +v; save(); } document.querySelectorAll('[data-act="mood"]').forEach(b => b.setAttribute("aria-pressed", b === t)); }
+    else if (act === "done") { closeSheet(); render(); }
+    else if (act === "del") { S.history = S.history.filter(x => x.id !== t.dataset.id); save(); render(); toast("Nacht gelöscht"); }
+    else if (act === "test2") {
+      const k = t.dataset.two;
+      if (!twoArmed[k]) {
+        twoArmed[k] = { text: t.textContent }; t.classList.add("armed");
+        t.textContent = k === "cheat" ? "Wirklich spicken?" : k === "cancel" ? "Nochmal tippen: Wecker aus" : "Nochmal tippen: alles löschen";
+        twoArmed[k].tm = setTimeout(() => { t.classList.remove("armed"); t.textContent = twoArmed[k].text; delete twoArmed[k]; }, 3200);
+        return;
+      }
+      clearTimeout(twoArmed[k].tm); delete twoArmed[k];
+      if (k === "cheat" && A) { A.cheated = true; saveArmed(); render(); }
+      else if (k === "cancel") { disarm(); toast("Wecker aus"); }
+      else if (k === "wipe") { S.history = []; save(); render(); toast("Verlauf gelöscht"); }
+    }
+  });
+  document.addEventListener("input", e => {
+    if (e.target.id === "voiceInp") {
+      const p = parseSpeech(e.target.value), ch = parsedChips(p), box = document.getElementById("vchips");
+      if (box) box.innerHTML = ch.map(x => `<span>${esc(x)}</span>`).join("");
+    }
+  });
+  document.addEventListener("toggle", e => { if (e.target.id === "more") moreOpen = e.target.open; }, true);
+  document.addEventListener("change", e => {
+    if (e.target.id === "latestT" && e.target.value) { S.cfg.latest = e.target.value; save(); updateLive(); }
+    if (e.target.id === "earliestT" && e.target.value) { S.cfg.earliest = e.target.value; save(); updateLive(); }
+  });
+  document.addEventListener("submit", e => {
+    e.preventDefault();
+    if (e.target.id === "voiceForm") {
+      audio.unlock();
+      const inp = document.getElementById("voiceInp"), p = parseSpeech(inp.value), ch = parsedChips(p), box = document.getElementById("vchips");
+      if (!ch.length) { if (box) box.innerHTML = `<span class="bad">Keine Schlafdauer erkannt. Sag z. B. „7 Stunden, plus minus 30 Minuten, maximal 8“</span>`; inp.classList.remove("shake"); void inp.offsetWidth; inp.classList.add("shake"); return; }
+      applyParsed(p); inp.blur();
+      if (p.dur != null || p.target != null) {
+        const w = calcWindow(S.cfg);
+        if (!w.ok) { render(); toast("Fenster passt nicht ins Limit"); return; }
+        arm();
+      } else { render(); toast("Übernommen"); }
+    }
+    if (e.target.id === "mathForm") {
+      const i = document.getElementById("mathInp");
+      if (+i.value === sheet.a + sheet.b) wake();
+      else { i.value = ""; i.classList.remove("shake"); void i.offsetWidth; i.classList.add("shake"); }
+    }
+  });
+  ["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, () => { lastAct = Date.now(); if (A && !audio.ok) audio.unlock(); }, { passive: true }));
+  document.getElementById("nightBtn").addEventListener("click", openNight);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { if (A) { lockScreen(); audio.unlock(); } tick(); } });
+
+  // ---------- speech ----------
+  const SPEECH = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null;
+  function startMic() {
+    audio.unlock();
+    const inp = document.getElementById("voiceInp"), btn = document.getElementById("micBtn"), hint = document.getElementById("vhint");
+    if (!inp) return;
+    if (!SPEECH) { inp.focus(); toast("Hier gibt's keine Spracherkennung. Nimm das Mikro der Tastatur."); return; }
+    if (rec) { rec.stop(); return; }
+    let heard = "", failed = false;
+    rec = new SPEECH(); rec.lang = "de-DE"; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+    rec.onresult = e => { let txt = ""; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; heard = txt; inp.value = txt; inp.dispatchEvent(new Event("input", { bubbles: true })); };
+    rec.onerror = e => {
+      failed = true;
+      toast(e.error === "not-allowed" || e.error === "service-not-allowed" ? "Mikrofon blockiert. In den Einstellungen für diese Seite erlauben." : e.error === "no-speech" ? "Nichts gehört. Nochmal tippen." : "Spracherkennung hakt. Nimm das Mikro der Tastatur.");
+    };
+    rec.onend = () => {
+      rec = null; btn && btn.classList.remove("rec");
+      if (hint) hint.textContent = "Mikro antippen und sagen: „Wecker für 7 Stunden, maximal 8“";
+      if (!failed && heard.trim()) document.getElementById("voiceForm").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    };
+    try { rec.start(); btn && btn.classList.add("rec"); if (hint) hint.textContent = "Ich höre zu …"; }
+    catch (e) { rec = null; toast("Spracherkennung startet nicht. Nimm das Mikro der Tastatur."); }
+  }
+
+  // ---------- install ----------
+  let installEvt = null;
+  const isStandalone = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  function installHtml() {
+    if (isStandalone()) return `<div class="ck ok"><i>${I.check}</i><span>Läuft als App. Mikro, Vollbild und Offline-Modus sind an.</span></div>`;
+    if (installEvt) return `<div class="row"><div class="grow"><b>Als App installieren</b><span>Eigenes Icon, Vollbild, funktioniert offline</span></div><button class="cta small" data-act="install" style="width:auto">Installieren</button></div>`;
+    if (isIOS()) return `<div class="row"><div class="grow"><b>Als App installieren</b><span>Teilen-Symbol antippen (Safari: unten, Chrome: oben in der Adresszeile), dann „Zum Home-Bildschirm“.</span></div></div>`;
+    return `<div class="row"><div class="grow"><b>Als App installieren</b><span>Im Chrome-Menü ⋮ auf „App installieren“ oder „Zum Startbildschirm hinzufügen“.</span></div></div>`;
+  }
+  function installNudge() { return isStandalone() ? "" : `<button class="cta ghost small" data-act="goto" data-v="setup">Als App installieren →</button>`; }
+  function doInstall() { if (!installEvt) return; installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; const b = document.getElementById("installBox"); if (b) b.innerHTML = installHtml(); }); }
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; const b = document.getElementById("installBox"); if (b) b.innerHTML = installHtml(); });
+  window.addEventListener("appinstalled", () => { installEvt = null; toast("Installiert. Öffne den Blindwecker jetzt über das Icon."); });
+  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/blindwecker/sw.js", { scope: "/blindwecker/" }).catch(() => {}));
+
+  // ---------- clock ----------
+  let lastMove = 0, lastLive = 0;
+  function tick() {
+    const now = Date.now();
+    setText("clock", hm(now));
+    if (A && !ringing && now >= A.alarmAt) startRing();
+    if (ringing) setText("ringClock", hm(now));
+    if (A && !ringing) setText("sleptNum", durShort(Math.max(0, now - A.sleep) / MIN));
+    if (night) { setText("nightClock", hm(now)); if (now - lastMove > 20000) { lastMove = now; moveNight(); } }
+    if (A && !ringing && !night && !sheet && tab === "wecker" && now - lastAct > 45000) openNight();
+    if (!A && tab === "wecker" && now - lastLive > 30000) { lastLive = now; updateLive(); }
+  }
+
+  // ---------- boot ----------
+  if (A) {
+    const now = Date.now();
+    if (now > A.alarmAt + 15 * MIN) {
+      logNight({ missed: true, woke: A.alarmAt });
+      A = null; saveArmed();
+      setTimeout(() => toast("Wecker verpasst: die App war zu. Steht im Verlauf."), 400);
+    }
+  }
+  render();
+  if (A) {
+    const u = document.createElement("div"); u.className = "unlock"; u.setAttribute("role", "button");
+    u.innerHTML = `<b>Einmal tippen, um den Wecker-Ton wieder scharf zu schalten</b><span>Der Browser braucht nach dem Neuladen einen Tipp, sonst bleibt er stumm.</span>`;
+    u.addEventListener("click", () => { audio.unlock(); lockScreen(); u.remove(); if (ringing) audio.start(A.cfg.sound, A.cfg.ramp); updateChecks(); });
+    document.body.appendChild(u);
+  }
+  setInterval(tick, 1000); tick();
+  connect();
+})();
+</script>
+</body>
+</html>
