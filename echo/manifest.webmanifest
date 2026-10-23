@@ -1,0 +1,18 @@
+{
+  "name": "Echo Mitschrift",
+  "short_name": "Echo",
+  "description": "Meetings live mitschreiben und direkt an Claude geben.",
+  "id": "/echo/",
+  "start_url": "/echo/",
+  "scope": "/echo/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "de",
+  "background_color": "#e5e6e8",
+  "theme_color": "#e5e6e8",
+  "icons": [
+    { "src": "/echo/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/echo/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/echo/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

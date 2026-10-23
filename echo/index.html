@@ -4,13 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
+<link rel="manifest" href="/echo/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/echo/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/echo/icons/icon-192.png">
 <title>Echo Mitschrift</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Echo">
 <meta name="theme-color" content="#e5e6e8">
-<link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Doto:wght@900&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -86,9 +88,9 @@ button, input { font: inherit; color: inherit; }
 @keyframes d3 { to { transform: translate(-10%, 7%) scale(1.15); } }
 .orb { position: absolute; left: 50%; top: 31%; width: 62%; aspect-ratio: 1; margin-left: -31%; border-radius: 50%; filter: blur(30px); will-change: transform, opacity;
   background: radial-gradient(closest-side, #fff 30%, rgba(255,255,255,.55) 60%, rgba(255,255,255,0)); opacity: .6; }
-.edge, .edge2 { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
-.edge { box-shadow: inset 0 0 26px 14px rgba(244,177,58,.95), inset 0 0 70px 24px rgba(244,170,60,.55); }
-.edge2 { box-shadow: inset 0 0 40px 22px rgba(255,214,110,1), inset 0 0 110px 40px rgba(255,196,90,.6); opacity: 0; will-change: opacity; }
+.edgecv { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#edgeGlow { filter: blur(18px); opacity: .95; }
+#edgeCore { filter: blur(5px); }
 .veil { position: absolute; inset: 0; background: rgba(214,210,206,.55); transition: opacity 1.4s ease; }
 .on .veil { opacity: 0; }
 .spark { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff6d8; box-shadow: 0 0 4px #fff6d8; animation: tw 3s ease-in-out infinite; opacity: 0; transition: opacity 1s; }
@@ -208,7 +210,6 @@ button, input { font: inherit; color: inherit; }
   .sbar { display: none; }
   .top { padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
   .sheet { top: calc(54px + env(safe-area-inset-top, 0px)); }
-  .edge { box-shadow: inset 0 0 22px 10px rgba(244,177,58,.95), inset 0 0 60px 20px rgba(244,170,60,.5); }
 }
 @media (prefers-reduced-motion: reduce) { .fx .b, .spark, .sheet { animation: none; } }
 </style>
@@ -229,7 +230,7 @@ button, input { font: inherit; color: inherit; }
         <div class="orb" id="orb"></div>
         <div id="sparks"></div>
         <div class="veil"></div>
-        <div class="edge"></div><div class="edge2" id="edge2"></div>
+        <canvas class="edgecv" id="edgeGlow"></canvas><canvas class="edgecv" id="edgeCore"></canvas>
       </div>
       <div class="sbar" aria-hidden="true"><span id="clock">9:41</span><span class="isl"></span>
         <svg width="70" height="13" viewBox="0 0 70 13" fill="#1a1a1a"><rect x="0" y="8" width="3" height="5" rx="1"/><rect x="5" y="5.5" width="3" height="7.5" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/><path d="M30 4.2a9 9 0 0 1 12 0l-1.4 1.5a7 7 0 0 0-9.2 0zM32.6 7a5.2 5.2 0 0 1 6.8 0L36 10.6z"/><rect x="47" y="1" width="20" height="11" rx="3" fill="none" stroke="#1a1a1a" stroke-opacity=".4"/><rect x="49" y="3" width="16" height="7" rx="1.5"/></svg></div>
@@ -314,10 +315,21 @@ button, input { font: inherit; color: inherit; }
   const isMac = /Macintosh/.test(ua) && !isIOS;
   let framed = false; try { framed = window.self !== window.top; } catch (e) { framed = true; }
   const canShare = !!navigator.share && !framed;
+  const standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  let installEvt = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (view === "set") setupInstall(); });
+  function setupInstall() {
+    const row = $("#installRow"); if (!row) return;
+    if (framed || standalone) { row.hidden = true; return; }
+    row.hidden = false;
+    const btn = $("#installBtn");
+    if (installEvt) { $("#installTxt").textContent = "Mit eigenem Icon, im Vollbild"; btn.hidden = false; btn.onclick = () => { installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; setupInstall(); }); }; }
+    else { btn.hidden = true; $("#installTxt").textContent = isIOS ? "In Safari: Teilen › Zum Home-Bildschirm" : isMac && !isChrome ? "Safari: Ablage › Zum Dock hinzufügen" : "Chrome: Menü › Installieren"; }
+  }
 
   // ---------- recording ----------
   let state = "idle", cur = null, rec = null, interim = "", interimAt = null, acc = 0, startedAt = 0;
-  let wakeLock = null, demoTimer = null, level = 0, target = 0, analyser = null, audioCtx = null, micStream = null, lastRestart = 0;
+  let speakingUntil = 0, wakeLock = null, demoTimer = null, level = 0, target = 0, analyser = null, audioCtx = null, micStream = null, lastRestart = 0;
   const elapsed = () => acc + (state === "rec" ? Date.now() - startedAt : 0);
   const ICON = {
     pause: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>',
@@ -359,6 +371,7 @@ button, input { font: inherit; color: inherit; }
 
   const blockedNotice = () => framed
     ? `<b>In der Vorschau ist das Mikrofon gesperrt.</b><span>Claude lässt eingebettete Seiten nicht ans Mikro. Öffne Echo direkt im Browser, dort klappt es.</span><div class="row2"><a class="sbtn dark" href="${APP_URL}" target="_blank" rel="noopener">Echo im Browser öffnen</a><button class="sbtn" type="button" data-demo>Demo ansehen</button></div>`
+    : standalone && isIOS ? `<b>Apple sperrt hier die Spracherkennung.</b><span>In Home-Bildschirm-Apps blockiert iOS sie manchmal. Öffne Echo dann in Safari: <b>${APP_URL.replace("https://", "")}</b></span><div class="row2"><button class="sbtn dark" type="button" data-copyurl>Adresse kopieren</button><button class="sbtn" type="button" data-open="help">Mikro-Hilfe</button></div>`
     : `<b>Echo darf das Mikrofon nicht benutzen.</b><span>Das lässt sich in zwei Minuten freischalten.</span><div class="row2"><button class="sbtn dark" type="button" data-open="help">So geht's</button><button class="sbtn" type="button" data-demo>Demo ansehen</button></div>`;
 
   function makeRec() {
@@ -376,10 +389,11 @@ button, input { font: inherit; color: inherit; }
           interim = Array.from(e.results).slice(i).filter(x => !x.isFinal).map(x => x[0].transcript).join(" ").trim();
         }
       }
-      target = Math.max(target, .7);
+      speakingUntil = performance.now() + 900;
+      target = Math.max(target, .75);
       renderLive();
     };
-    r.onspeechstart = () => { target = Math.max(target, .6); };
+    r.onspeechstart = () => { speakingUntil = performance.now() + 900; target = Math.max(target, .6); };
     r.onerror = e => {
       if (e.error === "no-speech" || e.error === "aborted") return;
       if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") { stopAll(false); showNotice(blockedNotice()); }
@@ -480,7 +494,7 @@ button, input { font: inherit; color: inherit; }
       if (pauseTicks > 0) { pauseTicks--; return; }
       const parts = DEMO[i].split(" ");
       if (interimAt == null) interimAt = elapsed();
-      w++; interim = parts.slice(0, w).join(" "); target = .45 + Math.random() * .45;
+      w++; interim = parts.slice(0, w).join(" "); target = .45 + Math.random() * .45; speakingUntil = performance.now() + 500;
       if (w >= parts.length) { cur.segs.push([Math.floor(interimAt / 1000), DEMO[i]]); interim = ""; interimAt = null; i++; w = 0; pauseTicks = 4; }
       renderLive();
     }, 240);
@@ -495,11 +509,12 @@ button, input { font: inherit; color: inherit; }
   $("#discardBtn").addEventListener("click", () => { stopAll(false); toast("Aufnahme verworfen."); });
   document.addEventListener("click", e => {
     if (e.target.closest("[data-demo]")) { startDemo(); return; }
+    if (e.target.closest("[data-copyurl]")) { toast(copyText(APP_URL) ? "Adresse kopiert. In Safari einfügen." : APP_URL); return; }
     const o = e.target.closest("[data-open]"); if (o) openSheet(o.dataset.open);
   });
 
   // ---------- motion ----------
-  const orb = $("#orb"), edge2 = $("#edge2"), recBtn = $("#recBtn"), gl = [...document.querySelectorAll("#glyph i")];
+  const orb = $("#orb"), recBtn = $("#recBtn"), gl = [...document.querySelectorAll("#glyph i")];
   const sp = $("#sparks");
   for (let i = 0; i < 26; i++) {
     const s = document.createElement("span"); s.className = "spark";
@@ -507,6 +522,66 @@ button, input { font: inherit; color: inherit; }
     s.style.animationDelay = (-Math.random() * 3) + "s"; s.style.width = s.style.height = (1.5 + Math.random() * 2.5).toFixed(1) + "px";
     sp.appendChild(s);
   }
+  // ---------- Siri-Rand: farbiges Band entlang der Bildschirmkante, das mit der Stimme wellt ----------
+  const eg = $("#edgeGlow"), ec = $("#edgeCore"), egx = eg.getContext("2d"), ecx = ec.getContext("2d");
+  const PAL = ["#f4b13a", "#ffd25e", "#f07ad6", "#a77bff", "#6f8ff5", "#f4b13a", "#ff9f3a", "#ffd25e"].map(h => [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16)));
+  let EW = 0, EH = 0, ER = 0, EP = 0, flow = 0, tPrev = 0;
+  function sizeEdges() {
+    const r = eg.getBoundingClientRect(); EW = r.width; EH = r.height;
+    ER = parseFloat(getComputedStyle($("#screen")).borderTopLeftRadius) || 0;
+    if (!ER && isIOS) ER = 46; // echte iPhone-Ecken
+    ER = Math.min(ER, EW / 2, EH / 2);
+    EP = 2 * (EW + EH - 4 * ER) + 2 * Math.PI * ER;
+    [[eg, egx, 1], [ec, ecx, Math.min(devicePixelRatio || 1, 2)]].forEach(([c, x, d]) => { c.width = Math.round(EW * d); c.height = Math.round(EH * d); x.setTransform(d, 0, 0, d, 0, 0); });
+  }
+  new ResizeObserver(sizeEdges).observe(eg);
+  function edgePt(s) { // Punkt auf der Kante + Normale nach innen; s läuft im Uhrzeigersinn ab oben links
+    const w = EW - 2 * ER, h = EH - 2 * ER, a = Math.PI * ER / 2;
+    s = ((s % EP) + EP) % EP;
+    if (s < w) return [ER + s, 0, 0, 1]; s -= w;
+    if (s < a) { const t = -Math.PI / 2 + s / ER; return [EW - ER + Math.cos(t) * ER, ER + Math.sin(t) * ER, -Math.cos(t), -Math.sin(t)]; } s -= a;
+    if (s < h) return [EW, ER + s, -1, 0]; s -= h;
+    if (s < a) { const t = s / ER; return [EW - ER + Math.cos(t) * ER, EH - ER + Math.sin(t) * ER, -Math.cos(t), -Math.sin(t)]; } s -= a;
+    if (s < w) return [EW - ER - s, EH, 0, -1]; s -= w;
+    if (s < a) { const t = Math.PI / 2 + s / ER; return [ER + Math.cos(t) * ER, EH - ER + Math.sin(t) * ER, -Math.cos(t), -Math.sin(t)]; } s -= a;
+    if (s < h) return [0, EH - ER - s, 1, 0]; s -= h;
+    const t = Math.PI + s / ER; return [ER + Math.cos(t) * ER, ER + Math.sin(t) * ER, -Math.cos(t), -Math.sin(t)];
+  }
+  function palAt(u) {
+    u = ((u % 1) + 1) % 1; const f = u * PAL.length, i = Math.floor(f), k = f - i, a = PAL[i], b = PAL[(i + 1) % PAL.length];
+    return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+  }
+  function drawEdges(t, L) {
+    if (!EW) return;
+    const dt = Math.min(50, t - (tPrev || t)); tPrev = t;
+    const live = state === "rec" ? 1 : state === "paused" ? .4 : 0;
+    if (!reduceMotion) flow += dt * (.000025 + .00008 * live + .00022 * L);
+    const N = Math.max(120, Math.round(EP / 7)), step = EP / N, tt = reduceMotion ? 0 : t / 1000;
+    const base = 9 + 5 * live, amp = 46 * L;
+    egx.clearRect(0, 0, EW, EH); ecx.clearRect(0, 0, EW, EH);
+    let prev = null;
+    for (let i = 0; i <= N; i++) {
+      const s = i * step, u = s / EP, p = edgePt(s);
+      // mehrere Wellen, die um den Rand laufen
+      const wave = .5 + .5 * (Math.sin(u * 6.283 * 3 - tt * 2.4) * .5 + Math.sin(u * 6.283 * 7 + tt * 3.7) * .3 + Math.sin(u * 6.283 * 13 - tt * 5.9) * .2);
+      const breathe = 1.6 * Math.sin(tt * 1.3 + u * 12.566);
+      const d = base + breathe + amp * (.35 + .65 * wave);
+      const cur = [p[0], p[1], p[0] + p[2] * d, p[1] + p[3] * d, p[0] + p[2] * d * .42, p[1] + p[3] * d * .42];
+      if (prev) {
+        const c = palAt(u - flow), col = `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
+        // Glow: volles Band
+        egx.fillStyle = col; egx.beginPath();
+        egx.moveTo(prev[0], prev[1]); egx.lineTo(cur[0], cur[1]); egx.lineTo(cur[2], cur[3]); egx.lineTo(prev[2], prev[3]); egx.closePath(); egx.fill();
+        // Kern: schmaler, heller
+        const w = [c[0] + (255 - c[0]) * .35, c[1] + (255 - c[1]) * .35, c[2] + (255 - c[2]) * .35];
+        ecx.fillStyle = `rgba(${w[0] | 0},${w[1] | 0},${w[2] | 0},${.75 + .25 * L})`; ecx.beginPath();
+        ecx.moveTo(prev[0], prev[1]); ecx.lineTo(cur[0], cur[1]); ecx.lineTo(cur[4], cur[5]); ecx.lineTo(prev[4], prev[5]); ecx.closePath(); ecx.fill();
+      }
+      prev = cur;
+    }
+  }
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   const buf = new Uint8Array(1024), BASE = [44, 120, 80, 44];
   let lastSec = -1;
   function frame(t) {
@@ -516,6 +591,8 @@ button, input { font: inherit; color: inherit; }
         for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; sum += v * v; }
         target = Math.max(target, Math.min(1, Math.sqrt(sum / buf.length) * 6));
       }
+      // ohne Pegelmesser (iPhone): Bewegung aus den Spracherkennungs-Events ableiten
+      if (!analyser && t < speakingUntil) target = Math.max(target, .38 + .32 * (Math.sin(t / 170) * Math.sin(t / 97) * .5 + .5));
       target *= .95;
       const s = Math.floor(elapsed() / 1000);
       if (s !== lastSec) { lastSec = s; const f = fmt(elapsed()); $("#timer").textContent = f; $("#codeTime").textContent = "{" + f + "}"; }
@@ -524,7 +601,7 @@ button, input { font: inherit; color: inherit; }
     const L = level;
     orb.style.transform = `scale(${.92 + L * .32})`;
     orb.style.opacity = (state === "idle" ? .5 : .62 + L * .38).toFixed(3);
-    edge2.style.opacity = (L * .95).toFixed(3);
+    drawEdges(t, L);
     recBtn.style.setProperty("--glow", (.55 + L * .45).toFixed(3));
     gl.forEach((b, i) => { const mid = i === 1 || i === 2; const breathe = state === "rec" && mid ? Math.sin(t / 900 + i * 1.3) * 4 : 0; b.style.height = (BASE[i] + (mid ? BASE[i] * .35 * L : 0) + breathe) + "px"; });
     requestAnimationFrame(frame);
@@ -639,12 +716,14 @@ button, input { font: inherit; color: inherit; }
         <div class="r"><div><b>Zeitstempel bei „Nur Text“</b><small>[03:12] vor jedem Abschnitt</small></div><input class="toggle" type="checkbox" id="optStamps" ${store.stamps ? "checked" : ""}></div>
         <div class="r" style="flex-direction:column;align-items:flex-start"><div><b>Standard-Auftrag für Claude</b></div>
           <div class="modes" id="defModes">${Object.entries(MODES).map(([k, m]) => `<button type="button" data-m="${k}" aria-pressed="${k === store.mode}">${m.name}</button>`).join("")}</div></div>
+        <div class="r" id="installRow" hidden><div><b>Als App installieren</b><small id="installTxt">Echo auf den Home-Bildschirm legen</small></div><button class="sbtn dark" type="button" id="installBtn">Installieren</button></div>
         <div class="r"><div><b>Mikrofon einrichten</b><small>Schritt für Schritt für dein Gerät</small></div><button class="sbtn dark" type="button" data-open="help">Öffnen</button></div>
         <div class="r"><div><b>Demo</b><small>Simuliertes Gespräch, ohne Mikro</small></div><button class="sbtn" type="button" data-demo>Starten</button></div>
       </div>
       <p class="note">Die Spracherkennung läuft über den Browser: in Safari über Apple, in Chrome über Google. Mitschriften bleiben auf diesem Gerät. Sag im Meeting kurz Bescheid, dass mitgeschrieben wird.</p>
       <div><button class="sbtn red" type="button" id="wipe">Alle Mitschriften löschen</button></div>
       <div class="confirm" id="wipeC" hidden><span>Wirklich alles löschen?</span><div><button class="sbtn" type="button" id="wipeN">Abbrechen</button><button class="sbtn red" type="button" id="wipeY">Löschen</button></div></div>`;
+    setupInstall();
     $("#langSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; if (state !== "idle") { toast("Sprache erst nach der Aufnahme wechseln."); return; } store.lang = b.dataset.v; save(); $("#langTxt").textContent = langShort(store.lang); renderSettings(); });
     $("#optWake").addEventListener("change", e => { store.wake = e.target.checked; save(); });
     $("#optStamps").addEventListener("change", e => { store.stamps = e.target.checked; save(); });
@@ -685,6 +764,9 @@ button, input { font: inherit; color: inherit; }
   renderRec();
   if (framed) showNotice(blockedNotice());
 })();
+</script>
+<script>
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/echo/sw.js", { scope: "/echo/" }).catch(() => {}));
 </script>
 </body>
 </html>
