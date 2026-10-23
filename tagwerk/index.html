@@ -1,0 +1,1783 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Tagwerk: Habit-Tracker mit Fokus-Timer, Wasser, Stimmung, Tagesablauf und Business-Cockpit für Fabian Visuals.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#050507">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tagwerk">
+<link rel="manifest" href="/tagwerk/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/tagwerk/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/tagwerk/icons/apple-touch-icon.png">
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+<script>
+  window.__TAGWERK_PWA__ = true;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); window.__twInstall = e; window.dispatchEvent(new Event("tw-install")); });
+</script>
+<title>Tagwerk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@600;800&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: "observatory" phone — dotted black field, big left title, square glass tiles that glow from the rim, badge on top, caption at the bottom. Single committed dark look on a soft grey stage. */
+:root {
+  --stage: #d3d3d8;
+  --ink: #050507;
+  --glass: #1d1d24;
+  --line: rgba(255,255,255,.12);
+  --fg: #f4f2f7;
+  --muted: rgba(244,242,247,.58);
+  --signal: #e6ee6c;
+  --f-num: "Doto", ui-monospace, "SF Mono", Menlo, monospace;
+  --f-body: "Instrument Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--stage); color: var(--fg);
+  font-family: var(--f-body); font-size: 15px; line-height: 1.4; -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+.wrap { display: flex; justify-content: center; padding-inline: 16px; padding-block: 32px 48px; }
+.phone {
+  width: 100%; max-width: 440px; border-radius: 52px; padding: 18px 20px 18px; min-width: 0;
+  background-color: var(--ink);
+  background-image: radial-gradient(rgba(255,255,255,.085) 1px, transparent 1.3px);
+  background-size: 13px 13px;
+  box-shadow: 0 0 0 9px #9d9da4, 0 0 0 10px #85858c, 0 50px 90px -30px rgba(0,0,0,.5);
+  display: flex; flex-direction: column; gap: 14px;
+}
+.island { width: 104px; height: 30px; border-radius: 20px; background: #000; margin: 0 auto; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px; }
+.island .dot { width: 7px; height: 7px; border-radius: 50%; background: #2a2a2e; }
+.island .dot.on { background: #4fe3c8; box-shadow: 0 0 10px #4fe3c8; }
+
+/* top bar */
+.top { display: flex; align-items: center; gap: 8px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 7; margin: -8px -10px 4px; padding: 8px 10px; border-radius: 999px; transition: background .3s, box-shadow .3s; }
+.top.scrolled { background: rgba(20,20,26,.55); -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%); box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 30px -12px rgba(0,0,0,.8); }
+.round { width: 44px; height: 44px; flex: none; border-radius: 50%; background: rgba(255,255,255,.07); border: 1px solid var(--line); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.seg { flex: 1; display: flex; justify-content: center; min-width: 0; }
+.seg div { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; border: 1px solid var(--line); background: rgba(10,10,14,.8); }
+.seg button { border: 0; background: transparent; border-radius: 999px; padding: 8px 13px; font-size: 13px; cursor: pointer; color: var(--fg); }
+.seg button[aria-selected="true"] { background: #3a3a42; }
+.ringbtn { position: relative; }
+.ringbtn svg { position: absolute; inset: -1px; width: calc(100% + 2px); height: calc(100% + 2px); }
+.ringbtn b { font: 800 13px var(--f-num); }
+
+.head { padding: 6px 6px 0; display: flex; flex-direction: column; gap: 2px; }
+.head h1 { font: 400 34px/1.1 var(--f-body); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+.head .sub { color: var(--muted); font-size: 13px; }
+
+.days { display: flex; justify-content: space-between; gap: 4px; }
+.day { width: 40px; height: 40px; flex: none; border-radius: 50%; border: 1px solid var(--line); background: rgba(5,5,7,.8); font: 500 12px var(--f-body); cursor: pointer; position: relative; padding: 0; }
+.day[aria-pressed="true"] { background: var(--fg); color: var(--ink); border-color: var(--fg); }
+.day .pip { position: absolute; left: 50%; bottom: -7px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--signal); }
+.day:disabled { opacity: .3; cursor: default; }
+.wave { display: block; width: 100%; height: 50px; }
+.label { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 30px 6px 2px; display: flex; align-items: center; gap: 12px; }
+.label::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+#view { display: flex; flex-direction: column; gap: 16px; }
+
+/* tiles */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tile {
+  --c: #4b4b5a; --light: #7c7c90; --deep: #0a0a0e;
+  position: relative; isolation: isolate; overflow: hidden; min-width: 0;
+  border-radius: 32px; padding: 12px 12px 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+  background: radial-gradient(85% 80% at 50% 42%, #09090c 30%, #20202a 82%, #3b3b48 118%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), inset 0 1.5px 0 rgba(255,255,255,.2), inset 0 -22px 34px -14px color-mix(in srgb, var(--c) 70%, transparent), 0 22px 34px -22px rgba(0,0,0,.95), 0 2px 6px rgba(0,0,0,.35);
+}
+.tile.sq { aspect-ratio: 1 / 1.05; }
+.tile.wide { grid-column: 1 / -1; }
+.tile.glow { background: radial-gradient(78% 74% at 50% 46%, var(--deep) 8%, var(--c) 70%, var(--light) 118%); }
+.tile.flood { background: radial-gradient(70% 70% at 50% 46%, var(--c) 25%, var(--light) 125%); }
+.tile.left { align-items: stretch; text-align: left; padding: 16px 20px 18px; gap: 10px; }
+
+.c-violet { --c: #6447e0; --light: #93b4ff; --deep: #1c1060; }
+.c-teal   { --c: #1d9188; --light: #84e6d4; --deep: #06221f; }
+.c-rose   { --c: #d4448d; --light: #f2b5dc; --deep: #33091f; }
+.c-sage   { --c: #6f9a82; --light: #cfe4d6; --deep: #0f1914; }
+.c-cobalt { --c: #2f45cc; --light: #7fa4ff; --deep: #080d36; }
+.c-ember  { --c: #d4673a; --light: #ffb48c; --deep: #331106; }
+.c-plum   { --c: #5a2fb8; --light: #8a7cff; --deep: #150a3a; }
+
+.hit { position: absolute; inset: 0; z-index: 1; border: 0; background: transparent; cursor: pointer; border-radius: inherit; padding: 0; }
+.corner {
+  position: absolute; top: 11px; left: 11px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; padding: 0;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); display: grid; place-items: center; cursor: pointer;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); font-size: 16px; line-height: 1;
+}
+.corner svg, .step svg, .send svg, .round svg { display: block; }
+.step, .send { display: inline-grid; place-items: center; }
+.corner.r { left: auto; right: 11px; }
+.badge {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+  font-size: 11px; padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,.38); border: 1px solid rgba(255,255,255,.1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px;
+}
+.badge.ghost { visibility: hidden; }
+.tile:has(.corner) .badge { max-width: calc(100% - 84px); }
+.tile > * { flex-shrink: 0; }
+.tile.sq { overflow: visible; }
+.fv .txt { flex-shrink: 1; }
+.badge .live { width: 6px; height: 6px; border-radius: 50%; background: #4fe3c8; flex: none; }
+.vis { flex: 1 0 auto; width: 100%; display: grid; place-items: center; min-height: 0; position: relative; }
+.cap { display: flex; flex-direction: column; gap: 1px; min-width: 0; max-width: 100%; }
+.cap b { font-weight: 500; font-size: 13.5px; overflow-wrap: anywhere; }
+.cap span { font-size: 11.5px; color: rgba(255,255,255,.62); }
+.num { font: 800 42px/1 var(--f-num); font-variant-numeric: tabular-nums; }
+.num small { font: 500 12px var(--f-body); color: rgba(255,255,255,.7); margin-left: 3px; }
+
+/* ruler */
+.ruler { position: relative; height: 22px; width: 82%; }
+.ruler .ticks { position: absolute; inset: 7px 0 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 1px, transparent 1px 6px); }
+.ruler .fill { position: absolute; left: 0; top: 7px; bottom: 0; background: repeating-linear-gradient(90deg, var(--fg) 0 1.5px, transparent 1.5px 6px); }
+.ruler .mark { position: absolute; top: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid var(--signal); transform: translateX(-5px); }
+.ruler .mark::after { content: ""; position: absolute; left: -1px; top: 0; width: 2px; height: 16px; background: var(--signal); }
+
+/* orb + sphere + aura */
+.orb { position: relative; width: 100%; height: 78px; overflow: hidden; }
+.orb::after { content: ""; position: absolute; left: -12px; right: -12px; bottom: 0; height: 1px; background: rgba(255,255,255,.3); }
+.orb i { position: absolute; left: 50%; width: 76px; height: 76px; margin-left: -38px; border-radius: 50%;
+  background: radial-gradient(circle at 50% 28%, #d9e4ff, #8ea2ff 42%, #6a5cff 75%); box-shadow: 0 0 36px rgba(140,160,255,.55); }
+.sphere { width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle at 38% 30%, #e8f0ff, #8aa8ff 40%, #4a3fd0 80%); box-shadow: 0 0 34px rgba(120,150,255,.5); }
+.aura { position: absolute; inset: 0; margin: auto; width: 96px; height: 96px; }
+.over { position: relative; }
+.dots7 { display: flex; gap: 5px; justify-content: center; }
+.dots7 i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.22); }
+.dots7 i.on { background: var(--fg); box-shadow: 0 0 6px rgba(255,255,255,.6); }
+
+/* summary */
+.sum { background: linear-gradient(165deg, #6f5f8e 0%, #b57d8c 55%, #e3958a 100%); flex-direction: row; justify-content: space-between; align-items: center; text-align: left; padding: 18px 20px; }
+.sum .big { font: 400 36px/1 var(--f-body); letter-spacing: -.02em; }
+.sum .big small { font-size: 15px; color: rgba(255,255,255,.8); margin-left: 4px; }
+.sum h2 { font: 400 13px var(--f-body); margin: 0 0 14px; color: rgba(255,255,255,.88); }
+.ring { position: relative; width: 92px; height: 92px; flex: none; display: grid; place-items: center; }
+.ring svg { position: absolute; inset: 0; }
+.ring b { font: 800 26px var(--f-num); }
+
+/* inner controls */
+.chip { border: 1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.3); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+.quote { font: 400 21px/1.28 var(--f-body); letter-spacing: -.01em; margin: 6px 4px 0; text-wrap: balance; }
+.noteform { display: flex; gap: 6px; }
+input[type="text"] {
+  flex: 1; min-width: 0; background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.16); color: var(--fg);
+  border-radius: 999px; padding: 11px 16px; font: inherit; font-size: 16px;
+}
+input::placeholder { color: rgba(255,255,255,.45); }
+.send { width: 42px; height: 42px; border-radius: 50%; border: 0; background: var(--fg); color: var(--ink); cursor: pointer; font-size: 20px; flex: none; }
+.notelist { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.notelist li { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; align-items: baseline; padding: 9px 0; border-top: 1px solid rgba(255,255,255,.09); }
+.notelist time { font: 600 12px var(--f-num); color: rgba(255,255,255,.6); }
+.notelist span { overflow-wrap: anywhere; min-width: 0; font-size: 14px; }
+.notelist .del { border: 0; background: none; color: rgba(255,255,255,.45); cursor: pointer; font-size: 17px; padding: 0 4px; }
+.rowhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.rowhead h2 { font: 500 13.5px var(--f-body); margin: 0; }
+.empty { color: rgba(255,255,255,.6); font-size: 13px; margin: 4px 0; }
+
+/* week */
+.bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 130px; margin-top: 8px; }
+.bar { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 5px; height: 100%; border: 0; background: none; padding: 0; cursor: pointer; }
+.bar:disabled { cursor: default; }
+.bar b { width: 100%; max-width: 26px; border-radius: 999px; background: linear-gradient(180deg, #e3958a, #6f5f8e); min-height: 6px; }
+.bar.today b { background: var(--signal); }
+.bar span { font: 600 11px var(--f-num); color: rgba(255,255,255,.65); }
+.matrix { display: grid; gap: 8px 4px; align-items: center; overflow-x: auto; margin-top: 8px; }
+.matrix .lbl { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; color: rgba(255,255,255,.85); }
+.matrix .hd { font: 600 10px var(--f-num); text-align: center; color: rgba(255,255,255,.5); }
+.matrix .c { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,.1); justify-self: center; }
+.matrix .c.on { background: var(--fg); box-shadow: 0 0 6px rgba(255,255,255,.5); }
+
+.status { text-align: center; font-size: 10.5px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin: 2px 0 0; }
+
+/* sheet */
+.scrim { position: fixed; inset: 0; z-index: 10; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; justify-content: center; padding-inline: 16px; }
+.sheet {
+  width: 100%; max-width: 430px; max-height: 86vh; overflow: auto; border-radius: 34px 34px 0 0;
+  padding: 18px 14px calc(26px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 14px;
+  background-color: #0b0b0f; background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1.3px); background-size: 13px 13px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+}
+.sheet .shead { display: flex; align-items: center; gap: 12px; }
+.sheet .shead h3 { margin: 0; font: 400 24px/1.15 var(--f-body); flex: 1; min-width: 0; overflow-wrap: anywhere; letter-spacing: -.01em; }
+.editrow { display: flex; align-items: center; gap: 8px; padding: 9px 2px; border-top: 1px solid rgba(255,255,255,.1); }
+.editrow span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.step { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.07); cursor: pointer; font-size: 16px; line-height: 1; padding: 0; flex: none; }
+.step:disabled { opacity: .3; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.cal div { aspect-ratio: 1; max-width: 100%; border-radius: 50%; background: rgba(255,255,255,.08); display: grid; place-items: center; font: 600 10px var(--f-num); color: rgba(255,255,255,.55); }
+.cal div.on { background: var(--fg); color: var(--ink); box-shadow: 0 0 8px rgba(255,255,255,.4); }
+.cal div.blank { background: transparent; }
+
+.sheet h4 { margin: 4px 2px 0; font: 500 11px var(--f-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.sheet .bars { height: 96px; margin-top: 0; }
+.bigrow { display: flex; align-items: center; justify-content: center; gap: 22px; padding: 6px 0; }
+.bigrow .num { font-size: 72px; }
+.step.lg { width: 54px; height: 54px; font-size: 24px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--ink); border-color: var(--fg); }
+.cta { border: 0; border-radius: 999px; padding: 14px 18px; font-size: 15px; font-weight: 500; cursor: pointer; background: var(--fg); color: var(--ink); width: 100%; }
+.cta.ghost { background: rgba(255,255,255,.08); color: var(--fg); border: 1px solid var(--line); }
+.cta.danger { background: transparent; color: #ff9a9a; border: 1px solid rgba(255,140,140,.3); }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; background: var(--c); }
+.swatch[aria-pressed="true"] { border-color: var(--fg); box-shadow: 0 0 0 2px var(--ink) inset; }
+.list { display: flex; flex-direction: column; }
+.item { display: flex; align-items: center; gap: 8px; padding: 10px 2px; border-top: 1px solid rgba(255,255,255,.09); min-width: 0; }
+.item .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.item .grow b { font-weight: 500; font-size: 14px; overflow-wrap: anywhere; }
+.item .grow span { font-size: 12px; color: var(--muted); }
+.item.past { opacity: .5; }
+.tag { font: 600 11px var(--f-body); padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.06); cursor: pointer; white-space: nowrap; }
+.tag { text-decoration: none; color: var(--fg); }
+.tag.won { background: #2f7d5f; border-color: transparent; }
+.tag.lost { background: rgba(255,120,120,.18); color: #ffb3b3; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.stats div { background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stats b { font: 800 22px var(--f-num); }
+.stats span { font-size: 11px; color: var(--muted); }
+.formcol { display: flex; flex-direction: column; gap: 8px; }
+input[type="date"], input[type="number"], input[type="time"] {
+  flex: 1; min-width: 0; background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.16); color: var(--fg);
+  border-radius: 999px; padding: 10px 14px; font: inherit; font-size: 16px;
+}
+.lanes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 86%; align-items: end; height: 62px; }
+.lane { display: flex; flex-direction: column-reverse; align-items: center; gap: 4px; }
+.lane i { width: 8px; height: 8px; border-radius: 50%; background: var(--fg); box-shadow: 0 0 5px rgba(255,255,255,.5); }
+.lane i.off { background: rgba(255,255,255,.15); box-shadow: none; }
+.lane em { font: 600 9px var(--f-num); font-style: normal; color: rgba(255,255,255,.6); }
+.mono { font: 800 44px/1 var(--f-num); letter-spacing: .02em; flex: none; }
+.fv { flex-direction: row; justify-content: space-between; align-items: center; text-align: left; padding: 18px 20px; gap: 14px; }
+.fv .txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fv .txt b { font: 400 22px/1.1 var(--f-body); letter-spacing: -.01em; }
+.fv .txt span { font-size: 12px; color: rgba(255,255,255,.7); }
+.heat { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.heat div { aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; font: 600 10px var(--f-num); color: rgba(255,255,255,.7); max-width: 100%; }
+.dayline { position: relative; height: 10px; border-radius: 999px; background: rgba(255,255,255,.1); overflow: hidden; }
+.dayline b { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #6f5f8e, #e3958a); border-radius: 999px; }
+.dayline i { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--signal); }
+
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+/* v11: calmer Heute */
+.ch-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); background: rgba(0,0,0,.25); font-size: 12px; cursor: pointer; }
+.ch-link i { width: 6px; height: 6px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 8px var(--signal); }
+.label .lbl-act { order: 3; border: 0; background: none; padding: 4px 0 4px 6px; font: 500 12px var(--f-body); letter-spacing: 0; text-transform: none; color: var(--fg); cursor: pointer; }
+.label::after { order: 2; }
+.hlist { display: flex; flex-direction: column; gap: 10px; }
+.hpill { --c: #4b4b5a; --light: #7c7c90; --deep: #0a0a0e; position: relative; isolation: isolate; display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 10px 10px 10px 12px; border-radius: 26px; border: 0; width: 100%; text-align: left;
+  background: linear-gradient(100deg, #0c0c10 0%, #16161c 60%, color-mix(in srgb, var(--c) 30%, #16161c) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), inset 0 1.5px 0 rgba(255,255,255,.16), 0 16px 26px -20px rgba(0,0,0,.95); }
+.hpill.on { background: linear-gradient(100deg, var(--deep) 0%, var(--c) 58%, var(--light) 130%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14), inset 0 1.5px 0 rgba(255,255,255,.32), 0 16px 30px -18px color-mix(in srgb, var(--c) 80%, transparent); }
+.hpill > *:not(.hit) { position: relative; z-index: 2; pointer-events: none; }
+.hpill .hp-c { pointer-events: auto; }
+.hp-g { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,.32); flex: none; }
+.hp-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.hp-t b { font-weight: 500; font-size: 15px; overflow-wrap: anywhere; }
+.hp-t span { font-size: 12px; color: rgba(255,255,255,.62); }
+.hpill.on .hp-t span { color: rgba(255,255,255,.82); }
+.hp-c { width: 42px; height: 42px; flex: none; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.4); background: transparent; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.hpill.on .hp-c { background: var(--fg); color: #121216; border-color: var(--fg); }
+.stack { display: flex; flex-direction: column; }
+.band { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; border: 0; text-align: left; cursor: pointer; padding: 16px 20px 34px; border-radius: 30px; margin-top: -20px;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.3), inset 0 0 0 1px rgba(255,255,255,.1), 0 -12px 24px -14px rgba(0,0,0,.85); }
+.band:first-child { margin-top: 0; }
+.band:last-child { padding-bottom: 18px; }
+.bd-l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bd-l b { font: 500 16px var(--f-body); }
+.bd-l span { font-size: 12px; color: rgba(255,255,255,.78); overflow-wrap: anywhere; }
+.bd-v { font: 800 28px/1 var(--f-num); white-space: nowrap; text-shadow: 0 0 14px rgba(255,255,255,.35); }
+.bd-v small { font: 500 11px var(--f-body); margin-left: 4px; color: rgba(255,255,255,.75); text-shadow: none; }
+.b-rose { background: radial-gradient(80% 140% at 85% 0%, #f2b5dc 0%, rgba(242,181,220,0) 60%), linear-gradient(120deg, #4a1030, #d4448d); }
+.b-sage { background: radial-gradient(80% 140% at 85% 0%, #cfe4d6 0%, rgba(207,228,214,0) 60%), linear-gradient(120deg, #13241b, #5f8c74); }
+.b-ember { background: radial-gradient(80% 140% at 85% 0%, #ffb48c 0%, rgba(255,180,140,0) 60%), linear-gradient(120deg, #3a1306, #d4673a); }
+.b-cobalt { background: radial-gradient(80% 140% at 85% 0%, #7fa4ff 0%, rgba(127,164,255,0) 60%), linear-gradient(120deg, #0a0f3a, #2f45cc); }
+.qline { display: block; width: 100%; border: 0; background: none; cursor: pointer; text-align: left; padding: 6px 6px 0; font: 400 19px/1.3 var(--f-body); color: rgba(255,255,255,.82); letter-spacing: -.01em; text-wrap: balance; }
+.qline span { display: block; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+@media (prefers-reduced-motion: no-preference) {
+  .hpill, .band { transition: transform .2s cubic-bezier(.2,.8,.2,1), background .3s, box-shadow .3s; }
+  .hpill:has(.hit:active), .band:active { transform: scale(.98); }
+  .hp-c { transition: transform .15s, background .25s, color .2s; }
+  .hp-c:active { transform: scale(.85); }
+  .enter .hpill, .enter .band, .enter .qline, .enter .impulse, .enter .carousel { animation: rise .55s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 35ms); }
+  .hpill.pop .hp-c { animation: iconpop .5s cubic-bezier(.2,1.6,.4,1); }
+}
+
+/* glass sheen on every card */
+.tile::before, .pcard::before, .bigc::before, .curve::before, .sum::before, .phase::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+  background: radial-gradient(110% 55% at 22% -8%, rgba(255,255,255,.2), rgba(255,255,255,0) 58%), linear-gradient(180deg, rgba(255,255,255,0) 70%, rgba(255,255,255,.06)); }
+.pcard, .curve { box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), inset 0 1.5px 0 rgba(255,255,255,.28), 0 22px 34px -22px rgba(0,0,0,.95); }
+.pcard > *, .curve > * { position: relative; }
+
+/* hero carousel */
+.carousel { margin-inline: -20px; overflow-x: auto; overflow-y: visible; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; padding-block: 10px 6px; }
+.carousel::-webkit-scrollbar { display: none; }
+.ctrack { display: flex; gap: 14px; padding-inline: 13%; width: max-content; }
+.bigc { position: relative; isolation: isolate; flex: none; width: min(300px, 74vw); height: 270px; border-radius: 44px; scroll-snap-align: center; overflow: hidden; cursor: pointer;
+  display: flex; flex-direction: column; padding: 20px 22px 18px; transform-origin: center; will-change: transform;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.14), inset 0 2px 0 rgba(255,255,255,.35), inset 0 -30px 50px -24px rgba(255,255,255,.18), 0 30px 50px -26px rgba(0,0,0,.95); }
+.bigc > * { position: relative; z-index: 1; }
+.bc-top { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: rgba(255,255,255,.9); }
+.bc-ic { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); }
+.bc-num { margin-top: auto; text-align: center; font: 800 76px/1 var(--f-num); text-shadow: 0 0 20px rgba(255,255,255,.4); font-variant-numeric: tabular-nums; }
+.bc-unit { text-align: center; font-size: 13px; color: rgba(255,255,255,.8); margin-top: 4px; }
+.bc-plot { margin-top: auto; height: 62px; }
+.bc-plot svg { width: 100%; height: 100%; display: block; }
+.bc-violet { background: radial-gradient(70% 55% at 50% 42%, #23082c 0%, rgba(35,8,44,0) 72%), linear-gradient(165deg, #d46bd9 0%, #8d3fd4 45%, #3a1a7a 100%); }
+.bc-teal { background: radial-gradient(70% 55% at 50% 42%, #04201f 0%, rgba(4,32,31,0) 72%), linear-gradient(165deg, #7fe0cf 0%, #1f8f88 45%, #0c3433 100%); }
+.bc-sun { background: radial-gradient(70% 55% at 50% 42%, #3a0c14 0%, rgba(58,12,20,0) 72%), linear-gradient(165deg, #f2b06a 0%, #e0507a 50%, #6a1f4a 100%); }
+.bc-blue { background: radial-gradient(70% 55% at 50% 42%, #050a26 0%, rgba(5,10,38,0) 72%), linear-gradient(165deg, #8fb0ff 0%, #3a52d8 45%, #10175a 100%); }
+.cdots { display: flex; justify-content: center; gap: 6px; }
+.cdots i { width: 6px; height: 6px; border-radius: 999px; background: rgba(255,255,255,.3); transition: width .3s, background .3s; }
+.cdots i.on { width: 18px; background: var(--fg); }
+
+/* day phases */
+.phases .ctrack { padding-inline: 9%; gap: 12px; }
+.phase { position: relative; isolation: isolate; flex: none; width: min(340px, 82vw); min-height: max(430px, min(560px, calc(100vh - 290px))); border-radius: 44px; scroll-snap-align: center; overflow: hidden;
+  display: flex; flex-direction: column; padding: 24px 20px 20px; background: var(--pg); transform-origin: center; will-change: transform;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12), inset 0 2px 0 rgba(255,255,255,.25), 0 30px 50px -26px rgba(0,0,0,.95); }
+.phase > * { position: relative; z-index: 1; }
+.ph-head { display: flex; justify-content: space-between; gap: 10px; }
+.ph-head h2 { margin: 0; font: 500 36px/1.05 var(--f-body); letter-spacing: -.02em; }
+.ph-head h2 span { display: block; color: rgba(255,255,255,.45); }
+.ph-btns { display: flex; flex-direction: column; gap: 8px; }
+.ph-btns button { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.06); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.ph-body { flex: 1; display: grid; grid-template-columns: 1fr 34px; gap: 10px; margin-top: 18px; }
+.ph-items { display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
+.ph-item { display: flex; align-items: center; gap: 10px; text-align: left; border: 0; cursor: pointer; padding: 12px 14px; border-radius: 16px;
+  background: rgba(30,26,30,.42); -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 8px 18px -10px rgba(0,0,0,.6); }
+.ph-item .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ph-item b { font-weight: 500; font-size: 14px; overflow-wrap: anywhere; }
+.ph-item span { font-size: 11.5px; color: rgba(255,255,255,.75); }
+.ph-item .ck { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.7); flex: none; display: grid; place-items: center; }
+.ph-item.done .ck { background: var(--fg); color: #111; border-color: var(--fg); }
+.ph-item.done b { text-decoration: line-through; text-decoration-color: rgba(255,255,255,.5); }
+.ph-line { position: relative; display: flex; flex-direction: column; align-items: center; font: 600 9.5px var(--f-body); color: rgba(255,255,255,.85); letter-spacing: .04em; }
+.ph-line .rail { flex: 1; width: 2px; margin: 6px 0; border-radius: 2px; background: linear-gradient(180deg, rgba(255,255,255,.25), rgba(255,255,255,.9)); position: relative; }
+.ph-line .rail i { position: absolute; left: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; border: 1.5px solid #fff; background: rgba(0,0,0,.5); }
+.ph-line .rail i.on { background: #fff; }
+.ph-line .rail em { position: absolute; left: 50%; width: 16px; height: 3px; margin: -1.5px 0 0 -8px; border-radius: 2px; background: var(--signal); box-shadow: 0 0 10px var(--signal); }
+.ph-empty { font-size: 13px; color: rgba(255,255,255,.75); padding: 12px 14px; border-radius: 16px; background: rgba(30,26,30,.3); }
+
+
+/* bottom glass tab bar */
+.brand { flex: 1; text-align: center; font: 500 15px var(--f-body); letter-spacing: .02em; color: rgba(255,255,255,.85); }
+.phone { padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)); }
+.tabbar { position: fixed; left: 0; right: 0; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 8; display: flex; justify-content: center; padding-inline: 16px; pointer-events: none; }
+.tb-glass { pointer-events: auto; position: relative; width: min(320px, 100%); display: grid; grid-template-columns: repeat(4, 1fr); padding: 7px; border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.07)); -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid rgba(255,255,255,.2); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -8px 18px -10px rgba(255,255,255,.18), 0 20px 44px -14px rgba(0,0,0,.75); }
+.tb-glass::after { content: ""; position: absolute; inset: 1px 10% auto; height: 45%; border-radius: 999px; background: linear-gradient(180deg, rgba(255,255,255,.14), transparent); filter: blur(3px); pointer-events: none; }
+.tb-glass button { position: relative; z-index: 1; height: 54px; border: 0; background: transparent; display: grid; place-items: center; color: rgba(255,255,255,.82); cursor: pointer; padding: 0; transition: color .3s; }
+.tb-glass button[aria-selected="true"] { color: #121216; }
+.tb-ind { position: absolute; top: 7px; left: 7px; height: 54px; width: calc((100% - 14px) / 4); transform: translateX(calc(var(--i, 0) * 100%)); pointer-events: none; }
+.tb-ind::before { content: ""; position: absolute; inset: 0; margin: auto; width: 54px; height: 54px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #ffffff, #ecebf1 55%, #c9c9d4); box-shadow: 0 8px 18px rgba(0,0,0,.4), inset 0 -3px 6px rgba(0,0,0,.12), inset 0 2px 2px rgba(255,255,255,.9); }
+@media (prefers-reduced-motion: no-preference) {
+  .tb-ind { transition: transform .6s cubic-bezier(.34,1.5,.5,1); }
+  .tb-ind.squish::before { animation: squish .6s cubic-bezier(.3,.8,.3,1); }
+  .tb-glass button[aria-selected="true"] svg { animation: iconpop .5s cubic-bezier(.2,1.6,.4,1); }
+  .tb-glass button:active svg { transform: scale(.85); }
+  .tb-glass button svg { transition: transform .15s; }
+  #view.slide-r { animation: slideR .45s cubic-bezier(.2,.8,.2,1); }
+  #view.slide-l { animation: slideL .45s cubic-bezier(.2,.8,.2,1); }
+}
+@keyframes squish { 25% { transform: scale(1.32, .82); } 55% { transform: scale(.94, 1.06); } 100% { transform: none; } }
+@keyframes iconpop { 0% { transform: scale(.6); } 60% { transform: scale(1.15); } }
+@keyframes slideR { from { transform: translateX(36px); opacity: 0; } }
+@keyframes slideL { from { transform: translateX(-36px); opacity: 0; } }
+
+/* calendar header */
+.calhead { position: relative; overflow: hidden; border-radius: 38px; padding: 20px 16px 14px;
+  background: radial-gradient(120% 95% at 105% -5%, #2a98a0 0%, rgba(42,152,160,0) 58%), radial-gradient(110% 100% at -5% 105%, #f2a27c 0%, rgba(242,162,124,0) 60%), radial-gradient(70% 70% at 55% 95%, #b8578d 0%, rgba(184,87,141,0) 70%), #14161c; }
+.calhead .ch-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; padding-inline: 6px; }
+.calhead h1 { font: 400 38px/1 var(--f-body); letter-spacing: -.02em; margin: 0; }
+.calhead .ch-sub { font-size: 13px; color: rgba(255,255,255,.75); margin-top: 6px; }
+.calhead .ch-nav { display: flex; gap: 6px; }
+.calhead .ch-nav button { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.55); background: transparent; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.calhead .ch-nav button:disabled { opacity: .3; }
+.cal7 { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 8px; margin-top: 18px; text-align: center; }
+.cal7 .wd { font-size: 11px; letter-spacing: .08em; color: rgba(255,255,255,.62); }
+.cal7 button { width: 100%; max-width: 46px; aspect-ratio: 1; justify-self: center; border-radius: 50%; border: 0; background: transparent; font: 500 15px var(--f-body); cursor: pointer; position: relative; padding: 0; }
+.cal7 button[aria-pressed="true"] { background: var(--fg); color: #111; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.cal7 button:disabled { opacity: .38; cursor: default; }
+.cal7 .pip { position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--signal); }
+.cal7 button[aria-pressed="true"] .pip { background: #111; }
+
+/* impulse pill */
+.impulse { display: flex; align-items: center; gap: 14px; width: 100%; border: 0; text-align: left; cursor: pointer; padding: 18px 20px; border-radius: 999px;
+  background: linear-gradient(100deg, #a52c9a 0%, #dc4a8f 45%, #f09a86 100%); font-size: 14.5px; line-height: 1.3; box-shadow: 0 14px 30px -18px #dc4a8f; }
+.impulse .grow { flex: 1; min-width: 0; }
+.impulse svg { flex: none; }
+
+/* big views */
+.sheet.full { height: calc(100% - 20px); max-height: none; }
+.sheet.magenta { background: radial-gradient(60% 34% at 50% 26%, #3d0a24 0%, #dc308f 52%, #d0a8c9 100%); }
+.sheet.sunset { background: radial-gradient(90% 50% at 70% 20%, #d6457f 0%, rgba(214,69,127,0) 70%), linear-gradient(172deg, #c9733b 0%, #d64d7c 38%, #e8a487 70%, #efe3b4 100%); }
+.sheet.ocean { background: radial-gradient(60% 34% at 50% 26%, #050a26 0%, #2e48c8 60%, #457bf1 100%); }
+.hugenum { font: 800 96px/1 var(--f-num); text-align: center; font-variant-numeric: tabular-nums; letter-spacing: .02em; text-shadow: 0 0 22px rgba(255,255,255,.35); }
+.unitlbl { text-align: center; font-size: 15px; color: rgba(255,255,255,.85); margin-top: 4px; }
+.ask { font: 400 30px/1.12 var(--f-body); letter-spacing: -.02em; margin: 4px 2px 0; text-wrap: balance; }
+.hint { margin: 0 2px; font-size: 13px; color: rgba(255,255,255,.75); }
+.ghostcirc { width: 58px; height: 58px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.55); background: rgba(255,255,255,.08); display: grid; place-items: center; cursor: pointer; flex: none; padding: 0; }
+.ghostcirc.sm { width: 40px; height: 40px; }
+.amounts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.amount { display: flex; align-items: center; gap: 10px; border-radius: 40px; padding: 10px 10px 10px 18px; cursor: pointer; text-align: left;
+  background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: inset 0 1px 0 rgba(255,255,255,.4); }
+.amount .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.amount b { font: 800 24px/1 var(--f-num); }
+.amount b small { font: 500 11px var(--f-body); margin-left: 2px; }
+.amount span { font-size: 12px; color: rgba(255,255,255,.85); }
+.pillcta { display: flex; align-items: center; justify-content: space-between; gap: 12px; align-self: center; min-width: 210px; border: 0; cursor: pointer;
+  border-radius: 999px; padding: 7px 7px 7px 22px; font-size: 15px; background: rgba(40,10,30,.42); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.pillcta .plus { width: 40px; height: 40px; border-radius: 50%; background: var(--fg); color: #111; display: grid; place-items: center; }
+.pillcta.dark { background: rgba(10,8,30,.55); border: 1px solid rgba(255,255,255,.12); flex: 1; }
+.panel { background: rgba(8,8,12,.55); border: 1px solid rgba(255,255,255,.1); border-radius: 28px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.center { justify-content: center; }
+
+/* ruler slider */
+.rswrap { position: relative; }
+.rswrap::before { content: ""; position: absolute; left: 50%; top: 0; z-index: 2; transform: translateX(-6px); border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid var(--signal); pointer-events: none; }
+.rswrap::after { content: ""; position: absolute; left: 50%; top: 6px; z-index: 2; width: 3px; height: 40px; margin-left: -1.5px; border-radius: 2px; background: var(--signal); box-shadow: 0 0 10px rgba(230,238,108,.7); pointer-events: none; }
+.rs { height: 70px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent); mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent); cursor: grab; }
+.rs::-webkit-scrollbar { display: none; }
+.rs .track { display: flex; height: 100%; width: max-content; }
+.rs .pad { flex: none; height: 100%; }
+.rs .s { flex: none; width: var(--sp); height: 100%; position: relative; scroll-snap-align: center; cursor: pointer; }
+.rs .s::after { content: ""; position: absolute; left: 50%; top: 14px; width: 1.5px; height: 18px; margin-left: -.75px; background: rgba(255,255,255,.5); border-radius: 1px; }
+.rs .s.major::after { height: 28px; top: 9px; background: rgba(255,255,255,.95); }
+.rs .s em { position: absolute; left: 50%; top: 46px; transform: translateX(-50%); font: 600 10px var(--f-num); font-style: normal; color: rgba(255,255,255,.75); white-space: nowrap; }
+
+/* focus running */
+.orbwrap { position: relative; width: min(300px, 82vw); aspect-ratio: 1; align-self: center; }
+.orbwrap canvas { width: 100%; height: 100%; display: block; }
+.orbwrap .countdown { position: absolute; inset: 0; display: grid; place-content: center; }
+.orbwrap .hugenum { font-size: 72px; }
+.fpanel { border-radius: 36px; padding: 18px 16px 14px; display: flex; flex-direction: column; gap: 16px;
+  background: radial-gradient(80% 90% at 50% 0%, #6b55d8 0%, #2a2a8c 45%, #0d0e3a 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
+.fpanel .r3 { display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 8px; }
+.fpanel .r3 div { display: flex; flex-direction: column; gap: 1px; }
+.fpanel .r3 div:last-child { text-align: right; }
+.fpanel .r3 b { font: 600 16px var(--f-body); }
+.fpanel .r3 span { font-size: 11px; color: rgba(255,255,255,.6); }
+.fpanel .mid { text-align: center; font-size: 13px; color: rgba(255,255,255,.85); align-items: center; }
+.prog { position: relative; height: 34px; }
+.prog::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1.5px dotted rgba(255,255,255,.3); }
+.prog i { position: absolute; left: 0; top: 50%; height: 2.5px; margin-top: -1.25px; background: var(--signal); border-radius: 2px; box-shadow: 0 0 8px rgba(230,238,108,.6); }
+.prog b { position: absolute; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, #c9c9d6 60%, #8d8da8); box-shadow: 0 0 0 5px rgba(255,255,255,.12), 0 4px 12px rgba(0,0,0,.4); }
+.fpanel .r2 { display: flex; gap: 10px; align-items: center; }
+
+/* week curve + pill cards */
+.curve { border-radius: 40px; padding: 20px 16px 16px; display: flex; flex-direction: column; gap: 8px; position: relative; overflow: hidden;
+  background: radial-gradient(90% 60% at 50% 105%, #3fa2b4 0%, rgba(63,162,180,0) 70%), radial-gradient(60% 70% at 105% 60%, #6b4b7c 0%, rgba(107,75,124,0) 70%), linear-gradient(180deg, #1d2333, #182434); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.curve h2 { margin: 0 4px; font: 400 19px var(--f-body); }
+.curve svg { width: 100%; height: auto; display: block; overflow: visible; }
+.curve .dsel { display: grid; grid-template-columns: repeat(7, 1fr); }
+.curve .dsel button { width: 34px; height: 34px; justify-self: center; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: transparent; font-size: 11px; cursor: pointer; padding: 0; }
+.curve .dsel button[aria-pressed="true"] { background: var(--fg); color: #111; border-color: var(--fg); }
+.curve .dsel button:disabled { opacity: .3; cursor: default; }
+.curve .range { display: flex; justify-content: center; align-items: center; gap: 14px; font-size: 13px; color: rgba(255,255,255,.8); }
+.curve .range button { border: 0; background: none; padding: 6px; cursor: pointer; display: grid; place-items: center; }
+.curve .range button:disabled { opacity: .25; }
+.pcard { border-radius: 44px; padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; position: relative; overflow: hidden; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+.pcard h3 { margin: 0; text-align: center; font: 400 12px var(--f-body); color: rgba(255,255,255,.85); }
+.pcard .pr { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; }
+.pcard .pn { font: 800 30px/1 var(--f-num); }
+.pcard .pn small { font: 500 11px var(--f-body); margin-left: 2px; color: rgba(255,255,255,.75); }
+.delta { font: 600 11px var(--f-body); padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,.55); white-space: nowrap; }
+.pc-pink { background: radial-gradient(90% 80% at 50% 110%, #2a1a14 0%, rgba(42,26,20,0) 60%), linear-gradient(170deg, #f06fd0 0%, #c4466a 60%, #6d2d2a 100%); }
+.pc-indigo { background: radial-gradient(100% 90% at 50% 0%, #6a70c8 0%, #2c2f7c 55%, #14163a 100%); }
+.pc-sun { background: linear-gradient(175deg, #b5402c 0%, #e0612a 50%, #f0b45b 100%); }
+.pc-teal { background: radial-gradient(100% 90% at 50% 0%, #49b8a8 0%, #1b6d6b 55%, #0d2b2c 100%); }
+@media (prefers-reduced-motion: no-preference) {
+  .impulse svg.spark { animation: twinkle 1.8s ease-in-out infinite alternate; }
+  .hugenum { animation: dotin .5s cubic-bezier(.2,1.3,.4,1) both; }
+  .amount:active, .ghostcirc:active, .pillcta:active { transform: scale(.94); }
+  .amount, .ghostcirc, .pillcta { transition: transform .15s; }
+}
+@media (max-width: 480px) {
+  .wrap { padding-inline: 0; padding-block: 0; }
+  .phone { border-radius: 0; max-width: none; box-shadow: none; padding-inline: 20px; padding-top: 22px; min-height: 100vh; }
+  .island { display: none; }
+  .day { width: 36px; height: 36px; }
+  .seg button { padding: 8px 10px; }
+  .round { width: 40px; height: 40px; }
+}
+@media (max-width: 370px) {
+  .day { width: 32px; height: 32px; font-size: 11px; }
+  .num { font-size: 34px; }
+  .tile.sq { aspect-ratio: auto; min-height: 150px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tile, .day, .bar b { transition: background .25s, box-shadow .25s, color .2s, height .3s; }
+  .orb i { animation: breathe 5s ease-in-out infinite alternate; }
+}
+@keyframes breathe { from { filter: brightness(.92); } to { filter: brightness(1.12); } }
+@media (prefers-reduced-motion: no-preference) {
+  .tile { transition: transform .18s cubic-bezier(.2,.8,.2,1), background .25s, box-shadow .25s; }
+  .tile:has(.hit:active) { transform: scale(.97); }
+  .corner, .step, .send, .chip, .cta, .day, .seg button { transition: transform .15s, background .2s, color .2s; }
+  .corner:active, .step:active, .send:active, .chip:active, .cta:active, .day:active { transform: scale(.88); }
+  .enter .head, .enter .days, .enter .label, .enter .tile { animation: rise .6s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 40ms); }
+  .enter .wave path { stroke-dasharray: 900; animation: draw 1.3s cubic-bezier(.3,.7,.2,1) both .15s; }
+  .enter .ring circle:last-child, .ringbtn circle:last-child { animation: arc 1.1s cubic-bezier(.3,.7,.2,1) both .2s; }
+  .enter .bar b { transform-origin: bottom; animation: grow .7s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(.2s + var(--b, 0) * 50ms); }
+  .enter .dots7 i, .enter .lane i { animation: dotin .5s cubic-bezier(.2,1.4,.4,1) both .35s; }
+  .glow .vis svg circle:nth-child(3n) { animation: twinkle 2.2s ease-in-out infinite alternate; }
+  .glow .vis svg circle:nth-child(4n+1) { animation: twinkle 3.1s ease-in-out infinite alternate-reverse; }
+  .aura { animation: auraPulse 4.5s ease-in-out infinite; }
+  .sphere { animation: float 5s ease-in-out infinite, breathe 5s ease-in-out infinite alternate; }
+  .badge .live, .island .dot.on { animation: blink 1.4s ease-in-out infinite; }
+  .running .orb i { animation: breathe 1.6s ease-in-out infinite alternate; }
+  .pop { animation: pop .6s cubic-bezier(.2,1.5,.4,1); }
+  .pop::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.75), 0 0 46px color-mix(in srgb, var(--c) 90%, transparent); animation: flash .9s ease-out forwards; }
+  .scrim.anim { animation: fade .25s ease-out both; }
+  .scrim.anim .sheet { animation: up .42s cubic-bezier(.2,.9,.2,1) both; }
+  .seg button[aria-selected="true"] { animation: segin .3s ease-out; }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(16px) scale(.97); } }
+@keyframes draw { from { stroke-dashoffset: 900; } to { stroke-dashoffset: 0; } }
+@keyframes arc { from { stroke-dasharray: 0 999; } }
+@keyframes grow { from { transform: scaleY(0); } }
+@keyframes dotin { from { transform: scale(0); opacity: 0; } }
+@keyframes twinkle { from { opacity: 1; } to { opacity: .35; } }
+@keyframes auraPulse { 50% { transform: scale(1.06); opacity: .8; } }
+@keyframes float { 50% { transform: translateY(-6px); } }
+@keyframes blink { 50% { opacity: .35; } }
+@keyframes pop { 0% { transform: scale(.93); } 55% { transform: scale(1.035); } 100% { transform: none; } }
+@keyframes flash { to { opacity: 0; transform: scale(1.06); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes up { from { transform: translateY(60px); opacity: .4; } }
+@keyframes segin { from { transform: scale(.9); } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <main class="phone" id="app">
+    <div class="island" aria-hidden="true"><span class="dot" id="liveDot"></span></div>
+    <div class="top">
+      <button class="round" id="todayBtn" aria-label="Zu heute springen" title="Heute">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3m0 0 4.5-4.5M3 8l4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="brand" id="brand">Heute</div>
+      <div class="round ringbtn" id="ringBtn" aria-hidden="true"></div>
+    </div>
+    <section id="view"></section>
+    <p class="status" id="status">Lädt …</p>
+  </main>
+</div>
+<nav class="tabbar" aria-label="Navigation"><div class="tb-glass" role="tablist">
+  <span class="tb-ind" id="tbInd" aria-hidden="true"></span>
+  <button role="tab" id="tab-heute" data-tab="heute" aria-selected="true" aria-label="Heute"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1v-8.5Z"/></svg></button>
+  <button role="tab" id="tab-ablauf" data-tab="ablauf" aria-selected="false" aria-label="Tagesablauf"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M7 3v18"/><circle cx="7" cy="7" r="2.2" fill="#0000"/><circle cx="7" cy="16" r="2.2" fill="#0000"/><path d="M12 6h8M12 8.5h5M12 15h8M12 17.5h5"/></svg></button>
+  <button role="tab" id="tab-woche" data-tab="woche" aria-selected="false" aria-label="Woche"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15c2.5 0 3-6 5.5-6s3 8 5.5 8 3-11 5.5-11c1 0 1.5.7 1.5.7"/><path d="M3 20h18" opacity=".5"/></svg></button>
+  <button role="tab" id="tab-journal" data-tab="journal" aria-selected="false" aria-label="Journal"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h10.5a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H6a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1Z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/></svg></button>
+  
+</div></nav>
+<div id="sheetRoot"></div>
+
+<script>
+(() => {
+  // ---------- constants ----------
+  const DEFAULT_CONFIG = {
+    habits: [
+      { id: "h1", name: "Morgens ohne Handy" },
+      { id: "h2", name: "30 Min. Bewegung" },
+      { id: "h3", name: "Content gepostet" },
+      { id: "h4", name: "Inbox auf null" },
+      { id: "h5", name: "20 Seiten lesen" },
+      { id: "h6", name: "Vor 23:30 ins Bett" }
+    ],
+    waterGoal: 8,
+    postGoal: 4,
+    endHour: 19,
+    quotes: []
+  };
+  const DEFAULT_BIZ = { pipeline: [], shoots: [], offers: [] };
+  const STAGES = ["Idee", "Dreh", "Schnitt", "Online"];
+  const PLATFORMS = ["Instagram", "TikTok", "YouTube", "LinkedIn"];
+  const OFFER_STATES = ["Offen", "Gewonnen", "Verloren"];
+  const COLORS = ["c-violet", "c-teal", "c-rose", "c-cobalt", "c-sage", "c-ember", "c-plum"];
+  const QUOTES = [
+    "Konstanz schlägt Motivation.",
+    "Das beste Licht ist das, in dem du heute anfängst.",
+    "Fertig ist besser als perfekt. Export drücken.",
+    "Kleine Schritte, große Totale.",
+    "Du musst nicht schnell sein. Nur nicht stehen bleiben.",
+    "Disziplin ist, was du tust, wenn keiner zuschaut.",
+    "Heute zählt. Gestern ist schon im Archiv.",
+    "Was du scharf stellst, wird groß.",
+    "Erst Rohschnitt, dann Feinschliff.",
+    "Energie folgt Aufmerksamkeit."
+  ];
+  const MOODS = ["Offen", "Zäh", "Okay", "Gut", "Stark", "On fire"];
+  const WD = ["M", "D", "M", "D", "F", "S", "S"];
+  const WD_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
+  const MONTHS = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."];
+
+  const svg = (d, w = 16, sw = 1.7) => `<svg width="${w}" height="${w}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const I = {
+    plus: svg('<path d="M8 3v10M3 8h10"/>'), plusLg: svg('<path d="M8 3v10M3 8h10"/>', 22, 1.4),
+    minus: svg('<path d="M3 8h10"/>'), x: svg('<path d="m4 4 8 8M12 4l-8 8"/>', 14),
+    left: svg('<path d="m10 3-5 5 5 5"/>'), right: svg('<path d="m6 3 5 5-5 5"/>'), up: svg('<path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/>'),
+    spark: '<svg class="spark" width="26" height="26" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M10 2.5c.6 3.9 2.6 5.9 6.5 6.5-3.9.6-5.9 2.6-6.5 6.5-.6-3.9-2.6-5.9-6.5-6.5 3.9-.6 5.9-2.6 6.5-6.5Z"/><path d="M18.5 13.5c.3 2 1.3 3 3.3 3.3-2 .3-3 1.3-3.3 3.3-.3-2-1.3-3-3.3-3.3 2-.3 3-1.3 3.3-3.3Z"/></svg>',
+    redo: svg('<path d="M13 8a5 5 0 1 1-1.5-3.6"/><path d="M13 3v3h-3"/>'), check: svg('<path d="m3.5 8.5 3 3 6-7"/>', 16, 2),
+    play: '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.6-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5Z" fill="currentColor"/></svg>',
+    stop: '<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" rx="2" fill="currentColor"/></svg>'
+  };
+
+  // ---------- state ----------
+  let config = clone(DEFAULT_CONFIG);
+  let biz = clone(DEFAULT_BIZ);
+  let days = {};
+  let tab = "heute";
+  let selected = keyOf(new Date());
+  let quoteOffset = 0;
+  let mode = "local";
+  let coll = null;
+  let sheet = null;
+  let animateNext = true, enterTimer = 0, popKey = null, lastRing = -1, shownTab = "heute";
+  const TABS = ["heute", "ablauf", "woche", "journal"];
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+  function keyOf(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function dateOf(k) { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); }
+  function addDays(k, n) { const d = dateOf(k); d.setDate(d.getDate() + n); return keyOf(d); }
+  function wdIndex(k) { return (dateOf(k).getDay() + 6) % 7; }
+  function weekKeys(k) { const s = addDays(k, -wdIndex(k)); return [0, 1, 2, 3, 4, 5, 6].map(i => addDays(s, i)); }
+  function todayKey() { return keyOf(new Date()); }
+  function label(k) { const d = dateOf(k); return WD_LONG[wdIndex(k)] + ", " + d.getDate() + ". " + MONTHS[d.getMonth()]; }
+  function seed(s) { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; }
+  function day(k) { return days[k] || { done: {}, water: 0, mood: 0, focusMin: 0, focusStart: null, notes: [] }; }
+  function ensureDay(k) { if (!days[k]) days[k] = day(k); const d = days[k]; d.done ||= {}; d.notes ||= []; return d; }
+  function doneCount(k) { const d = day(k); return config.habits.filter(h => d.done && d.done[h.id]).length; }
+  function pct(k) { const n = config.habits.length; return n ? Math.round(doneCount(k) / n * 100) : 0; }
+  function focusTotal(k) { const d = day(k); let m = d.focusMin || 0; if (d.focusStart) m += Math.min((Date.now() - d.focusStart) / 60000, d.focusPlan || 1e9); return m; }
+  function waterMl(k) { const d = day(k); return d.waterMl != null ? d.waterMl : (d.water || 0) * 250; }
+  function goalMl() { return config.waterGoalMl || (config.waterGoal || 8) * 250; }
+  function liters(ml) { return (ml / 1000).toFixed(ml % 1000 === 0 ? 0 : ml % 100 === 0 ? 1 : 2).replace(".", ","); }
+  function mmss(ms) { const s = Math.max(0, Math.round(ms / 1000)); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
+  function focusLeft(d) { return d.focusPlan ? d.focusStart + d.focusPlan * 60000 - Date.now() : null; }
+  function rslider(id, min, max, step, value, sp, major, lab) {
+    let h = "";
+    for (let v = min, i = 0; v <= max + 1e-9; v += step, i++) {
+      const mj = i % major === 0;
+      h += `<div class="s${mj ? " major" : ""}" data-v="${v}">${mj && lab ? `<em>${lab(v)}</em>` : ""}</div>`;
+    }
+    return `<div class="rswrap"><div class="rs" id="${id}" data-min="${min}" data-max="${max}" data-step="${step}" data-sp="${sp}" data-val="${value}" style="--sp:${sp}px" role="slider" aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${value}" tabindex="0"><div class="track"><i class="pad"></i>${h}<i class="pad"></i></div></div></div>`;
+  }
+  function initSliders(root) {
+    root.querySelectorAll(".rs").forEach(el => {
+      const min = +el.dataset.min, max = +el.dataset.max, step = +el.dataset.step, sp = +el.dataset.sp;
+      const half = (el.clientWidth || 300) / 2 - sp / 2;
+      el.querySelectorAll(".pad").forEach(p => p.style.width = half + "px");
+      const toLeft = v => Math.round((v - min) / step) * sp;
+      el.scrollLeft = toLeft(+el.dataset.val);
+      let t = 0, last = +el.dataset.val;
+      const read = () => Math.min(max, Math.max(min, min + Math.round(el.scrollLeft / sp) * step));
+      el.addEventListener("scroll", () => {
+        const v = read();
+        if (v !== last) { last = v; el.setAttribute("aria-valuenow", v); sliderInput(el.id, v); }
+        clearTimeout(t); t = setTimeout(() => sliderCommit(el.id, read()), 180);
+      }, { passive: true });
+      el.addEventListener("click", e => { const s = e.target.closest(".s"); if (s) el.scrollTo({ left: toLeft(+s.dataset.v), behavior: "smooth" }); });
+      el.addEventListener("keydown", e => {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        e.preventDefault(); el.scrollTo({ left: toLeft(Math.min(max, Math.max(min, read() + (e.key === "ArrowRight" ? step : -step)))), behavior: "smooth" });
+      });
+      el.addEventListener("pointerdown", e => { if (e.pointerType !== "mouse") return; rsDrag = { el, x: e.clientX, l: el.scrollLeft, snap: () => el.scrollTo({ left: toLeft(read()), behavior: "smooth" }) }; el.style.scrollSnapType = "none"; });
+      el.setSlider = v => el.scrollTo({ left: toLeft(v), behavior: "smooth" });
+    });
+  }
+  let rsDrag = null;
+  window.addEventListener("pointermove", e => { if (rsDrag) rsDrag.el.scrollLeft = rsDrag.l - (e.clientX - rsDrag.x); });
+  window.addEventListener("pointerup", () => { if (!rsDrag) return; const d = rsDrag; rsDrag = null; d.el.style.scrollSnapType = ""; d.snap(); });
+  function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+  function sliderInput(id, v) {
+    if (id === "fcPlan") setText("fcPlanNum", v);
+    if (id === "wGoal") setText("wGoalTxt", liters(v) + " L");
+    if (id === "endH") { setText("endTxt", v); }
+  }
+  function sliderCommit(id, v) {
+    if (id === "fcPlan" && config.focusPlan !== v) { config.focusPlan = v; save("config"); }
+    if (id === "wGoal" && config.waterGoalMl !== v) { config.waterGoalMl = v; save("config"); }
+    if (id === "endH" && config.endHour !== v) { config.endHour = v; save("config"); setText("endLeft", dayLeft()); }
+  }
+  let actx = null;
+  function unlockAudio() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.resume) actx.resume(); } catch (e) {} }
+  function chime() {
+    if (!actx) return;
+    try {
+      const t0 = actx.currentTime;
+      [660, 880, 1320].forEach((f, i) => {
+        const o = actx.createOscillator(), g = actx.createGain(), at = t0 + i * .18;
+        o.frequency.value = f; g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(.22, at + .02); g.gain.exponentialRampToValueAtTime(.0001, at + .6);
+        o.connect(g); g.connect(actx.destination); o.start(at); o.stop(at + .65);
+      });
+    } catch (e) {}
+  }
+  let sphereRAF = 0;
+  const calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function drawSphere(t) {
+    const c = document.getElementById("fcCanvas");
+    if (!c) { sphereRAF = 0; return; }
+    const dpr = window.devicePixelRatio || 1, S = c.clientWidth || 280;
+    if (c.width !== Math.round(S * dpr)) { c.width = c.height = Math.round(S * dpr); }
+    const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, S, S);
+    const d = day(todayKey()), prog = d.focusStart && d.focusPlan ? Math.min(1, (Date.now() - d.focusStart) / (d.focusPlan * 60000)) : 0;
+    const R = S * .44 * (1 + .025 * Math.sin((t || 0) / 900)), cx = S / 2, cy = S / 2, step = S / 36;
+    const lx = Math.cos((t || 0) / 2600) * .55, ly = -.5, lz = .67;
+    g.fillStyle = "#fff";
+    for (let y = step / 2; y < S; y += step) for (let x = step / 2; x < S; x += step) {
+      const dx = (x - cx) / R, dy = (y - cy) / R, r2 = dx * dx + dy * dy;
+      if (r2 > 1) continue;
+      const z = Math.sqrt(1 - r2), b = Math.max(0, dx * lx + dy * ly + z * lz);
+      const filled = (cy + R - y) / (2 * R) <= prog;
+      const rad = step * .4 * Math.pow(b, 1.2) * (filled ? 1.15 : .7);
+      if (rad < .3) continue;
+      g.globalAlpha = filled ? .55 + .45 * b : .18 + .3 * b;
+      g.beginPath(); g.arc(x, y, rad, 0, 6.283); g.fill();
+    }
+    g.globalAlpha = 1;
+    sphereRAF = calm ? 0 : requestAnimationFrame(drawSphere);
+  }
+  function finishFocus(k, auto) {
+    const d = ensureDay(k); if (!d.focusStart) return;
+    d.sessions ||= [];
+    const end = auto && d.focusPlan ? d.focusStart + d.focusPlan * 60000 : Date.now();
+    d.focusMin = (d.focusMin || 0) + (end - d.focusStart) / 60000;
+    d.sessions.push({ id: uid(), s: d.focusStart, e: end });
+    d.focusStart = null; d.focusPlan = null;
+    save(k);
+  }
+  function startFocus(k) { const d = ensureDay(k); d.focusStart = Date.now(); d.focusPlan = config.focusPlan || 25; unlockAudio(); save(k); }
+  function impulses() {
+    const t = todayKey(), d = day(t), out = [], left = config.habits.filter(h => !(d.done || {})[h.id]);
+    if (left.length) out.push(left.length === 1 ? `Nur noch „${left[0].name}“ offen, dann ist der Tag komplett.` : `${left.length} Habits offen. Starte mit „${left[0].name}“.`);
+    else if (config.habits.length) out.push("Alle Habits erledigt. Stark, genieß den Feierabend.");
+    const wl = goalMl() - waterMl(t);
+    if (wl > 0) out.push(`Noch ${liters(wl)} L Wasser bis zu deinem Ziel.`);
+    const fm = Math.floor(focusTotal(t)), now = new Date();
+    if (fm < 50 && now.getHours() < (config.endHour || 19)) out.push(`Erst ${fm} min Fokus. Plan vor ${config.endHour || 19} Uhr noch einen ${config.focusPlan || 25}-Min-Block ein.`);
+    const sh = biz.shoots.filter(x => x.date >= t && daysUntil(x.date) <= 3).sort((a, b) => a.date < b.date ? -1 : 1)[0];
+    if (sh) out.push(`Dreh „${sh.client}“ ${untilText(daysUntil(sh.date))}. Shotlist und Akkus checken.`);
+    const old = biz.offers.filter(o => o.status === 0 && o.at && daysUntil(o.at) <= -5).sort((a, b) => a.at < b.at ? -1 : 1)[0];
+    if (old) out.push(`Angebot an ${old.client} ist seit ${-daysUntil(old.at)} Tagen offen. Zeit zum Nachfassen.`);
+    const pl = (config.postGoal || 4) - weekPosts(t).length;
+    if (pl > 0 && wdIndex(t) >= 3) out.push(`Noch ${pl} ${pl === 1 ? "Post" : "Posts"} bis zum Wochenziel.`);
+    const st = streak();
+    if (st >= 3) out.push(`${st} Tage Streak. Lass sie heute nicht abreißen.`);
+    return out;
+  }
+  const PHASES = [
+    { id: "morgen", label: "Morgen", title: "Vorbereiten", from: () => 6, to: () => 10, bg: "linear-gradient(180deg, #050507 0%, #050507 32%, #3a3cc9 56%, #f0c63c 80%, #f08a2c 100%)" },
+    { id: "tag", label: "Tag", title: "Fokussieren", from: () => 10, to: () => config.endHour || 19, bg: "linear-gradient(180deg, #050507 0%, #050507 32%, #5a3ee0 54%, #e0458f 78%, #f2903a 100%)" },
+    { id: "abend", label: "Abend", title: "Abschalten", from: () => config.endHour || 19, to: () => 22, bg: "linear-gradient(180deg, #050507 0%, #050507 32%, #3a3cc9 52%, #3ec6e0 76%, #d8f24a 100%)" },
+    { id: "nacht", label: "Nacht", title: "Schlafen", from: () => 22, to: () => 6, bg: "linear-gradient(180deg, #050507 0%, #050507 34%, #32d88a 56%, #d8f24a 78%, #5ee0e8 100%)" }
+  ];
+  function habitPhase(h) {
+    if (h.phase) return h.phase;
+    const n = h.name.toLowerCase();
+    if (/morgen|früh|aufsteh|handy/.test(n)) return "morgen";
+    if (/bett|schlaf|nacht/.test(n)) return "nacht";
+    if (/lesen|abend|journal|tagebuch|meditat/.test(n)) return "abend";
+    return "tag";
+  }
+  function phaseNow() {
+    const h = new Date().getHours() + new Date().getMinutes() / 60;
+    const i = PHASES.findIndex(p => { const a = p.from(), b = p.to(); return a < b ? h >= a && h < b : h >= a || h < b; });
+    return i < 0 ? 1 : i;
+  }
+  function plotDots(vals, max) {
+    const W = 260, H = 62, mx = Math.max(max || 1, ...vals, 1);
+    let g = "";
+    vals.forEach((v, i) => {
+      const x = 14 + i * ((W - 28) / 6);
+      for (let r = 0; r < 6; r++) g += `<circle cx="${x.toFixed(1)}" cy="${(8 + r * 9.5).toFixed(1)}" r="1.3" fill="rgba(255,255,255,.28)"/>`;
+      const y = 55.5 - Math.min(1, v / mx) * 47.5;
+      g += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${i === 6 ? 4.2 : 3}" fill="#fff"${i === 6 ? ' style="filter:drop-shadow(0 0 4px #fff)"' : ""}/>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${g}</svg>`;
+  }
+  function heroCarousel(k) {
+    const t = todayKey(), last = [6, 5, 4, 3, 2, 1, 0].map(i => addDays(t, -i));
+    const d = day(k), wp = weekPosts(k).length;
+    const cards = [
+      { cls: "bc-violet", lab: "Habits heute", num: pct(k), unit: `% erledigt · ${doneCount(k)} von ${config.habits.length}`, plot: plotDots(last.map(pct), 100), act: 'data-act="tab" data-tab="woche"' },
+      { cls: "bc-teal", lab: "Fokuszeit", num: Math.floor(focusTotal(k)), unit: d.focusStart ? "min · Timer läuft" : "min fokussiert", plot: plotDots(last.map(x => focusTotal(x)), 60), act: 'data-act="open" data-sheet="focus"' },
+      { cls: "bc-sun", lab: "Wasser", num: liters(waterMl(k)), unit: `Liter von ${liters(goalMl())} L`, plot: plotDots(last.map(waterMl), goalMl()), act: 'data-act="open" data-sheet="water"' },
+      { cls: "bc-blue", lab: "Posts diese Woche", num: wp, unit: `von ${config.postGoal || 4} geplant`, plot: plotDots(last.map(x => (day(x).posts || []).length), 2), act: 'data-act="open" data-sheet="posts"' }
+    ];
+    return `<div class="carousel hero" id="carHero" data-start="0"><div class="ctrack">${cards.map(c =>
+      `<article class="bigc ${c.cls}" ${c.act} role="button" tabindex="0" aria-label="${c.lab}: ${c.num} ${c.unit}">
+        <div class="bc-top"><span>${c.lab}</span><span class="bc-ic">${I.right}</span></div>
+        <div class="bc-num">${c.num}</div><div class="bc-unit">${c.unit}</div>
+        <div class="bc-plot">${c.plot}</div></article>`).join("")}</div></div>
+      <div class="cdots" data-for="carHero">${cards.map((_, i) => `<i class="${i ? "" : "on"}"></i>`).join("")}</div>`;
+  }
+  function viewAblauf() {
+    const t = todayKey(), d = day(t), now = new Date(), nowH = now.getHours() + now.getMinutes() / 60, pn = phaseNow();
+    const fm = Math.floor(focusTotal(t)), plan = config.focusPlan || 25, wml = waterMl(t), gml = goalMl();
+    const shootsToday = biz.shoots.filter(s => s.date === t);
+    const pad = h => String(Math.round(h) % 24).padStart(2, "0") + ":00";
+    const cards = PHASES.map((ph, pi) => {
+      const items = [];
+      config.habits.filter(h => habitPhase(h) === ph.id).forEach(h => items.push({ title: h.name, sub: "Habit", done: !!(d.done || {})[h.id], act: `data-act="toggle" data-id="${h.id}"` }));
+      if (ph.id === "morgen") items.unshift({ title: "0,5 L Wasser zum Start", sub: liters(Math.min(wml, 500)) + " von 0,5 L", done: wml >= 500, act: 'data-act="open" data-sheet="water"' });
+      if (ph.id === "tag") {
+        items.unshift({ title: `Fokusblock ${plan} min`, sub: d.focusStart ? "läuft gerade" : fm + " min heute geschafft", done: fm >= plan, act: 'data-act="open" data-sheet="focus"' });
+        shootsToday.forEach(s => items.push({ title: "Dreh: " + s.client, sub: s.time ? "ab " + s.time : "heute", done: false, act: 'data-act="open" data-sheet="shoots"' }));
+        const pl = (config.postGoal || 4) - weekPosts(t).length;
+        if (pl > 0) items.push({ title: "Content posten", sub: `noch ${pl} bis zum Wochenziel`, done: false, act: 'data-act="open" data-sheet="posts"' });
+      }
+      if (ph.id === "abend") {
+        items.unshift({ title: "Wasserziel erreichen", sub: liters(wml) + " von " + liters(gml) + " L", done: wml >= gml, act: 'data-act="open" data-sheet="water"' });
+        items.push({ title: "Tag im Journal festhalten", sub: (d.notes || []).length + " Notizen heute", done: (d.notes || []).length > 0, act: 'data-act="tab" data-tab="journal"' });
+      }
+      const rel = pi === pn ? "Jetzt" : pi < pn ? "Früher" : "Später";
+      const a = ph.from(), b = ph.to(), span = (b - a + 24) % 24 || 24;
+      const inPh = pi === pn ? (((nowH - a + 24) % 24) / span) : null;
+      return `<article class="phase" style="--pg:${ph.bg}" aria-label="${ph.title}, ${rel}">
+        <div class="ph-head"><h2>${ph.title}<span>${rel}</span></h2>
+          <div class="ph-btns"><button data-act="tab" data-tab="woche" aria-label="Wochenstatistik">${svg('<path d="M4 13V9M8 13V4M12 13V7"/>')}</button><button data-act="edit-habits" aria-label="Habits bearbeiten">${I.plus}</button></div></div>
+        <div class="ph-body">
+          <div class="ph-items">${items.length ? items.map(it => `<button class="ph-item${it.done ? " done" : ""}" ${it.act}><span class="grow"><b>${esc(it.title)}</b><span>${esc(it.sub)}</span></span><span class="ck">${it.done ? I.check : ""}</span></button>`).join("") : `<div class="ph-empty">Noch nichts geplant. Ordne Habits über ihre Detailansicht der Tageszeit „${ph.label}“ zu.</div>`}</div>
+          <div class="ph-line"><span>${pad(a)}</span><div class="rail">${items.map((it, i) => `<i class="${it.done ? "on" : ""}" style="top:${((i + 1) / (items.length + 1) * 100).toFixed(1)}%"></i>`).join("")}${inPh !== null ? `<em style="top:${(inPh * 100).toFixed(1)}%"></em>` : ""}</div><span>${pad(b)}</span></div>
+        </div>
+      </article>`;
+    });
+    return `
+      <div class="head"><h1>Dein Tag</h1><div class="sub">${esc(label(t))} · ${PHASES[pn].title} ist dran</div></div>
+      <div class="carousel phases" id="carPhases" data-start="${pn}"><div class="ctrack">${cards.join("")}</div></div>
+      <div class="cdots" data-for="carPhases">${PHASES.map((_, i) => `<i class="${i === pn ? "on" : ""}"></i>`).join("")}</div>`;
+  }
+  const carPos = {};
+  function initCarousels(root) {
+    root.querySelectorAll(".carousel").forEach(c => {
+      const cards = [...c.querySelectorAll(".ctrack > *")], dots = document.querySelectorAll(`.cdots[data-for="${c.id}"] i`);
+      const center = el => el.offsetLeft + el.offsetWidth / 2 - c.clientWidth / 2;
+      const fx = () => {
+        const mid = c.scrollLeft + c.clientWidth / 2; let best = 0, bd = 1e9;
+        cards.forEach((el, i) => {
+          const dd = (el.offsetLeft + el.offsetWidth / 2 - mid) / el.offsetWidth;
+          if (Math.abs(dd) < bd) { bd = Math.abs(dd); best = i; }
+          if (!calm) { const a = Math.min(1, Math.abs(dd)); el.style.transform = `perspective(1000px) rotateY(${(-dd * 9).toFixed(2)}deg) scale(${(1 - a * .07).toFixed(3)})`; el.style.opacity = (1 - a * .35).toFixed(3); }
+        });
+        dots.forEach((dt, i) => dt.classList.toggle("on", i === best));
+        carPos[c.id] = c.scrollLeft;
+      };
+      c.scrollLeft = carPos[c.id] != null ? carPos[c.id] : Math.max(0, center(cards[+c.dataset.start || 0] || cards[0]));
+      c.addEventListener("scroll", () => requestAnimationFrame(fx), { passive: true });
+      fx();
+    });
+  }
+  let scrollQueued = false;
+  function scrollFx() {
+    scrollQueued = false;
+    const y = window.scrollY, H = window.innerHeight;
+    document.querySelector(".top").classList.toggle("scrolled", y > 12);
+    if (calm) return;
+    const head = document.querySelector("#view .calhead, #view .head");
+    if (head) { const p = Math.min(1, y / 320); head.style.scale = (1 - p * .04).toFixed(3); head.style.opacity = (1 - p * .45).toFixed(3); head.style.translate = `0 ${(y * .15).toFixed(1)}px`; }
+    document.querySelectorAll("#view .grid > *, #view .label, #view .curve, #view .impulse, #view .hpill, #view .stack, #view .qline").forEach(el => {
+      const r = el.getBoundingClientRect(), p = Math.max(0, Math.min(1, (H - r.top) / (H * .32)));
+      el.style.scale = (.95 + .05 * p).toFixed(3); el.style.translate = `0 ${((1 - p) * 18).toFixed(1)}px`; el.style.opacity = (.45 + .55 * p).toFixed(3);
+    });
+  }
+  window.addEventListener("scroll", () => { if (!scrollQueued) { scrollQueued = true; requestAnimationFrame(scrollFx); } }, { passive: true });
+  window.addEventListener("resize", () => requestAnimationFrame(scrollFx));
+  function calHeader(mode) {
+    const t = todayKey(), wk = weekKeys(selected), d = dateOf(selected);
+    const MONTH_LONG = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+    const title = mode === "woche" ? "Woche" : selected === t ? "Heute" : WD_LONG[wdIndex(selected)];
+    const sub = mode === "woche" ? `${dateOf(wk[0]).getDate()}. – ${dateOf(wk[6]).getDate()}. ${MONTH_LONG[dateOf(wk[6]).getMonth()]}` : `${d.getDate()}. ${MONTH_LONG[d.getMonth()]}${selected === t ? "" : " · Rückblick"}`;
+    const extra = mode !== "woche" && selected === t ? `<button class="ch-link" data-act="open" data-sheet="clock"><i></i><span id="dayLeft">${dayLeft()}</span></button>` : "";
+    return `<section class="calhead">
+      <div class="ch-top"><div><h1>${title}</h1><div class="ch-sub">${sub}</div>${extra}</div>
+        <div class="ch-nav"><button data-act="weeknav" data-n="-1" aria-label="Vorherige Woche">${I.left}</button><button data-act="weeknav" data-n="1" aria-label="Nächste Woche" ${wk[6] >= t ? "disabled" : ""}>${I.right}</button></div></div>
+      <div class="cal7" role="group" aria-label="Tag wählen">${WD.map(w => `<span class="wd">${w}</span>`).join("")}${wk.map(k =>
+        `<button data-day="${k}" aria-pressed="${k === selected}" ${k > t ? "disabled" : ""} aria-label="${esc(label(k))}">${dateOf(k).getDate()}${pct(k) === 100 && k <= t ? '<span class="pip"></span>' : ""}</button>`).join("")}</div>
+    </section>`;
+  }
+  function smooth(pts) {
+    if (pts.length < 2) return pts.length ? `M${pts[0][0]} ${pts[0][1]}` : "";
+    let p = `M${pts[0][0]} ${pts[0][1]}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i - 1] || pts[i], b = pts[i], c = pts[i + 1], e = pts[i + 2] || c;
+      p += ` C${(b[0] + (c[0] - a[0]) / 6).toFixed(1)} ${(b[1] + (c[1] - a[1]) / 6).toFixed(1)} ${(c[0] - (e[0] - b[0]) / 6).toFixed(1)} ${(c[1] - (e[1] - b[1]) / 6).toFixed(1)} ${c[0]} ${c[1]}`;
+    }
+    return p;
+  }
+  function streak() {
+    let k = todayKey(), n = 0;
+    if (pct(k) < 50) k = addDays(k, -1);
+    while (pct(k) >= 50 && n < 999) { n++; k = addDays(k, -1); }
+    return n;
+  }
+  function habitStreak(id) {
+    let k = todayKey(), n = 0;
+    if (!(day(k).done || {})[id]) k = addDays(k, -1);
+    while ((day(k).done || {})[id] && n < 999) { n++; k = addDays(k, -1); }
+    return n;
+  }
+  function noteCount() { return Object.values(days).reduce((s, d) => s + ((d && d.notes) || []).length, 0); }
+  function cfg() {
+    for (const k in DEFAULT_CONFIG) if (config[k] === undefined) config[k] = clone(DEFAULT_CONFIG[k]);
+    for (const k in DEFAULT_BIZ) if (!Array.isArray(biz[k])) biz[k] = [];
+  }
+  function allQuotes() { return QUOTES.concat((config.quotes || []).map(q => q.text)); }
+  function habitColor(h, i) { return h.color || COLORS[i % COLORS.length]; }
+  function weekPosts(k) { return weekKeys(k).flatMap(x => (day(x).posts || []).map(p => Object.assign({ day: x }, p))); }
+  function euro(n) { return Math.round(n).toLocaleString("de-DE") + " €"; }
+  function daysUntil(k) { return Math.round((dateOf(k) - dateOf(todayKey())) / 86400000); }
+  function untilText(n) { return n === 0 ? "heute" : n === 1 ? "morgen" : n < 0 ? "vor " + -n + " Tagen" : "in " + n + " Tagen"; }
+  function shortDate(k) { const d = dateOf(k); return WD_LONG[wdIndex(k)].slice(0, 2) + ", " + d.getDate() + ". " + MONTHS[d.getMonth()]; }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+  function gcalUrl(sh) {
+    const d = sh.date.replace(/-/g, "");
+    let dates;
+    if (sh.time) {
+      const [h, m] = sh.time.split(":").map(Number), e = new Date(2000, 0, 1, h + 2, m);
+      const t2 = String(e.getHours()).padStart(2, "0") + String(e.getMinutes()).padStart(2, "0");
+      const endDay = h + 2 >= 24 ? addDays(sh.date, 1).replace(/-/g, "") : d;
+      dates = d + "T" + sh.time.replace(":", "") + "00/" + endDay + "T" + t2 + "00";
+    } else dates = d + "/" + addDays(sh.date, 1).replace(/-/g, "");
+    const q = new URLSearchParams({ action: "TEMPLATE", text: "Dreh: " + sh.client, dates, details: "Fabian Visuals · eingetragen aus Tagwerk", ctz: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Berlin" });
+    return "https://calendar.google.com/calendar/render?" + q.toString();
+  }
+  function parseIcs(text) {
+    const lines = text.replace(/\r\n/g, "\n").replace(/\n[ \t]/g, "").split("\n");
+    const out = []; let ev = null;
+    const un = v => v.replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1").trim();
+    for (const ln of lines) {
+      if (ln === "BEGIN:VEVENT") ev = {};
+      else if (ln === "END:VEVENT") { if (ev && ev.date) out.push(ev); ev = null; }
+      else if (ev) {
+        const i = ln.indexOf(":"); if (i < 0) continue;
+        const key = ln.slice(0, i).split(";")[0].toUpperCase(), val = ln.slice(i + 1);
+        if (key === "SUMMARY") ev.summary = un(val);
+        else if (key === "UID") ev.uid = val.trim();
+        else if (key === "LOCATION") ev.location = un(val);
+        else if (key === "DTSTART") {
+          const m = val.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})\d{0,2}(Z?))?/);
+          if (!m) continue;
+          if (m[4] && m[6]) { const dt = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5])); ev.date = keyOf(dt); ev.time = fmtClock(dt); }
+          else { ev.date = m[1] + "-" + m[2] + "-" + m[3]; if (m[4]) ev.time = m[4] + ":" + m[5]; }
+        }
+      }
+    }
+    return out;
+  }
+  function bestStreak() {
+    let best = 0, run = 0;
+    for (let i = 365; i >= 0; i--) { if (pct(addDays(todayKey(), -i)) >= 50) { run++; best = Math.max(best, run); } else run = 0; }
+    return best;
+  }
+  function bars7(fn, fmt) {
+    const t = todayKey(), ks = [6, 5, 4, 3, 2, 1, 0].map(i => addDays(t, -i)), vals = ks.map(fn), max = Math.max(1, ...vals);
+    return `<div class="bars">${ks.map((k, i) => `<div class="bar${k === t ? " today" : ""}"><span>${fmt(vals[i])}</span><b style="height:${Math.max(6, vals[i] / max * 56)}px"></b><span>${WD[wdIndex(k)]}</span></div>`).join("")}</div>`;
+  }
+
+  // ---------- persistence ----------
+  const pend = {}, busy = {}, timers = {};
+  function docId(k) { return k === "config" || k === "biz" ? k : "d-" + k; }
+  function bodyFor(id) { return id === "config" ? clone(config) : id === "biz" ? clone(biz) : clone(days[id.slice(2)] || {}); }
+  function save(k) {
+    if (mode === "readonly") return;
+    if (mode === "local") { saveLocal(); return; }
+    const id = docId(k);
+    pend[id] = true;
+    clearTimeout(timers[id]);
+    timers[id] = setTimeout(() => flush(id), 400);
+  }
+  async function flush(id) {
+    if (busy[id] || !pend[id]) return;
+    pend[id] = false; busy[id] = true;
+    try { await coll.doc(id).set(bodyFor(id)); setStatus(); }
+    catch (e) {
+      if (e && e.code === "invalid_argument") { mode = "readonly"; setStatus("Nur Lesen · Änderungen werden nicht gespeichert"); }
+      else if (e && e.code === "quota_exceeded") setStatus("Speicher voll · lösche alte Notizen");
+      else setStatus("Speichern hakt · versuche es gleich erneut");
+    }
+    busy[id] = false;
+    if (pend[id]) flush(id);
+  }
+  function saveLocal() { try { localStorage.setItem("tagwerk.v1", JSON.stringify({ config, days, biz })); } catch (e) {} }
+  function loadLocal() {
+    try { const raw = localStorage.getItem("tagwerk.v1"); if (raw) { const s = JSON.parse(raw); if (s.config) config = s.config; if (s.days) days = s.days; if (s.biz) biz = s.biz; } } catch (e) {}
+    cfg();
+  }
+  function setStatus(msg) {
+    document.getElementById("status").textContent = msg ||
+      (mode === "sync" ? "Synchron · auf all deinen Geräten" : mode === "readonly" ? "Nur Lesen" : window.__TAGWERK_PWA__ ? "Auf diesem Gerät gespeichert · Backup in Bearbeiten" : "Nur in diesem Browser gespeichert");
+  }
+  async function connect() {
+    loadLocal(); setStatus(); render();
+    const c = window.claude;
+    if (!c || !c.use) return;
+    const [db, user] = await Promise.all([c.use("db"), c.use("user")]);
+    if (!db || !user) return;
+    const uid = await user.id();
+    if (!uid) return;
+    coll = db.collection("data/users/" + uid);
+    mode = "sync";
+    let first = true;
+    coll.onSnapshot(snap => {
+      if (first && snap.docs.length === 0) {
+        first = false;
+        const local = Object.keys(days).filter(k => days[k] && Object.keys(days[k]).length);
+        if (local.length) { save("config"); save("biz"); local.forEach(save); }
+        setStatus(); render(); return;
+      }
+      first = false;
+      snap.docs.forEach(d => {
+        const id = d.id;
+        if (pend[id] || busy[id]) return;
+        const body = d.data();
+        if (id === "config") { if (body && body.habits) config = clone(body); }
+        else if (id === "biz") { if (body) biz = clone(body); }
+        else if (id.startsWith("d-")) days[id.slice(2)] = clone(body);
+      });
+      cfg(); setStatus(); render();
+    }, () => { mode = "local"; setStatus("Sync getrennt · lokal weiter"); });
+  }
+
+  // ---------- graphics ----------
+  function wave(p) {
+    const W = 360, H = 50, mid = 27, x = Math.max(8, Math.min(W - 8, W * p / 100));
+    let a = "", b = "";
+    for (let i = 0; i <= x; i += 3) {
+      const env = Math.sin(Math.PI * Math.min(1, i / Math.max(x, 1)));
+      a += (i ? "L" : "M") + i + " " + (mid + Math.sin(i / 13) * 12 * env).toFixed(1);
+      b += (i ? "L" : "M") + i + " " + (mid + Math.sin(i / 13 + 1.7) * 9 * env).toFixed(1);
+    }
+    return `<svg class="wave" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+      <path d="${a}" fill="none" stroke="#cdd36a" stroke-width="1.4"/>
+      <path d="${b}" fill="none" stroke="#f4f2f7" stroke-width="1" opacity=".4"/>
+      <path d="M${x} ${mid}L${W} ${mid}" stroke="#f4f2f7" stroke-width="1.3" opacity=".55"/>
+      <path d="M${x - 6} ${mid - 13}L${x + 6} ${mid - 13}L${x} ${mid - 3}Z" fill="#e6ee6c"/></svg>`;
+  }
+  function glyph(id, on, size = 64) {
+    const t = seed(id) % 5; let s = "";
+    for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) {
+      const dx = x - 2, dy = y - 2, d = Math.hypot(dx, dy), m = Math.abs(dx) + Math.abs(dy); let r = 0;
+      if (t === 0) r = d <= 2.3 ? 4 - d * 1.25 : 0;
+      else if (t === 1) r = Math.abs(d - 2) < .5 ? 2.6 : d === 0 ? 3.4 : 0;
+      else if (t === 2) r = dx === 0 || dy === 0 ? 3.6 - (Math.abs(dx) + Math.abs(dy)) * .6 : 1;
+      else if (t === 3) r = m <= 2 ? 3.8 - m * .8 : 1;
+      else r = x % 2 === 0 ? 1.6 + (2 - Math.abs(dy)) * .8 : 1;
+      if (r > 0) s += `<circle cx="${10 + x * 10}" cy="${10 + y * 10}" r="${r.toFixed(2)}"/>`;
+    }
+    return `<svg width="${size}" height="${size}" viewBox="0 0 60 60" fill="${on ? "#fff" : "rgba(255,255,255,.32)"}" aria-hidden="true"${on ? ' style="filter:drop-shadow(0 0 6px rgba(255,255,255,.55))"' : ""}>${s}</svg>`;
+  }
+  function ruler(val, max) {
+    const p = Math.max(0, Math.min(100, val / max * 100));
+    return `<div class="ruler" aria-hidden="true"><div class="ticks"></div><div class="fill" style="width:${p}%"></div><div class="mark" style="left:${p}%"></div></div>`;
+  }
+  function aura(level) {
+    let s = "";
+    for (let i = 0; i < 6; i++) {
+      const lit = i < level;
+      s += `<circle cx="48" cy="48" r="${18 + i * 5.6}" fill="none" stroke="${lit ? "rgba(255,255,255,.8)" : "rgba(255,255,255,.16)"}" stroke-width="${lit ? 1.4 : 1}"/>`;
+    }
+    return `<svg class="aura" viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="48" r="17" fill="rgba(0,0,0,.35)"/>${s}</svg>`;
+  }
+  function dial() {
+    const n = new Date(), lit = Math.floor((n.getHours() * 60 + n.getMinutes()) / 1440 * 60);
+    let t = "";
+    for (let i = 0; i < 60; i++) {
+      const a = i / 60 * Math.PI * 2 - Math.PI / 2, r1 = 46, r2 = i % 5 === 0 ? 38 : 41;
+      const hot = i < lit && i >= lit - 4;
+      const col = hot ? "#e6ee6c" : i < lit ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.2)";
+      t += `<line x1="${(50 + Math.cos(a) * r1).toFixed(1)}" y1="${(50 + Math.sin(a) * r1).toFixed(1)}" x2="${(50 + Math.cos(a) * r2).toFixed(1)}" y2="${(50 + Math.sin(a) * r2).toFixed(1)}" stroke="${col}" stroke-width="${hot ? 2 : 1.1}" stroke-linecap="round"/>`;
+    }
+    return `<svg width="84" height="84" viewBox="0 0 100 100" aria-hidden="true">${t}<circle cx="50" cy="50" r="22" fill="#eeedf2"/><circle cx="50" cy="50" r="2.5" fill="#888"/></svg>`;
+  }
+  function ringSvg(p, size, r, w) {
+    const C = 2 * Math.PI * r, c = size / 2;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="1"/>
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#e6ee6c" stroke-width="${w}" stroke-linecap="round"
+        stroke-dasharray="${(C * p / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 ${c} ${c})"/></svg>`;
+  }
+  function fmtClock(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); }
+  function dayPct() { const n = new Date(); return Math.floor((n.getHours() * 60 + n.getMinutes()) / 14.4); }
+  function dayLeft() {
+    const n = new Date(), now = n.getHours() * 60 + n.getMinutes(), end = (config.endHour || 19) * 60;
+    const m = now < end ? end - now : 1440 - now;
+    return "noch " + Math.floor(m / 60) + " h " + (m % 60) + " min" + (now < end ? " bis Feierabend" : " bis Mitternacht");
+  }
+
+  // ---------- views ----------
+  function daysStrip() {
+    const t = todayKey();
+    return `<div class="days" role="group" aria-label="Tag wählen">${weekKeys(selected).map((k, i) =>
+      `<button class="day" data-day="${k}" aria-pressed="${k === selected}" ${k > t ? "disabled" : ""} aria-label="${esc(label(k))}">${WD[i]}${pct(k) === 100 && k <= t ? '<span class="pip"></span>' : ""}</button>`).join("")}</div>`;
+  }
+  function summary(title, valueHtml, p) {
+    return `<article class="tile wide sum">
+      <button class="hit" data-act="tab" data-tab="woche" aria-label="Wochenübersicht öffnen"></button>
+      <div><h2>${title}</h2><div class="big">${valueHtml}</div></div>
+      <div class="ring">${ringSvg(p, 92, 42, 2.5)}<b>${p}</b></div></article>`;
+  }
+
+  function viewHeute() {
+    const k = selected, d = day(k), isToday = k === todayKey();
+    const wml = waterMl(k), gml = goalMl(), running = !!d.focusStart, imp = impulses();
+    const fmin = Math.floor(focusTotal(k)), st = streak();
+    const last7 = [6, 5, 4, 3, 2, 1, 0].map(i => pct(addDays(todayKey(), -i)) >= 50);
+    const qs = allQuotes(), q = qs[(dateOf(k).getDate() + quoteOffset) % qs.length];
+    const posts = weekPosts(k), pg = config.postGoal || 4;
+    const t0 = todayKey(), nextShoot = biz.shoots.filter(s => s.date >= t0).sort((a, b) => a.date < b.date ? -1 : 1)[0];
+    const open = biz.offers.filter(o => o.status === 0), openSum = open.reduce((s, o) => s + (o.amount || 0), 0);
+    const inWork = biz.pipeline.filter(p => p.stage === 1 || p.stage === 2).length;
+    const rise = Math.min(1, fmin / 120);
+    const band = (cls, sheetName, title, sub, val, unit) => `<button class="band ${cls}" data-act="open" data-sheet="${sheetName}"><span class="bd-l"><b>${title}</b><span>${sub}</span></span><span class="bd-v">${val}${unit ? `<small>${unit}</small>` : ""}</span></button>`;
+    return `
+      ${calHeader("heute")}
+      ${heroCarousel(k)}
+      ${isToday && imp.length ? `<button class="impulse" data-act="open" data-sheet="impulse">${I.spark}<span class="grow">${imp.length} ${imp.length === 1 ? "Impuls" : "Impulse"} für deinen Tag</span>${I.right}</button>` : ""}
+
+      <div class="label">Habits · ${doneCount(k)}/${config.habits.length}<button class="lbl-act" data-act="edit-habits">Bearbeiten</button></div>
+      <div class="hlist">
+        ${config.habits.length ? config.habits.map((h, i) => {
+          const on = !!(d.done || {})[h.id], hs = habitStreak(h.id);
+          return `<article class="hpill ${habitColor(h, i)}${on ? " on" : ""}" data-tile="${h.id}">
+            <button class="hit" data-act="open" data-sheet="habit" data-id="${h.id}" aria-label="Details: ${esc(h.name)}"></button>
+            <span class="hp-g">${glyph(h.id, on, 34)}</span>
+            <span class="hp-t"><b>${esc(h.name)}</b><span>${hs ? hs + (hs === 1 ? " Tag" : " Tage") + " Serie" : "Serie startet heute"}</span></span>
+            <button class="hp-c" data-act="toggle" data-id="${h.id}" aria-pressed="${on}" aria-label="${esc(h.name)} ${on ? "als offen markieren" : "abhaken"}">${on ? I.check : ""}</button>
+          </article>`;
+        }).join("") : `<button class="hpill" data-act="edit-habits"><span class="hp-t"><b>Lege deinen ersten Habit an</b><span>Tippen zum Bearbeiten</span></span></button>`}
+      </div>
+
+      <div class="label">Tracker</div>
+      <div class="grid">
+        <article class="tile sq" data-tile="water">
+          <button class="hit" data-act="open" data-sheet="water" aria-label="Wasser: Details"></button>
+          <button class="corner" data-act="ml" data-n="250" aria-label="Ein Glas (250 ml) mehr">${I.plus}</button>
+          <span class="badge ghost">.</span>
+          <div class="vis"><div class="num">${liters(wml)}<small>L</small></div></div>
+          ${ruler(wml, gml)}
+          <div class="cap"><b>Wasser</b><span>${wml >= gml ? "Ziel erreicht" : "noch " + liters(gml - wml) + " L"}</span></div>
+        </article>
+        <article class="tile sq c-teal${running ? " running" : ""}" data-tile="focus">
+          <button class="hit" data-act="open" data-sheet="focus" aria-label="Fokuszeit: Details"></button>
+          ${isToday ? `<button class="corner" data-act="focus" aria-label="${running ? "Fokus stoppen" : "Fokus starten"}">${running ? I.stop : I.play}</button>` : ""}
+          <span class="badge${running ? "" : " ghost"}"><i class="live"></i>läuft</span>
+          <div class="vis"><div class="orb"><i style="top:${(78 - rise * 60 - 16).toFixed(0)}px"></i></div></div>
+          <div class="cap"><b>Fokuszeit</b><span id="focusSub">${running ? (d.focusPlan ? "noch " + mmss(focusLeft(d)) : fmin + " min · seit " + fmtClock(d.focusStart)) : fmin + " min heute"}</span></div>
+        </article>
+        <article class="tile sq c-violet${d.mood ? " glow" : ""}">
+          <button class="hit" data-act="open" data-sheet="mood" aria-label="Stimmung, aktuell ${MOODS[d.mood || 0]}. Details öffnen"></button>
+          <span class="badge ghost">.</span>
+          <div class="vis">${aura(d.mood || 0)}<div class="num over">${d.mood || "–"}</div></div>
+          <div class="cap"><b>Stimmung</b><span>${d.mood ? MOODS[d.mood] : "Wie läuft's?"}</span></div>
+        </article>
+        <article class="tile sq c-cobalt glow">
+          <button class="hit" data-act="open" data-sheet="streak" aria-label="Streak: Details"></button>
+          <span class="badge ghost">.</span>
+          <div class="vis"><div class="num">${st}</div></div>
+          <div class="dots7" aria-hidden="true">${last7.map(o => `<i class="${o ? "on" : ""}"></i>`).join("")}</div>
+          <div class="cap"><b>Streak</b><span>${st >= 3 ? "Du rockst das!" : "Tage ab 50 %"}</span></div>
+        </article>
+      </div>
+
+      <div class="label">Fabian Visuals</div>
+      <div class="stack">
+        ${band("b-rose", "posts", "Posts", posts.length >= pg ? "Wochenziel erreicht" : "diese Woche · Ziel " + pg, posts.length + "/" + pg, "")}
+        ${band("b-sage", "pipeline", "Content-Pipeline", biz.pipeline.length + " Projekte", inWork, "in Arbeit")}
+        ${band("b-ember", "shoots", "Nächster Dreh", nextShoot ? esc(nextShoot.client) + " · " + shortDate(nextShoot.date) : "Kein Termin geplant", nextShoot ? daysUntil(nextShoot.date) : "–", nextShoot ? "Tage" : "")}
+        ${band("b-cobalt", "offers", "Angebote", open.length + " offen", (openSum / 1000).toFixed(1).replace(".", ","), "k€")}
+      </div>
+
+      <button class="qline" data-act="open" data-sheet="quote"><span>Spruch des Tages</span>„${esc(q)}“</button>`;
+  }
+  function weekAvg() {
+    const t = todayKey(), past = weekKeys(selected).filter(k => k <= t);
+    return past.length ? Math.round(past.reduce((s, k) => s + pct(k), 0) / past.length) : 0;
+  }
+  function noteLi(k) {
+    return n => `<li><time>${fmtClock(n.at)}</time><span>${esc(n.text)}</span><button class="del" data-act="del-note" data-day="${k}" data-id="${n.id}" aria-label="Notiz löschen">${I.x}</button></li>`;
+  }
+
+  function viewWoche() {
+    const wk = weekKeys(selected), t = todayKey(), past = wk.filter(k => k <= t);
+    const pw = weekKeys(addDays(selected, -7));
+    const stats = keys => {
+      const ps = keys.filter(k => k <= t), n = ps.length || 1, moods = ps.map(k => day(k).mood).filter(Boolean);
+      return { habits: Math.round(ps.reduce((s, k) => s + pct(k), 0) / n), water: ps.reduce((s, k) => s + waterMl(k), 0) / n,
+        focus: Math.round(ps.reduce((s, k) => s + focusTotal(k), 0)), mood: moods.length ? moods.reduce((a, b) => a + b, 0) / moods.length : 0 };
+    };
+    const cur = stats(wk), prev = stats(pw);
+    const de = n => n.toFixed(1).replace(".", ",");
+    const delta = (a, b, fmt) => { const dv = a - b; return `<span class="delta">${dv > 0 ? "↑" : dv < 0 ? "↓" : "±"} ${fmt(Math.abs(dv))}</span>`; };
+    const X = i => 22 + i * 46, Y = v => 128 - v * .98;
+    const pts = past.map(k => [X(wk.indexOf(k)), +Y(pct(k)).toFixed(1)]);
+    const si = wk.indexOf(selected), sp = si >= 0 && selected <= t ? [X(si), Y(pct(selected))] : null;
+    const avgY = Y(cur.habits).toFixed(1);
+    return `
+      ${calHeader("woche")}
+      <div class="curve">
+        <h2>Habits pro Tag</h2>
+        <svg viewBox="0 0 320 150" aria-label="Verlauf der Habit-Quote dieser Woche">
+          <defs><linearGradient id="cfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient></defs>
+          <line x1="0" x2="320" y1="${avgY}" y2="${avgY}" stroke="rgba(255,255,255,.35)" stroke-dasharray="2 4"/>
+          <text x="318" y="${(+avgY - 6).toFixed(1)}" text-anchor="end" fill="rgba(255,255,255,.6)" font-size="10">Ø ${cur.habits} %</text>
+          ${pts.length > 1 ? `<path d="${smooth(pts)} L${pts[pts.length - 1][0]} 140 L${pts[0][0]} 140 Z" fill="url(#cfill)"/>` : ""}
+          <path class="cline" d="${smooth(pts)}" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+          ${sp ? `<line x1="${sp[0]}" x2="${sp[0]}" y1="${sp[1]}" y2="140" stroke="rgba(255,255,255,.6)" stroke-dasharray="1.5 3"/>
+            <circle cx="${sp[0]}" cy="${sp[1]}" r="13" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.55)"/><circle cx="${sp[0]}" cy="${sp[1]}" r="3.5" fill="#fff"/>
+            <text x="${Math.min(296, Math.max(24, sp[0]))}" y="${Math.max(12, sp[1] - 20)}" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">${pct(selected)} %</text>` : ""}
+        </svg>
+        <div class="dsel">${wk.map((k, i) => `<button data-day="${k}" aria-pressed="${k === selected}" ${k > t ? "disabled" : ""} aria-label="${esc(label(k))}">${WD[i]}</button>`).join("")}</div>
+        <div class="range"><button data-act="weeknav" data-n="-1" aria-label="Vorherige Woche">${I.left}</button><span>${shortDate(wk[0])} – ${shortDate(wk[6])}</span><button data-act="weeknav" data-n="1" aria-label="Nächste Woche" ${wk[6] >= t ? "disabled" : ""}>${I.right}</button></div>
+      </div>
+      <div class="grid">
+        <article class="pcard pc-pink"><h3>Habits Ø</h3><div class="pr"><div class="pn">${cur.habits}<small>%</small></div>${delta(cur.habits, prev.habits, v => v + " Pkt")}</div></article>
+        <article class="pcard pc-indigo"><h3>Fokus gesamt</h3><div class="pr"><div class="pn">${cur.focus}<small>min</small></div>${delta(cur.focus, prev.focus, v => v + " min")}</div></article>
+        <article class="pcard pc-sun"><h3>Wasser Ø</h3><div class="pr"><div class="pn">${liters(Math.round(cur.water / 50) * 50)}<small>L</small></div>${delta(cur.water / 1000, prev.water / 1000, v => de(v) + " L")}</div></article>
+        <article class="pcard pc-teal"><h3>Stimmung Ø</h3><div class="pr"><div class="pn">${cur.mood ? de(cur.mood) : "–"}</div>${delta(cur.mood, prev.mood, v => de(v))}</div></article>
+      </div>
+      <div class="label">Details</div>
+      <div class="grid">
+        <article class="tile sq c-cobalt glow">
+          <span class="badge">${streak() >= 3 ? "Du rockst das!" : "Dranbleiben"}</span>
+          <div class="vis"><div class="num">${streak()}</div></div>
+          <div class="cap"><b>Streak</b><span>Tage ab 50 %</span></div>
+        </article>
+        <article class="tile sq c-rose glow">
+          <span class="badge">Vorwoche ${weekPosts(addDays(selected, -7)).length}</span>
+          <div class="vis"><div class="num">${weekPosts(selected).length}</div></div>
+          <div class="cap"><b>Posts</b><span>Ziel ${config.postGoal || 4}</span></div>
+        </article>
+        <article class="tile wide left">
+          <div class="rowhead"><h2>Habit-Matrix</h2></div>
+          <div class="matrix" style="grid-template-columns:minmax(90px,1fr) repeat(7, 22px)">
+            <span></span>${WD.map(w => `<span class="hd">${w}</span>`).join("")}
+            ${config.habits.map(h => `<span class="lbl" title="${esc(h.name)}">${esc(h.name)}</span>${wk.map(k => `<span class="c${(day(k).done || {})[h.id] ? " on" : ""}"></span>`).join("")}`).join("")}
+          </div>
+        </article>
+      </div>`;
+  }
+
+  function viewJournal() {
+    const ks = Object.keys(days).filter(k => (days[k].notes || []).length).sort().reverse();
+    return `
+      <div class="head"><h1>Journal</h1><div class="sub">${noteCount()} Notizen · gruppiert nach Tag</div></div>
+      <div class="grid">
+        <article class="tile wide left c-teal glow">
+          <div class="rowhead"><h2>Neue Notiz · ${selected === todayKey() ? "heute" : esc(label(selected))}</h2></div>
+          <form class="noteform" data-form="note">
+            <input type="text" id="noteInput2" autocomplete="off" placeholder="Shot-Idee, Feedback …" aria-label="Neue Notiz">
+            <button class="send" aria-label="Notiz speichern">${I.plus}</button>
+          </form>
+        </article>
+        ${ks.length ? ks.map(k => `<article class="tile wide left">
+            <div class="rowhead"><h2>${k === todayKey() ? "Heute" : esc(label(k))}</h2><span class="badge" style="margin:0">${days[k].notes.length}</span></div>
+            <ul class="notelist">${days[k].notes.slice().sort((a, b) => b.at - a.at).map(noteLi(k)).join("")}</ul>
+          </article>`).join("") : '<article class="tile wide left"><p class="empty">Hier landen deine Notizen. Schreib oben die erste.</p></article>'}
+      </div>`;
+  }
+
+  let lastSheetKey = "";
+  function renderSheet() {
+    const root = document.getElementById("sheetRoot");
+    if (!sheet) { root.innerHTML = ""; lastSheetKey = ""; return; }
+    const key = sheet.type + ":" + (sheet.id || "");
+    const keep = {};
+    if (key === lastSheetKey) root.querySelectorAll("input:not([type=file])").forEach(i => { if (i.id) keep[i.id] = i.value; });
+    const scroll = root.querySelector(".sheet") ? root.querySelector(".sheet").scrollTop : 0;
+    const close = `<button class="round" data-act="close" aria-label="Schließen">${I.x}</button>`;
+    const head = t => `<div class="shead"><h3>${t}</h3>${close}</div>`;
+    let cls = "";
+    const k = selected, d = day(k), isToday = k === todayKey();
+    const dayWord = isToday ? "heute" : "am " + shortDate(k);
+    let inner = "";
+    switch (sheet.type) {
+      case "edit":
+        inner = `${head("Habits & Ziele")}
+          ${window.__TAGWERK_PWA__ ? `<div class="panel"><h4 style="margin:0">App</h4><div id="installBox">${installHtml()}</div>
+            <h4 style="margin:4px 0 0">Backup</h4><p class="empty" style="margin:0">Deine Daten liegen nur auf diesem Gerät. Sichere sie ab und zu als Datei.</p>
+            <div style="display:flex;gap:8px"><button class="cta ghost" data-act="export" style="flex:1;white-space:nowrap">Sichern</button><label class="cta ghost" style="flex:1;display:flex;align-items:center;justify-content:center;white-space:nowrap;cursor:pointer">Wiederherstellen<input type="file" id="importFile" accept="application/json,.json" hidden></label></div>
+            ${sheet.msg ? `<p class="empty" style="margin:0;color:var(--signal)">${esc(sheet.msg)}</p>` : ""}</div>` : ""}
+          <form class="noteform" data-form="habit"><input type="text" id="habitInput" autocomplete="off" placeholder="Neuer Habit, z. B. 5 Min. Stretching" aria-label="Neuer Habit"><button class="send" aria-label="Habit hinzufügen">${I.plus}</button></form>
+          <div>${config.habits.map((h, i) => `<div class="editrow"><span>${esc(h.name)}</span>
+            <button class="step" data-act="move" data-id="${h.id}" aria-label="Nach oben" ${i ? "" : "disabled"}>${I.up}</button>
+            <button class="step" data-act="rm-habit" data-id="${h.id}" aria-label="${esc(h.name)} entfernen">${I.x}</button></div>`).join("")}
+          <div class="editrow"><span>Wasserziel pro Tag</span>
+            <button class="step" data-act="goal" data-n="-1" aria-label="Ziel senken">${I.minus}</button><b class="num" style="font-size:22px;min-width:64px;text-align:center">${liters(goalMl())} L</b><button class="step" data-act="goal" data-n="1" aria-label="Ziel erhöhen">${I.plus}</button></div></div>`;
+        break;
+      case "habit": {
+        const h = config.habits.find(x => x.id === sheet.id);
+        if (!h) { sheet = null; root.innerHTML = ""; return; }
+        const idx = config.habits.indexOf(h), on = !!(d.done || {})[h.id];
+        const t = todayKey(), first = addDays(t, -27), start = addDays(first, -wdIndex(first));
+        const cells = []; let total = 0;
+        for (let x = start; x <= t; x = addDays(x, 1)) {
+          const o = !!(day(x).done || {})[h.id]; if (o) total++;
+          cells.push(`<div class="${o ? "on" : ""}" title="${esc(label(x))}">${dateOf(x).getDate()}</div>`);
+        }
+        inner = `${head(esc(h.name))}
+          <button class="cta${on ? " ghost" : ""}" data-act="toggle" data-id="${h.id}">${on ? "Erledigt " + dayWord + " ✓ · rückgängig" : "Als erledigt markieren · " + dayWord}</button>
+          <div class="grid">
+            <div class="tile sq ${habitColor(h, idx)} glow"><span class="badge">Aktuell</span><div class="vis"><div class="num">${habitStreak(h.id)}</div></div><div class="cap"><b>Serie</b><span>Tage am Stück</span></div></div>
+            <div class="tile sq"><span class="badge">4 Wochen</span><div class="vis">${glyph(h.id, true)}</div><div class="cap"><b>${total}× erledigt</b><span>seit ${dateOf(start).getDate()}. ${MONTHS[dateOf(start).getMonth()]}</span></div></div>
+          </div>
+          <div class="cal">${WD.map(w => `<div class="blank">${w}</div>`).join("")}${cells.join("")}</div>
+          <h4>Tageszeit</h4>
+          <div class="chips">${PHASES.map(ph => `<button class="chip" data-act="phase" data-id="${h.id}" data-p="${ph.id}" aria-pressed="${habitPhase(h) === ph.id}">${ph.label}</button>`).join("")}</div>
+          <h4>Name</h4>
+          <form class="noteform" data-form="rename"><input type="text" id="renameInput" autocomplete="off" value="${esc(h.name)}" aria-label="Name des Habits"><button class="send" aria-label="Namen speichern">${I.check}</button></form>
+          <h4>Farbe</h4>
+          <div class="swatches">${COLORS.map(c => `<button class="swatch ${c}" data-act="color" data-id="${h.id}" data-c="${c}" aria-pressed="${habitColor(h, idx) === c}" aria-label="Farbe ${c.slice(2)}"></button>`).join("")}</div>
+          <button class="cta danger" data-act="rm-habit" data-id="${h.id}">Habit löschen</button>`;
+        break;
+      }
+      case "water": {
+        const w = waterMl(k), g = goalMl();
+        cls = "full sunset";
+        inner = `${head("Wasser")}
+          <h2 class="ask">Wie viel hast du ${isToday ? "heute" : "an diesem Tag"} getrunken?</h2>
+          <p class="hint">Wasser, Kaffee, Tee – alles, was nicht süß ist, zählt.</p>
+          <div class="bigrow"><button class="ghostcirc" data-act="ml" data-n="-250" aria-label="250 ml weniger">${I.minus}</button>
+            <div><div class="hugenum">${liters(w)}</div><div class="unitlbl">Liter · Ziel ${liters(g)} L</div></div>
+            <button class="ghostcirc" data-act="ml" data-n="250" aria-label="250 ml mehr">${I.plus}</button></div>
+          <h4 style="color:rgba(255,255,255,.85)">Menge wählen</h4>
+          <div class="amounts">${[[200, "Espresso-Tasse"], [250, "Glas"], [330, "Becher"], [500, "Flasche"], [750, "Große Flasche"], [1000, "Liter-Karaffe"]].map(([ml, nm]) =>
+            `<button class="amount" data-act="ml" data-n="${ml}" aria-label="${nm}, ${ml} ml hinzufügen"><span class="grow"><b>${ml}<small>ml</small></b><span>${nm}</span></span><span class="ghostcirc sm">${I.plus}</span></button>`).join("")}</div>
+          <div class="panel">
+            <div class="rowhead"><h2 style="font-size:13px">Tagesziel</h2><b id="wGoalTxt" class="num" style="font-size:20px">${liters(g)} L</b></div>
+            ${rslider("wGoal", 1000, 5000, 250, g, 16, 4, v => liters(v) + " L")}
+          </div>
+          <div class="panel"><h4 style="margin:0">Letzte 7 Tage · Liter</h4>${bars7(x => waterMl(x) / 1000, v => v ? v.toFixed(1).replace(".", ",") : "0")}</div>
+          <button class="cta ghost" data-act="ml" data-n="-99999">Tag auf 0 zurücksetzen</button>`;
+        break;
+      }
+      case "focus": {
+        const running = !!d.focusStart, ss = (d.sessions || []).slice().sort((a, b) => b.s - a.s), plan = config.focusPlan || 25;
+        const stats = `<div class="panel">
+            <div class="rowhead"><h2 style="font-size:13px">${isToday ? "Heute" : shortDate(k)} fokussiert</h2><b class="num" style="font-size:22px">${Math.floor(focusTotal(k))}<small>min</small></b></div>
+            <h4 style="margin:0">Manuell nachtragen</h4>
+            <div class="chips">${[15, 25, 50, 90].map(n => `<button class="chip" data-act="focus-add" data-n="${n}">+ ${n} min</button>`).join("")}</div>
+            <h4 style="margin:0">Sessions</h4>
+            <div class="list">${ss.length ? ss.map(x => `<div class="item"><div class="grow"><b>${fmtClock(x.s)} – ${fmtClock(x.e)}</b><span>${Math.round((x.e - x.s) / 60000)} min${x.manual ? " · nachgetragen" : ""}</span></div><button class="step" data-act="focus-del" data-id="${x.id}" aria-label="Session löschen">${I.x}</button></div>`).join("") : '<p class="empty">Noch keine Session.</p>'}</div>
+            <h4 style="margin:0">Letzte 7 Tage · Minuten</h4>${bars7(x => Math.round(focusTotal(x)), v => v)}
+          </div>`;
+        if (running && isToday) {
+          const left = focusLeft(d), endTs = d.focusPlan ? d.focusStart + d.focusPlan * 60000 : null;
+          cls = "full";
+          inner = `${head("Deep Work")}
+            <div class="orbwrap"><canvas id="fcCanvas" aria-hidden="true"></canvas>
+              <div class="countdown"><div class="hugenum" id="fcCount">${d.focusPlan ? mmss(left) : mmss(Date.now() - d.focusStart)}</div><div class="unitlbl">${d.focusPlan ? "verbleibend" : "läuft"}</div></div></div>
+            ${sheet.msg ? `<p class="empty" style="text-align:center;color:var(--signal)">${esc(sheet.msg)}</p>` : ""}
+            <div class="fpanel">
+              <div class="r3"><div><b>${fmtClock(d.focusStart)}</b><span>Start</span></div><div class="mid">Handy weg,<br>Kopf an.</div><div><b>${endTs ? fmtClock(endTs) : "offen"}</b><span>Ende</span></div></div>
+              <div class="prog" aria-hidden="true"><i id="fcFill" style="width:0"></i><b id="fcKnob" style="left:0"></b></div>
+              <div class="r2"><button class="ghostcirc sm" data-act="focus-cancel" aria-label="Session verwerfen, ohne zu speichern">${I.redo}</button>
+                <button class="pillcta dark" data-act="focus">Session beenden <span class="plus">${I.x}</span></button></div>
+            </div>
+            ${stats}`;
+        } else if (isToday) {
+          cls = "full magenta";
+          inner = `${head("Fokus-Timer")}
+            ${sheet.msg ? `<p class="empty" style="text-align:center;color:#fff;font-size:15px">${esc(sheet.msg)}</p>` : ""}
+            <div style="margin-top:4vh"><div class="hugenum" id="fcPlanNum">${plan}</div><div class="unitlbl">Minuten</div></div>
+            ${rslider("fcPlan", 5, 120, 5, plan, 18, 3, v => v)}
+            <div class="chips center">${[15, 25, 50, 90].map(n => `<button class="chip" data-act="fcpreset" data-n="${n}" style="background:rgba(40,10,30,.35)">${n} min</button>`).join("")}</div>
+            <button class="pillcta" data-act="focus-start">Fokus starten <span class="plus">${I.play.replace('fill="currentColor"', 'fill="#111"')}</span></button>
+            ${stats}`;
+        } else { inner = `${head("Fokuszeit")}${stats}`; }
+        break;
+      }
+      case "mood":
+        inner = `${head("Stimmung")}
+          <div class="bigrow" style="position:relative;height:120px"><div style="position:relative;width:120px;height:120px;display:grid;place-items:center">${aura(d.mood || 0).replace('class="aura"', 'class="aura" style="width:120px;height:120px"')}<div class="num over">${d.mood || "–"}</div></div></div>
+          <div class="chips" style="justify-content:center">${[1, 2, 3, 4, 5].map(m => `<button class="chip" data-act="setmood" data-n="${m}" aria-pressed="${d.mood === m}">${m} · ${MOODS[m]}</button>`).join("")}</div>
+          <h4>Warum?</h4>
+          <form class="noteform" data-form="moodnote"><input type="text" id="moodNote" autocomplete="off" value="${esc(d.moodNote || "")}" placeholder="z. B. starker Dreh, wenig Schlaf" aria-label="Notiz zur Stimmung"><button class="send" aria-label="Speichern">${I.check}</button></form>
+          <h4>Letzte 7 Tage</h4>${bars7(x => day(x).mood || 0, v => v || "–")}`;
+        break;
+      case "streak": {
+        const t = todayKey(), first = addDays(t, -27), start = addDays(first, -wdIndex(first)), cells = [];
+        for (let x = start; x <= t; x = addDays(x, 1)) {
+          const p = pct(x);
+          cells.push(`<div style="background:rgba(230,238,108,${(p / 100 * .85 + .07).toFixed(2)});${p > 55 ? "color:#050507" : ""}" title="${esc(label(x))}: ${p} %">${dateOf(x).getDate()}</div>`);
+        }
+        inner = `${head("Streak")}
+          <div class="stats"><div><b>${streak()}</b><span>Aktuell</span></div><div><b>${bestStreak()}</b><span>Rekord</span></div><div><b>${pct(t)}</b><span>% heute</span></div></div>
+          <p class="empty">Ein Tag zählt, wenn du mindestens die Hälfte deiner Habits erledigt hast. Je heller der Punkt, desto mehr hast du geschafft.</p>
+          <h4>Letzte 4 Wochen</h4>
+          <div class="heat">${WD.map(w => `<div style="background:none">${w}</div>`).join("")}${cells.join("")}</div>`;
+        break;
+      }
+      case "clock": {
+        const e = config.endHour || 19;
+        cls = "magenta";
+        inner = `${head("Feierabend")}
+          <div class="rowhead"><span class="toggle" style="cursor:default">Jetzt ${fmtClock(Date.now())}</span><span class="toggle" style="cursor:default">Tag zu ${dayPct()} %</span></div>
+          <div><div class="hugenum" id="endTxt">${e}</div><div class="unitlbl">Uhr Feierabend</div></div>
+          ${rslider("endH", 12, 23, 1, e, 28, 2, v => v + ":00")}
+          <p class="quote" id="endLeft" style="font-size:18px;margin:0;text-align:center">${dayLeft()}</p>
+          <div class="panel"><div class="dayline" aria-hidden="true"><b style="width:${dayPct()}%"></b><i style="left:${e / 24 * 100}%"></i></div>
+          <div class="rowhead"><span class="empty">0:00</span><span class="empty">24:00</span></div></div>`;
+        break;
+      }
+      case "impulse": {
+        const imp = impulses();
+        cls = "sunset";
+        inner = `${head("Tagesimpulse")}
+          <p class="hint">Aus deinen Habits, Trackern und Business-Daten von heute zusammengestellt.</p>
+          <div class="list">${imp.length ? imp.map((x, i) => `<div class="item" style="border-color:rgba(255,255,255,.3)"><span class="ghostcirc sm" style="font:800 14px var(--f-num)">${i + 1}</span><div class="grow"><b>${esc(x)}</b></div></div>`).join("") : '<p class="empty">Heute ist alles im grünen Bereich.</p>'}</div>`;
+        break;
+      }
+      case "quote": {
+        const qs = allQuotes(), q = qs[(dateOf(k).getDate() + quoteOffset) % qs.length];
+        inner = `${head("Sprüche")}
+          <p class="quote">${esc(q)}</p>
+          <button class="cta ghost" data-act="quote">Nächster Spruch</button>
+          <h4>Eigene Sprüche</h4>
+          <form class="noteform" data-form="quote"><input type="text" id="quoteInput" autocomplete="off" placeholder="Dein Satz, der dich pusht" aria-label="Eigener Spruch"><button class="send" aria-label="Spruch hinzufügen">${I.plus}</button></form>
+          <div class="list">${config.quotes.length ? config.quotes.map(x => `<div class="item"><div class="grow"><b>${esc(x.text)}</b></div><button class="step" data-act="rm-quote" data-id="${x.id}" aria-label="Spruch löschen">${I.x}</button></div>`).join("") : '<p class="empty">Noch keine eigenen. Sie mischen sich unter die Tagessprüche.</p>'}</div>
+          <h4>Mitgeliefert</h4>
+          <div class="list">${QUOTES.map(x => `<div class="item"><div class="grow"><span style="color:var(--fg);font-size:14px">${esc(x)}</span></div></div>`).join("")}</div>`;
+        break;
+      }
+      case "posts": {
+        const wp = weekPosts(k).sort((a, b) => b.at - a.at), lw = weekPosts(addDays(k, -7)).length, pf = sheet.platform || "Instagram";
+        inner = `${head("Posts")}
+          <div class="stats"><div><b>${wp.length}</b><span>diese Woche</span></div><div><b>${config.postGoal}</b><span>Wochenziel</span></div><div><b>${lw}</b><span>Vorwoche</span></div></div>
+          <h4>Post eintragen · ${dayWord}</h4>
+          <div class="chips">${PLATFORMS.map(p => `<button class="chip" data-act="platform" data-p="${p}" aria-pressed="${p === pf}">${p}</button>`).join("")}</div>
+          <form class="noteform" data-form="post"><input type="text" id="postInput" autocomplete="off" placeholder="z. B. Reel: Hochzeit Teaser" aria-label="Titel des Posts"><button class="send" aria-label="Post eintragen">${I.plus}</button></form>
+          <h4>Diese Woche</h4>
+          <div class="list">${wp.length ? wp.map(p => `<div class="item"><div class="grow"><b>${esc(p.title)}</b><span>${esc(p.platform)} · ${shortDate(p.day)}</span></div><button class="step" data-act="rm-post" data-day="${p.day}" data-id="${p.id}" aria-label="Post löschen">${I.x}</button></div>`).join("") : '<p class="empty">Noch nichts gepostet. Ein Post zählt, sobald er online ist.</p>'}</div>
+          <div class="editrow"><span>Wochenziel</span><button class="step" data-act="postgoal" data-n="-1" aria-label="Ziel senken">${I.minus}</button><b class="num" style="font-size:24px;min-width:34px;text-align:center">${config.postGoal}</b><button class="step" data-act="postgoal" data-n="1" aria-label="Ziel erhöhen">${I.plus}</button></div>`;
+        break;
+      }
+      case "pipeline":
+        inner = `${head("Content-Pipeline")}
+          <form class="noteform" data-form="idea"><input type="text" id="ideaInput" autocomplete="off" placeholder="Neue Idee, z. B. BTS vom Autodreh" aria-label="Neue Content-Idee"><button class="send" aria-label="Idee hinzufügen">${I.plus}</button></form>
+          ${STAGES.map((s, i) => {
+            const items = biz.pipeline.filter(p => p.stage === i);
+            return `<h4>${s} · ${items.length}</h4><div class="list">${items.length ? items.map(p => `<div class="item"><div class="grow"><b>${esc(p.title)}</b></div>
+              <button class="step" data-act="stage" data-id="${p.id}" data-n="-1" aria-label="Zurück zu ${STAGES[i - 1] || ""}" ${i ? "" : "disabled"}>${I.left}</button>
+              <button class="step" data-act="stage" data-id="${p.id}" data-n="1" aria-label="Weiter zu ${STAGES[i + 1] || ""}" ${i < 3 ? "" : "disabled"}>${I.right}</button>
+              <button class="step" data-act="rm-idea" data-id="${p.id}" aria-label="Löschen">${I.x}</button></div>`).join("") : '<p class="empty">–</p>'}</div>`;
+          }).join("")}`;
+        break;
+      case "shoots": {
+        const t = todayKey(), up = biz.shoots.filter(s => s.date >= t).sort((a, b) => a.date < b.date ? -1 : 1), past = biz.shoots.filter(s => s.date < t).sort((a, b) => a.date > b.date ? -1 : 1).slice(0, 5);
+        const row = s => `<div class="item${s.date < t ? " past" : ""}"><div class="grow"><b>${esc(s.client)}</b><span>${shortDate(s.date)}${s.time ? " · " + s.time : ""} · ${untilText(daysUntil(s.date))}${s.uid ? " · aus Kalender" : ""}</span></div>
+          ${s.date >= t && !s.uid ? `<a class="tag" href="${esc(gcalUrl(s))}" target="_blank" rel="noopener" aria-label="${esc(s.client)} in Google Kalender eintragen">In Google</a>` : ""}
+          <button class="step" data-act="rm-shoot" data-id="${s.id}" aria-label="Termin löschen">${I.x}</button></div>`;
+        inner = `${head("Drehtermine")}
+          <form class="formcol" data-form="shoot">
+            <input type="text" id="shootClient" autocomplete="off" placeholder="Kunde / Projekt" aria-label="Kunde oder Projekt">
+            <div class="noteform"><input type="date" id="shootDate" value="${t}" aria-label="Datum"><input type="time" id="shootTime" aria-label="Uhrzeit (optional)" style="max-width:130px"></div>
+            <button class="cta">Dreh eintragen</button>
+          </form>
+          <h4>Google Kalender</h4>
+          <p class="empty" style="margin:0">Neue Drehs trägst du mit „In Google“ direkt in deinen Kalender ein. Termine, die schon in Google stehen, holst du per Kalenderdatei (.ics) rein: Google Kalender → Einstellungen → Import &amp; Export → Exportieren.</p>
+          <h4 style="margin-top:0">Nur Termine mit Stichwort</h4>
+          <div class="noteform"><input type="text" id="shootKeyword" autocomplete="off" value="${esc(config.shootKeyword ?? "Dreh")}" placeholder="Stichwort, leer = alle Termine" aria-label="Nur Termine mit diesem Stichwort importieren"></div>
+          <label class="cta ghost" style="text-align:center">.ics-Datei importieren<input type="file" id="icsFile" accept=".ics,text/calendar" hidden></label>
+          ${sheet.msg ? `<p class="empty" style="margin:0;color:var(--signal)">${esc(sheet.msg)}</p>` : ""}
+          <h4>Anstehend · ${up.length}</h4><div class="list">${up.length ? up.map(row).join("") : '<p class="empty">Kein Dreh geplant.</p>'}</div>
+          ${past.length ? `<h4>Zuletzt</h4><div class="list">${past.map(row).join("")}</div>` : ""}`;
+        break;
+      }
+      case "offers": {
+        const sum = st => biz.offers.filter(o => o.status === st).reduce((s, o) => s + (o.amount || 0), 0);
+        const dec = biz.offers.filter(o => o.status > 0), rate = dec.length ? Math.round(dec.filter(o => o.status === 1).length / dec.length * 100) + " %" : "–";
+        const list = biz.offers.slice().sort((a, b) => a.status - b.status || (a.at < b.at ? 1 : -1));
+        inner = `${head("Angebote")}
+          <div class="stats"><div><b>${(sum(0) / 1000).toFixed(1).replace(".", ",")}k</b><span>€ offen</span></div><div><b>${(sum(1) / 1000).toFixed(1).replace(".", ",")}k</b><span>€ gewonnen</span></div><div><b>${rate}</b><span>Quote</span></div></div>
+          <form class="formcol" data-form="offer">
+            <div class="noteform"><input type="text" id="offerClient" autocomplete="off" placeholder="Kunde / Projekt" aria-label="Kunde oder Projekt"><input type="text" inputmode="decimal" id="offerAmount" autocomplete="off" placeholder="Betrag €" aria-label="Betrag in Euro" style="max-width:120px"></div>
+            <button class="cta">Angebot anlegen</button>
+          </form>
+          <h4>Alle Angebote · Status antippen zum Wechseln</h4>
+          <div class="list">${list.length ? list.map(o => `<div class="item"><div class="grow"><b>${esc(o.client)}</b><span>${euro(o.amount || 0)} · ${shortDate(o.at)}</span></div>
+            <button class="tag${o.status === 1 ? " won" : o.status === 2 ? " lost" : ""}" data-act="offer-status" data-id="${o.id}">${OFFER_STATES[o.status]}</button>
+            <button class="step" data-act="rm-offer" data-id="${o.id}" aria-label="Angebot löschen">${I.x}</button></div>`).join("") : '<p class="empty">Noch keine Angebote erfasst.</p>'}</div>`;
+        break;
+      }
+      default: sheet = null; root.innerHTML = ""; return;
+    }
+    root.innerHTML = `<div class="scrim${key !== lastSheetKey ? " anim" : ""}" data-act="close-scrim"><div class="sheet ${cls}" role="dialog" aria-modal="true">${inner}</div></div>`;
+    initSliders(root);
+    if (document.getElementById("fcCanvas") && !sphereRAF) { sphereRAF = 1; drawSphere(performance.now()); tickFocusView(); }
+    for (const id in keep) { const el = document.getElementById(id); if (el) el.value = keep[id]; }
+    if (key === lastSheetKey) root.querySelector(".sheet").scrollTop = scroll;
+    lastSheetKey = key;
+  }
+
+  function render() {
+    const v = document.getElementById("view");
+    const active = document.activeElement && document.activeElement.id;
+    const draft = active === "noteInput" || active === "noteInput2" ? document.activeElement.value : null;
+    v.classList.remove("enter");
+    v.querySelectorAll(".carousel").forEach(c => { carPos[c.id] = c.scrollLeft; });
+    v.innerHTML = tab === "heute" ? viewHeute() : tab === "ablauf" ? viewAblauf() : tab === "woche" ? viewWoche() : viewJournal();
+    initCarousels(v);
+    if (animateNext) {
+      animateNext = false;
+      let i = 0;
+      v.querySelectorAll(".head, .calhead, .carousel, .impulse, .label, .tile, .hpill, .band, .qline, .pcard, .curve").forEach(el => el.style.setProperty("--i", Math.min(i++, 12)));
+      if (!calm) v.querySelectorAll(".bc-num, .bigpct").forEach(el => {
+        const txt = el.textContent.trim(), m = txt.match(/^(\d+)$/); if (!m) return;
+        const to = +m[1], t0 = performance.now(), dur = 700;
+        const step = now => { const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3); el.textContent = Math.round(to * e); if (p < 1) requestAnimationFrame(step); };
+        el.textContent = "0"; requestAnimationFrame(step);
+      });
+      v.querySelectorAll(".bar b").forEach((el, j) => el.style.setProperty("--b", j));
+      void v.offsetWidth; v.classList.add("enter");
+      clearTimeout(enterTimer); enterTimer = setTimeout(() => v.classList.remove("enter"), 1600);
+    }
+    if (popKey) { const el = v.querySelector(`[data-tile="${popKey}"]`); if (el) el.classList.add("pop"); popKey = null; }
+    if (draft !== null) { const el = document.getElementById(active); if (el) { el.value = draft; el.focus({ preventScroll: true }); } }
+    document.querySelectorAll(".tb-glass [data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+    const ti = TABS.indexOf(tab), ind = document.getElementById("tbInd");
+    ind.style.setProperty("--i", ti);
+    document.getElementById("brand").textContent = { heute: "Heute", ablauf: "Ablauf", woche: "Woche", journal: "Journal" }[tab];
+    if (tab !== shownTab) {
+      const dir = ti > TABS.indexOf(shownTab) ? "slide-r" : "slide-l";
+      v.classList.remove("slide-r", "slide-l"); ind.classList.remove("squish");
+      void v.offsetWidth;
+      v.classList.add(dir); ind.classList.add("squish");
+      shownTab = tab;
+    }
+    const tp = pct(todayKey());
+    if (tp !== lastRing) { lastRing = tp; document.getElementById("ringBtn").innerHTML = ringSvg(tp, 46, 21, 2) + `<b>${tp}</b>`; }
+    document.getElementById("liveDot").classList.toggle("on", !!day(todayKey()).focusStart);
+    renderSheet();
+    scrollFx();
+  }
+
+  // ---------- live ticking ----------
+  function tickFocusView() {
+    const d = day(todayKey()), c = document.getElementById("fcCount");
+    if (!c || !d.focusStart) return;
+    c.textContent = d.focusPlan ? mmss(focusLeft(d)) : mmss(Date.now() - d.focusStart);
+    const p = d.focusPlan ? Math.min(1, (Date.now() - d.focusStart) / (d.focusPlan * 60000)) : 0;
+    const f = document.getElementById("fcFill"), kn = document.getElementById("fcKnob");
+    if (f) f.style.width = (p * 100).toFixed(2) + "%";
+    if (kn) kn.style.left = (p * 100).toFixed(2) + "%";
+  }
+  let lastMin = -1, lastDay = todayKey();
+  setInterval(() => {
+    const now = new Date();
+    if (keyOf(now) !== lastDay) { if (selected === lastDay) selected = keyOf(now); lastDay = keyOf(now); render(); return; }
+    const td = day(todayKey());
+    if (td.focusStart && td.focusPlan && focusLeft(td) <= 0) {
+      finishFocus(todayKey(), true); chime();
+      try { navigator.vibrate && navigator.vibrate([120, 80, 120]); } catch (e) {}
+      if (sheet && sheet.type === "focus") sheet.msg = "Session geschafft. Kurz durchatmen, Wasser trinken.";
+      popKey = "focus"; render(); return;
+    }
+    const d = day(selected);
+    const fs = document.getElementById("focusSub");
+    if (fs && d.focusStart) fs.textContent = d.focusPlan ? "noch " + mmss(focusLeft(d)) : Math.floor(focusTotal(selected)) + " min · seit " + fmtClock(d.focusStart);
+    tickFocusView();
+    if (now.getMinutes() !== lastMin) {
+      lastMin = now.getMinutes();
+      const set = (id, v, html) => { const el = document.getElementById(id); if (el) el[html ? "innerHTML" : "textContent"] = v; };
+      set("clock", fmtClock(now)); set("dayLeft", dayLeft()); set("dayPct", "Tag zu " + dayPct() + " %"); set("dial", dial(), true);
+    }
+  }, 1000);
+
+  // ---------- actions ----------
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const byId = (arr, id) => arr.find(x => x.id === id);
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-act], [data-day], [data-tab]");
+    if (!b) return;
+    const act = b.dataset.act, k = selected, n = Number(b.dataset.n), id = b.dataset.id;
+    if (!act && b.dataset.day) { if (selected !== b.dataset.day) animateNext = true; selected = b.dataset.day; render(); return; }
+    if (!act && b.dataset.tab) { if (tab !== b.dataset.tab) animateNext = true; tab = b.dataset.tab; render(); window.scrollTo({ top: 0 }); return; }
+    const tileEl = b.closest("[data-tile]");
+    if (tileEl && !sheet && ["toggle", "ml", "focus"].includes(act)) popKey = tileEl.dataset.tile;
+    switch (act) {
+      case "open": sheet = { type: b.dataset.sheet, id, platform: "Instagram", msg: "" }; break;
+      case "toggle": { const d = ensureDay(k); if (d.done[id]) delete d.done[id]; else d.done[id] = true; save(k); break; }
+      case "ml": { const d = ensureDay(k); d.waterMl = clamp(waterMl(k) + n, 0, 10000); delete d.water; save(k); break; }
+      case "weeknav": { const nk = addDays(selected, n * 7), t = todayKey(); selected = nk > t ? t : nk; animateNext = true; break; }
+      case "fcpreset": { const el = document.getElementById("fcPlan"); if (el && el.setSlider) el.setSlider(n); return; }
+      case "focus-start": startFocus(k); if (sheet) sheet.msg = ""; break;
+      case "focus-cancel": { const d = ensureDay(k); d.focusStart = null; d.focusPlan = null; save(k); break; }
+      case "setmood": { const d = ensureDay(k); d.mood = d.mood === n ? 0 : n; save(k); break; }
+      case "focus": { const d = ensureDay(k); if (d.focusStart) finishFocus(k, false); else startFocus(k); if (sheet) sheet.msg = ""; break; }
+      case "focus-add": {
+        const d = ensureDay(k), now = Date.now();
+        d.sessions ||= [];
+        d.focusMin = (d.focusMin || 0) + n;
+        d.sessions.push({ id: uid(), s: now - n * 60000, e: now, manual: true });
+        save(k); break;
+      }
+      case "focus-del": {
+        const d = ensureDay(k), s = byId(d.sessions || [], id);
+        if (s) { d.focusMin = Math.max(0, (d.focusMin || 0) - (s.e - s.s) / 60000); d.sessions = d.sessions.filter(x => x !== s); save(k); }
+        break;
+      }
+      case "quote": quoteOffset++; break;
+      case "tab": tab = b.dataset.tab; sheet = null; animateNext = true; window.scrollTo({ top: 0 }); break;
+      case "go": selected = b.dataset.day; tab = "heute"; animateNext = true; window.scrollTo({ top: 0 }); break;
+      case "del-note": { const dk = b.dataset.day, d = ensureDay(dk); d.notes = d.notes.filter(x => x.id !== id); save(dk); break; }
+      case "edit-habits": sheet = { type: "edit", msg: "" }; break;
+      case "install": if (window.__twInstall) { window.__twInstall.prompt(); window.__twInstall.userChoice.finally(() => { window.__twInstall = null; render(); }); } return;
+      case "export": {
+        try {
+          const blob = new Blob([JSON.stringify({ app: "tagwerk", v: 1, exportedAt: new Date().toISOString(), config, days, biz }, null, 1)], { type: "application/json" });
+          const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "tagwerk-backup-" + todayKey() + ".json";
+          document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+          sheet.msg = "Backup gespeichert.";
+        } catch (er) { sheet.msg = "Das Speichern hat nicht geklappt."; }
+        break;
+      }
+      case "habit": sheet = { type: "habit", id }; break;
+      case "close": sheet = null; break;
+      case "close-scrim": if (e.target !== b) return; sheet = null; break;
+      case "rm-habit": config.habits = config.habits.filter(h => h.id !== id); save("config"); if (sheet && sheet.type === "habit") sheet = null; break;
+      case "move": { const i = config.habits.findIndex(h => h.id === id); if (i > 0) { const [h] = config.habits.splice(i, 1); config.habits.splice(i - 1, 0, h); save("config"); } break; }
+      case "phase": { const h = byId(config.habits, id); if (h) { h.phase = b.dataset.p; save("config"); } break; }
+      case "color": { const h = byId(config.habits, id); if (h) { h.color = b.dataset.c; save("config"); } break; }
+      case "goal": config.waterGoalMl = clamp(goalMl() + n * 250, 1000, 5000); save("config"); break;
+      case "postgoal": config.postGoal = clamp((config.postGoal || 4) + n, 1, 21); save("config"); break;
+      case "end": config.endHour = clamp((config.endHour || 19) + n, 12, 23); save("config"); break;
+      case "rm-quote": config.quotes = config.quotes.filter(q => q.id !== id); save("config"); break;
+      case "platform": sheet.platform = b.dataset.p; break;
+      case "rm-post": { const dk = b.dataset.day, d = ensureDay(dk); d.posts = (d.posts || []).filter(p => p.id !== id); save(dk); break; }
+      case "stage": { const p = byId(biz.pipeline, id); if (p) { p.stage = clamp(p.stage + n, 0, 3); save("biz"); } break; }
+      case "rm-idea": biz.pipeline = biz.pipeline.filter(p => p.id !== id); save("biz"); break;
+      case "rm-shoot": biz.shoots = biz.shoots.filter(s => s.id !== id); save("biz"); break;
+      case "rm-offer": biz.offers = biz.offers.filter(o => o.id !== id); save("biz"); break;
+      case "offer-status": { const o = byId(biz.offers, id); if (o) { o.status = (o.status + 1) % 3; save("biz"); } break; }
+      default: return;
+    }
+    render();
+  });
+  document.addEventListener("submit", e => {
+    e.preventDefault();
+    const f = e.target;
+    const field = x => f.querySelector("#" + x);
+    const val = x => (field(x) ? field(x).value.trim() : "");
+    const clear = (...xs) => xs.forEach(x => { if (field(x)) field(x).value = ""; });
+    let refocus = null;
+    switch (f.dataset.form) {
+      case "note": {
+        const el = f.querySelector("input"), text = el.value.trim();
+        if (!text) return;
+        ensureDay(selected).notes.push({ id: "n" + uid(), at: Date.now(), text: text.slice(0, 500) });
+        save(selected); el.value = ""; refocus = el.id; break;
+      }
+      case "habit": { const t = val("habitInput"); if (!t) return; config.habits.push({ id: "h" + uid(), name: t.slice(0, 60) }); save("config"); clear("habitInput"); refocus = "habitInput"; break; }
+      case "rename": { const t = val("renameInput"), h = sheet && byId(config.habits, sheet.id); if (!t || !h) return; h.name = t.slice(0, 60); save("config"); break; }
+      case "moodnote": { const d = ensureDay(selected); d.moodNote = val("moodNote").slice(0, 120); save(selected); break; }
+      case "quote": { const t = val("quoteInput"); if (!t) return; config.quotes.push({ id: uid(), text: t.slice(0, 200) }); save("config"); clear("quoteInput"); refocus = "quoteInput"; break; }
+      case "post": {
+        const d = ensureDay(selected); d.posts ||= [];
+        d.posts.push({ id: uid(), at: Date.now(), platform: (sheet && sheet.platform) || "Instagram", title: (val("postInput") || "Ohne Titel").slice(0, 100) });
+        save(selected); clear("postInput"); break;
+      }
+      case "idea": { const t = val("ideaInput"); if (!t) return; biz.pipeline.push({ id: uid(), title: t.slice(0, 100), stage: 0 }); save("biz"); clear("ideaInput"); refocus = "ideaInput"; break; }
+      case "shoot": {
+        const dt = val("shootDate"), c = val("shootClient");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dt)) { field("shootDate").focus(); return; }
+        if (!c) { field("shootClient").focus(); return; }
+        const tm = val("shootTime");
+        biz.shoots.push(Object.assign({ id: uid(), date: dt, client: c.slice(0, 80) }, /^\d{2}:\d{2}$/.test(tm) ? { time: tm } : {}));
+        save("biz"); clear("shootClient", "shootTime");
+        if (sheet) sheet.msg = "Gespeichert. Tipp auf „In Google“, um ihn auch in deinen Kalender zu legen.";
+        break;
+      }
+      case "offer": {
+        const c = val("offerClient"), a = parseFloat(val("offerAmount").replace(/\./g, "").replace(",", "."));
+        if (!c) { field("offerClient").focus(); return; }
+        if (!(a >= 0)) { field("offerAmount").focus(); return; }
+        biz.offers.push({ id: uid(), client: c.slice(0, 80), amount: a, status: 0, at: todayKey() }); save("biz"); clear("offerClient", "offerAmount"); break;
+      }
+      default: return;
+    }
+    render();
+    if (refocus) { const el = document.getElementById(refocus); if (el) el.focus({ preventScroll: true }); }
+  });
+  function installHtml() {
+    const standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+    if (standalone) return '<p class="empty" style="margin:0">Tagwerk ist auf diesem Gerät installiert.</p>';
+    if (window.__twInstall) return '<button class="cta" data-act="install">Auf den Home-Bildschirm</button>';
+    const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    return `<p class="empty" style="margin:0">${ios ? "In Safari unten auf Teilen tippen, dann „Zum Home-Bildschirm“." : "Im Browser-Menü „App installieren“ oder „Zum Startbildschirm hinzufügen“ wählen."}</p>`;
+  }
+  window.addEventListener("tw-install", () => { const bx = document.getElementById("installBox"); if (bx) bx.innerHTML = installHtml(); });
+  document.addEventListener("change", e => {
+    if (e.target.id === "importFile" && e.target.files && e.target.files[0]) {
+      const rd = new FileReader();
+      rd.onload = () => {
+        try {
+          const o = JSON.parse(String(rd.result));
+          if (!o || o.app !== "tagwerk" || !o.config || !Array.isArray(o.config.habits)) throw new Error("format");
+          config = o.config; days = o.days || {}; biz = o.biz || clone(DEFAULT_BIZ); cfg(); saveLocal();
+          if (sheet) sheet.msg = "Backup vom " + (o.exportedAt || "").slice(0, 10) + " wiederhergestellt."; animateNext = true;
+        } catch (er) { if (sheet) sheet.msg = "Diese Datei ist kein Tagwerk-Backup."; }
+        render();
+      };
+      rd.readAsText(e.target.files[0]);
+      return;
+    }
+    if (e.target.id !== "icsFile" || !e.target.files || !e.target.files[0]) return;
+    const kwEl = document.getElementById("shootKeyword"), kw = (kwEl ? kwEl.value : "").trim().toLowerCase();
+    if (config.shootKeyword !== kw) { config.shootKeyword = kwEl ? kwEl.value.trim() : ""; save("config"); }
+    const file = e.target.files[0], reader = new FileReader();
+    reader.onload = () => {
+      const from = addDays(todayKey(), -30), have = new Set(biz.shoots.map(s => s.uid).filter(Boolean));
+      const evs = parseIcs(String(reader.result)).filter(ev => ev.date >= from && (!kw || (ev.summary || "").toLowerCase().includes(kw)));
+      let added = 0;
+      for (const ev of evs.slice(0, 300)) {
+        const key = ev.uid ? ev.uid + "@" + ev.date : null;
+        if (key && have.has(key)) continue;
+        biz.shoots.push(Object.assign({ id: uid(), date: ev.date, client: (ev.summary || "Termin").slice(0, 80) }, ev.time ? { time: ev.time } : {}, key ? { uid: key } : {}));
+        if (key) have.add(key);
+        added++;
+      }
+      if (added) save("biz");
+      if (sheet) sheet.msg = added ? added + (added === 1 ? " Termin" : " Termine") + " importiert." : "Keine neuen Termine gefunden" + (kw ? " mit „" + config.shootKeyword + "“." : ".");
+      render();
+    };
+    reader.onerror = () => { if (sheet) sheet.msg = "Die Datei konnte nicht gelesen werden."; render(); };
+    reader.readAsText(file);
+  });
+  let sw = null;
+  const viewEl = document.getElementById("view");
+  viewEl.addEventListener("touchstart", e => {
+    if (sheet || e.touches.length !== 1 || e.target.closest(".matrix, .rs, input, .cal7, .carousel")) { sw = null; return; }
+    sw = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+  viewEl.addEventListener("touchend", e => {
+    if (!sw) return;
+    const dx = e.changedTouches[0].clientX - sw.x, dy = e.changedTouches[0].clientY - sw.y; sw = null;
+    if (Math.abs(dx) < 70 || Math.abs(dy) > 45) return;
+    const ni = TABS.indexOf(tab) + (dx < 0 ? 1 : -1);
+    if (ni < 0 || ni >= TABS.length) return;
+    tab = TABS[ni]; animateNext = true; render(); window.scrollTo({ top: 0 });
+  }, { passive: true });
+  document.getElementById("todayBtn").addEventListener("click", () => { selected = todayKey(); tab = "heute"; animateNext = true; render(); window.scrollTo({ top: 0 }); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && sheet) { sheet = null; render(); } });
+
+  connect();
+})();
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/tagwerk/sw.js", { scope: "/tagwerk/" }).catch(() => {}));
+</script>
+</body>
+</html>

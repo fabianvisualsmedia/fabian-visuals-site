@@ -8,6 +8,10 @@ Statische HTML/CSS/JS-Website (kein Build-Schritt). Ersetzt die vorherige Wix-Se
 
 Dann im Browser öffnen: http://localhost:8080/index.html oder /hochzeiten.html
 
+## Tagwerk (`/tagwerk/`)
+
+Eigenständige installierbare Web-App (PWA): Habit-Tracker mit Fokus-Timer, Wasser, Stimmung, Tagesablauf und Business-Cockpit. Liegt komplett in `tagwerk/` (index.html, manifest, Service Worker, Icons). Daten bleiben lokal im Browser (`localStorage`), Backup/Wiederherstellen als JSON unter „Bearbeiten“. Keine Verbindung zur restlichen Website, steht auf `noindex`.
+
 ## Deployment (Cloudflare Pages via GitHub)
 
 **Status: live.** Repo ist unter `github.com/fabianvisualsmedia/fabian-visuals-site` (main), Cloudflare Pages-Projekt `fabian-visuals-site` ist bereits mit diesem Repo verbunden (Git-Integration existierte schon) und deployt automatisch bei jedem Push nach `main`. Aktuell erreichbar unter https://fabian-visuals-site.pages.dev — Build-Einstellungen bereits korrekt (kein Build-Command, kein Framework-Preset, Root als Output-Dir).
