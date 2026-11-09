@@ -1,0 +1,1412 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Harvest OS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@600;800;900&family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one-screen "OS" shell — HUD on top, glass field + side console, floating black dock at the bottom.
+   Deliberately single dark look (like the reference sheets): ambient gradient glow driven by weather. */
+@property --a1 { syntax: '<color>'; inherits: true; initial-value: #7B5CFF; }
+@property --a2 { syntax: '<color>'; inherits: true; initial-value: #FF4D6D; }
+@property --a3 { syntax: '<color>'; inherits: true; initial-value: #140a26; }
+:root {
+  color-scheme: dark;
+  --void: #07060B;
+  --ink: #F5F3FF;
+  --ink-2: rgba(245, 243, 255, .66);
+  --ink-3: rgba(245, 243, 255, .40);
+  --glass: rgba(255, 255, 255, .055);
+  --glass-hi: rgba(255, 255, 255, .10);
+  --line: rgba(255, 255, 255, .12);
+  --line-hi: rgba(255, 255, 255, .24);
+  --lime: #E2FF3D;
+  --lime-ink: #151700;
+  --danger: #FF5468;
+  --water: #5CB8FF;
+  --a1: #7B5CFF; --a2: #FF4D6D; --a3: #140a26;
+  --night: 0;
+  --f-display: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+  --f-dot: "Doto", "JetBrains Mono", ui-monospace, monospace;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --r-lg: 28px; --r-md: 20px; --r-sm: 14px;
+  transition: --a1 2.4s ease, --a2 2.4s ease, --a3 2.4s ease;
+}
+html, body { height: 100%; }
+body { margin: 0; background: var(--void); color: var(--ink); font-family: var(--f-display); font-size: 14px; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+[hidden] { display: none !important; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+svg { display: block; }
+.mono { font-family: var(--f-mono); }
+.dot { font-family: var(--f-dot); font-weight: 800; }
+.dim { color: var(--ink-3); }
+.eyebrow { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+
+/* ---------- Ambient ---------- */
+.ambient { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: radial-gradient(120% 80% at 50% 115%, var(--a3), var(--void) 72%); }
+.blob { position: absolute; border-radius: 50%; filter: blur(80px); }
+.b1 { width: 62vmax; height: 62vmax; left: -20vmax; top: -24vmax; background: radial-gradient(circle at 45% 45%, var(--a1), transparent 64%); opacity: .7; animation: drift1 28s ease-in-out infinite alternate; }
+.b2 { width: 58vmax; height: 58vmax; right: -22vmax; bottom: -28vmax; background: radial-gradient(circle at 50% 50%, var(--a2), transparent 64%); opacity: .75; animation: drift2 34s ease-in-out infinite alternate; }
+.b3 { width: 34vmax; height: 34vmax; left: 46%; top: 26%; background: radial-gradient(circle, var(--a1), transparent 66%); opacity: .28; animation: drift3 22s ease-in-out infinite alternate; }
+.grain { position: absolute; inset: 0; opacity: .10; mix-blend-mode: overlay; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+.nightveil { position: absolute; inset: 0; background: #02020a; opacity: calc(var(--night) * .55); transition: opacity 1.5s; }
+@keyframes drift1 { to { transform: translate(12vmax, 8vmax) scale(1.08); } }
+@keyframes drift2 { to { transform: translate(-10vmax, -6vmax) scale(.94); } }
+@keyframes drift3 { to { transform: translate(-18vmax, 10vmax) scale(1.2); } }
+body.still .blob { animation: none; }
+
+.screen { position: relative; z-index: 1; min-height: 100%; box-sizing: border-box; }
+
+/* ---------- Menu ---------- */
+.menu { display: grid; grid-template-rows: auto 1fr auto; gap: 24px; padding-block: 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.corners { display: flex; justify-content: space-between; gap: 16px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.brand { font-family: var(--f-display); font-size: 15px; font-weight: 500; letter-spacing: -.01em; text-transform: none; color: var(--ink); }
+.brand span { color: var(--ink-3); font-weight: 400; }
+.menu-main { display: grid; align-content: center; gap: clamp(28px, 5vh, 56px); width: 100%; max-width: 1160px; margin-inline: auto; }
+.menu-hero { position: relative; }
+.menu-title { margin: 0; font-weight: 200; font-size: clamp(68px, 15vw, 210px); line-height: .84; letter-spacing: -.06em; text-wrap: balance; }
+.menu-title em { font-style: normal; color: var(--ink-3); }
+.tagline { margin: 18px 0 0; max-width: 46ch; font-size: clamp(15px, 1.6vw, 18px); font-weight: 300; line-height: 1.5; color: var(--ink-2); }
+.tagline b { font-weight: 500; color: var(--ink); }
+.menu-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; align-items: end; }
+@media (min-width: 860px) { .menu-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); } }
+.menu-list { display: grid; border-top: 1px solid var(--line); }
+.menu-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 4px; border-bottom: 1px solid var(--line); text-align: left; transition: padding .25s ease, background .25s; }
+.menu-item .t { font-size: clamp(22px, 3vw, 32px); font-weight: 300; letter-spacing: -.025em; line-height: 1.1; }
+.menu-item small { display: block; margin-top: 5px; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.menu-item .arr { width: 42px; height: 42px; border-radius: 50%; background: var(--ink); color: #000; display: grid; place-items: center; flex: none; transition: transform .25s; }
+.menu-item .arr svg { width: 18px; height: 18px; }
+.menu-item.primary .arr { background: var(--lime); color: var(--lime-ink); }
+.menu-item:hover:not(:disabled) { padding-left: 14px; }
+.menu-item:hover:not(:disabled) .arr { transform: rotate(-45deg); }
+.menu-item:disabled { opacity: .35; cursor: not-allowed; }
+.store-note { font-family: var(--f-mono); font-size: 11px; color: var(--danger); margin-top: 12px; }
+
+.deck { position: relative; height: 440px; display: none; }
+@media (min-width: 860px) { .deck { display: block; } }
+.dcard { position: absolute; left: 0; right: 0; top: calc(var(--k) * 58px); height: 210px; border-radius: 30px; padding: 18px 22px; box-sizing: border-box; color: var(--ink-c); background: linear-gradient(160deg, var(--c1), var(--c2) 85%); box-shadow: 0 -14px 40px -18px rgba(0,0,0,.8); transition: top .45s cubic-bezier(.2,.8,.2,1); display: flex; flex-direction: column; justify-content: space-between; }
+.deck:hover .dcard { top: calc(var(--k) * 66px); }
+.dcard .h { display: flex; justify-content: space-between; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.dcard .h span { font-family: var(--f-mono); font-size: 11px; font-weight: 400; opacity: .7; letter-spacing: .06em; }
+.dcard .big { font-family: var(--f-dot); font-weight: 800; font-size: 76px; line-height: .9; }
+.dcard .foot { display: flex; justify-content: space-between; align-items: end; font-family: var(--f-mono); font-size: 11px; opacity: .8; }
+
+/* ---------- Game shell ---------- */
+.game { display: flex; flex-direction: column; gap: 14px; padding-block: 14px 176px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 1440px; margin-inline: auto; }
+.hud { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "l c" "r r"; align-items: center; gap: 12px; }
+@media (min-width: 900px) { .hud { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-areas: "l c r"; } }
+.hud-l { grid-area: l; min-width: 0; }
+.hud-c { grid-area: c; text-align: right; }
+@media (min-width: 900px) { .hud-c { text-align: center; } }
+.hud-r { grid-area: r; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-start; }
+@media (min-width: 900px) { .hud-r { justify-content: flex-end; } }
+.farm { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .04em; }
+.farm .saved { color: var(--lime); opacity: 0; transition: opacity .4s; }
+.farm .saved.show { opacity: 1; }
+.clock { font-family: var(--f-dot); font-weight: 800; font-size: clamp(36px, 4.6vw, 54px); line-height: .95; letter-spacing: .03em; font-variant-numeric: tabular-nums; }
+.clock-sub { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin-top: 4px; }
+.chip { display: flex; align-items: center; gap: 10px; padding: 7px 14px 7px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.chip .lbl { font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.chip .val { font-family: var(--f-dot); font-weight: 800; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
+.chip .val.sm { font-size: 18px; min-width: 2.2em; }
+.ebar { position: relative; width: 84px; height: 16px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; -webkit-mask: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 5px); mask: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 5px); }
+.ebar i { position: absolute; inset: 0 auto 0 0; width: 100%; background: linear-gradient(90deg, #A4FF5E, var(--lime)); transition: width .2s; }
+.ebar.low i { background: var(--danger); }
+.ring { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--lime) calc(var(--x, 0) * 1turn), rgba(255,255,255,.12) 0); position: relative; }
+.ring::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: #0c0b11; }
+.ring b { position: relative; font-family: var(--f-dot); font-weight: 900; font-size: 15px; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (min-width: 1040px) {
+  .layout { grid-template-columns: minmax(0, 1fr) minmax(340px, 410px); }
+  .panel { position: sticky; top: 14px; max-height: calc(100dvh - 200px); overflow-y: auto; scrollbar-width: thin; padding-right: 2px; }
+}
+
+.field-wrap { position: relative; display: grid; gap: 12px; padding: 16px; border-radius: var(--r-lg); background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); min-width: 0; }
+.field-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.field-head h2 { margin: 0; font-weight: 300; font-size: 24px; letter-spacing: -.03em; }
+.field-head h2 span { color: var(--ink-3); }
+.fstat { font-family: var(--f-mono); font-size: 11px; color: var(--ink-2); display: flex; gap: 14px; flex-wrap: wrap; }
+.fstat b { color: var(--ink); font-weight: 500; }
+.fstat .drone { color: var(--water); }
+.field { --n: 4; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: clamp(5px, 1vw, 10px); width: min(100%, max(300px, calc(100dvh - 350px))); aspect-ratio: 1; margin-inline: auto; max-width: 100%; user-select: none; -webkit-user-select: none; }
+.inspector { font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-2); min-height: 1.5em; display: flex; gap: 10px; align-items: center; justify-content: center; text-align: center; }
+.inspector b { color: var(--ink); font-weight: 500; }
+.inspector .hint { color: var(--lime); }
+
+.tile { --p: 0; --w: 0; --c1: #fff; --c2: #888; position: relative; border-radius: clamp(10px, 1.6vw, 18px); background: rgba(255,255,255,.035); border: 1px solid var(--line); overflow: hidden; isolation: isolate; touch-action: manipulation; transition: transform .15s ease, border-color .25s, box-shadow .3s; }
+.tile::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.2) 1px, transparent 1.5px); background-size: 9px 9px; background-position: 4px 4px; opacity: .55; transition: opacity .4s; }
+.tile:hover { border-color: var(--line-hi); transform: translateY(-1px); }
+.tile:active { transform: scale(.96); }
+.t-glow { position: absolute; inset: 7%; border-radius: 50%; background: radial-gradient(circle at 48% 42%, var(--c1), var(--c2) 52%, transparent 71%); transform: scale(calc(.18 + var(--p) * .9)); opacity: 0; filter: blur(2px); transition: transform .5s ease, opacity .4s; }
+.t-ring { position: absolute; inset: 11%; border-radius: 50%; background: conic-gradient(rgba(255,255,255,.92) calc(var(--p) * 1turn), rgba(255,255,255,.12) 0); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px)); opacity: 0; transition: opacity .3s; }
+.t-glyph { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; opacity: 0; transition: opacity .4s; }
+.t-glyph svg { width: 40%; height: 40%; filter: drop-shadow(0 1px 3px rgba(0,0,0,.35)); }
+.t-water { position: absolute; left: 14%; right: 14%; bottom: 7%; height: 3px; border-radius: 2px; background: rgba(255,255,255,.16); opacity: 0; }
+.t-water i { display: block; height: 100%; width: calc(var(--w) * 100%); border-radius: inherit; background: var(--water); transition: width .3s; }
+.t-tag { position: absolute; top: 7%; left: 10%; font-family: var(--f-mono); font-size: clamp(8px, 1vw, 10.5px); letter-spacing: .04em; color: rgba(255,255,255,.4); pointer-events: none; }
+.t-badge { position: absolute; top: 7%; right: 7%; width: 22%; aspect-ratio: 1; border-radius: 50%; background: var(--lime); color: var(--lime-ink); display: none; place-items: center; }
+.t-badge svg { width: 70%; height: 70%; }
+.t-fert { position: absolute; top: 9%; right: 9%; width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 10px var(--lime); display: none; }
+.tile.is-grow::before, .tile.is-ready::before { opacity: .15; }
+.is-grow .t-glow { opacity: .92; }
+.is-grow .t-ring, .is-grow .t-water { opacity: 1; }
+.is-grow .t-glyph { opacity: calc(.3 + var(--p) * .55); }
+.is-grow .t-tag, .is-ready .t-tag { color: rgba(255,255,255,.85); }
+.is-fert .t-fert { display: block; }
+.is-ready { border-color: rgba(226,255,61,.6); box-shadow: 0 0 0 1px rgba(226,255,61,.2), 0 0 26px -6px var(--c1); }
+.is-ready .t-glow { opacity: 1; transform: scale(1.04); animation: pulse 1.8s ease-in-out infinite; }
+.is-ready .t-glyph { opacity: 1; }
+.is-ready .t-badge { display: grid; }
+.is-ready .t-fert { display: none; }
+.is-dry { border-color: rgba(255,84,104,.55); }
+.is-dry .t-water i { background: var(--danger); }
+.is-dry .t-water { animation: blink 1s steps(2) infinite; }
+.is-dead .t-glow { opacity: .45; filter: grayscale(1) blur(2px); transform: scale(.7); }
+.is-dead .t-glyph { opacity: .35; color: #aaa; }
+.is-dead .t-tag { color: var(--danger); }
+.field.dense .t-tag { display: none; }
+.field.dense .is-dead .t-tag, .field.dense .is-ready .t-tag { display: none; }
+@keyframes pulse { 50% { transform: scale(.92); filter: blur(4px) brightness(1.2); } }
+@keyframes blink { 50% { opacity: .35; } }
+.tile.ping-water::after, .tile.ping-harvest::after { content: ""; position: absolute; inset: 0; border-radius: inherit; animation: ping .65s ease-out forwards; }
+.tile.ping-water::after { box-shadow: inset 0 0 0 2px var(--water), inset 0 0 30px rgba(92,184,255,.5); }
+.tile.ping-harvest::after { box-shadow: inset 0 0 0 2px var(--lime), inset 0 0 30px rgba(226,255,61,.45); }
+@keyframes ping { from { opacity: 1; } to { opacity: 0; } }
+.tile.shake { animation: shake .32s; }
+@keyframes shake { 25% { transform: translateX(-3px); } 50% { transform: translateX(3px); } 75% { transform: translateX(-2px); } }
+.floater { position: absolute; z-index: 5; pointer-events: none; transform: translate(-50%, -50%); padding: 4px 9px; border-radius: 999px; background: rgba(5,5,8,.75); border: 1px solid var(--line-hi); font-family: var(--f-mono); font-size: 11.5px; white-space: nowrap; animation: floatUp 1.15s ease-out forwards; }
+.floater.lime { color: var(--lime); }
+@keyframes floatUp { from { opacity: 0; transform: translate(-50%, -30%); } 15% { opacity: 1; } to { opacity: 0; transform: translate(-50%, -160%); } }
+
+/* ---------- Panel ---------- */
+.panel { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.daycard { position: relative; overflow: hidden; border-radius: var(--r-lg); padding: 18px 18px 14px; background: linear-gradient(165deg, var(--a1), var(--a2) 58%, var(--a3)); border: 1px solid var(--line-hi); color: #fff; }
+.daycard::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,.35)); pointer-events: none; }
+.daycard > * { position: relative; z-index: 1; }
+.dc-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.dc-row h3 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.dc-row .mono { font-size: 11px; opacity: .8; }
+.temp { font-family: var(--f-dot); font-weight: 800; font-size: 68px; line-height: 1; margin-top: 4px; }
+.wdesc { margin: 4px 0 0; font-size: 13px; opacity: .88; }
+.arc { width: 100%; height: auto; margin-top: 4px; }
+.dc-meta { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; font-family: var(--f-mono); font-size: 11px; }
+.dc-meta small { display: block; opacity: .65; font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; margin-top: 2px; }
+.dc-meta .c { text-align: center; }
+.dc-meta .r { text-align: right; }
+.tabs { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.tab { flex: 1; height: 36px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ink-2); position: relative; transition: background .2s, color .2s; }
+.tab.on { background: var(--ink); color: #08070c; }
+.tab .badge { position: absolute; top: 5px; right: 10%; width: 7px; height: 7px; border-radius: 50%; background: var(--lime); }
+.tab.on .badge { background: #08070c; }
+.tabbody { display: grid; gap: 10px; }
+.sect-h { display: flex; justify-content: space-between; gap: 10px; margin: 8px 4px 0; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; padding: 12px; border-radius: var(--r-md); background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.card.locked { opacity: .5; }
+.card h4 { margin: 0; font-size: 14.5px; font-weight: 500; letter-spacing: -.01em; }
+.card p { margin: 3px 0 0; font-size: 12px; line-height: 1.4; color: var(--ink-2); }
+.card .acts { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.sw { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: linear-gradient(150deg, var(--c1), var(--c2)); flex: none; }
+.sw svg { width: 24px; height: 24px; }
+.sw.tech { background: rgba(255,255,255,.08); border: 1px solid var(--line); color: var(--ink); }
+.price { font-family: var(--f-mono); font-size: 13px; white-space: nowrap; text-align: right; }
+.price small { display: block; font-size: 10px; color: var(--ink-3); }
+.up { color: var(--lime); } .down { color: var(--danger); }
+.pips { display: flex; gap: 3px; margin-top: 6px; }
+.pips i { width: 14px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.15); }
+.pips i.on { background: var(--lime); }
+.btn { height: 34px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--glass-hi); border: 1px solid var(--line); font-size: 12.5px; font-weight: 500; white-space: nowrap; transition: background .2s, transform .1s; }
+.btn:hover:not(:disabled) { background: rgba(255,255,255,.17); }
+.btn:active:not(:disabled) { transform: scale(.96); }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn.lime { background: var(--lime); color: var(--lime-ink); border-color: transparent; }
+.btn.lime:hover:not(:disabled) { background: #EEFF7A; }
+.btn.danger { color: var(--danger); border-color: rgba(255,84,104,.45); }
+.btn.ghost { background: transparent; }
+.btn svg { width: 15px; height: 15px; }
+.spark { grid-column: 1 / -1; width: 100%; height: 44px; }
+.mtop { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-radius: var(--r-md); background: var(--glass); border: 1px solid var(--line); }
+.mtop .k { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.mtop .v { display: block; font-family: var(--f-dot); font-weight: 800; font-size: 32px; line-height: 1.1; }
+.empty-note { padding: 22px 16px; border-radius: var(--r-md); border: 1px dashed var(--line-hi); color: var(--ink-2); text-align: center; font-size: 13px; line-height: 1.5; }
+
+.contract { position: relative; overflow: hidden; display: grid; gap: 10px; padding: 16px; border-radius: 24px; background: linear-gradient(150deg, var(--c1), var(--c2) 90%); color: var(--ink-c); }
+.contract .row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-family: var(--f-mono); font-size: 11px; }
+.contract .big { font-family: var(--f-dot); font-weight: 800; font-size: 44px; line-height: .95; }
+.contract .cname { font-size: 18px; font-weight: 500; letter-spacing: -.02em; margin-top: -4px; }
+.contract .bar { height: 4px; border-radius: 2px; background: rgba(0,0,0,.22); overflow: hidden; }
+.contract .bar i { display: block; height: 100%; background: currentColor; }
+.contract .reward { font-family: var(--f-dot); font-weight: 800; font-size: 20px; }
+.contract .btn { background: rgba(6,6,10,.82); color: #fff; border-color: transparent; }
+.contract .btn.go { color: var(--lime); }
+.contract .btn:disabled { opacity: .55; }
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat { display: grid; gap: 4px; padding: 14px; border-radius: var(--r-md); background: var(--glass); border: 1px solid var(--line); }
+.stat .k { font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.stat .v { font-family: var(--f-dot); font-weight: 800; font-size: 34px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.stat .s { font-size: 11.5px; color: var(--ink-2); }
+.statcard { padding: 14px; border-radius: var(--r-md); background: var(--glass); border: 1px solid var(--line); display: grid; gap: 10px; }
+.statcard h4 { margin: 0; font-size: 13.5px; font-weight: 500; display: flex; justify-content: space-between; }
+.statcard h4 span { font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3); font-weight: 400; }
+.bars { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; align-items: end; height: 120px; }
+.bars .b { display: grid; grid-template-rows: auto 1fr auto; justify-items: center; gap: 4px; height: 100%; font-family: var(--f-mono); font-size: 10px; color: var(--ink-2); }
+.bars .b i { align-self: end; width: 100%; max-width: 26px; border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, var(--c1), var(--c2)); min-height: 3px; }
+.bars .b span { font-size: 9.5px; color: var(--ink-3); white-space: nowrap; }
+
+/* ---------- Dock ---------- */
+.dockwrap { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; justify-items: center; gap: 10px; padding-top: 0; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); pointer-events: none; }
+.seedbar { pointer-events: auto; display: flex; gap: 4px; max-width: 100%; overflow-x: auto; padding: 5px; border-radius: 999px; background: rgba(10,9,14,.78); border: 1px solid var(--line); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); scrollbar-width: none; box-sizing: border-box; }
+.seedbar::-webkit-scrollbar { display: none; }
+.seed { flex: none; display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; border: 1px solid transparent; font-size: 12.5px; white-space: nowrap; color: var(--ink-2); transition: background .2s; }
+.seed .sw2 { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(140deg, var(--c1), var(--c2)); display: grid; place-items: center; color: #fff; }
+.seed .sw2 svg { width: 13px; height: 13px; }
+.seed .n { font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3); }
+.seed.on { background: rgba(255,255,255,.12); border-color: var(--line-hi); color: var(--ink); }
+.seed.none .n { color: var(--danger); }
+.dock { pointer-events: auto; display: flex; align-items: center; gap: 8px; padding: 7px; border-radius: 999px; background: rgba(6,6,9,.92); border: 1px solid var(--line); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 24px 60px -20px #000; max-width: 100%; box-sizing: border-box; }
+.round { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.08); flex: none; transition: background .2s; }
+.round:hover { background: rgba(255,255,255,.15); }
+.round svg { width: 18px; height: 18px; }
+.round.sm { width: 38px; height: 38px; }
+.round.speed { font-family: var(--f-mono); font-size: 13px; font-weight: 500; }
+.round.speed.fast { background: var(--ink); color: #000; }
+.tools { display: flex; gap: 3px; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.05); min-width: 0; }
+.tool { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 999px; color: var(--ink-2); font-size: 13px; font-weight: 500; white-space: nowrap; transition: background .2s, color .2s; }
+.tool svg { width: 17px; height: 17px; }
+.tool kbd { font-family: var(--f-mono); font-size: 10px; opacity: .55; }
+.tool .cnt { font-family: var(--f-mono); font-size: 10.5px; opacity: .75; }
+.tool.on { background: var(--lime); color: var(--lime-ink); }
+@media (max-width: 560px) { .ebar { width: 54px; } .chip { gap: 8px; padding: 6px 12px 6px 10px; } .tool .lbl, .tool kbd { display: none; } .tool { padding: 0 14px; } .dock { gap: 6px; } }
+
+/* ---------- Overlay / modals ---------- */
+.overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding-block: 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: rgba(3,2,8,.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.modal { width: min(560px, 100%); max-height: calc(100dvh - 40px); overflow-y: auto; box-sizing: border-box; display: grid; gap: 16px; padding: 22px; border-radius: 30px; background: rgba(15,13,21,.94); border: 1px solid var(--line-hi); box-shadow: 0 40px 90px -30px #000; animation: pop .28s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+.modal-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.modal h2 { margin: 4px 0 0; font-size: clamp(26px, 5vw, 34px); font-weight: 300; letter-spacing: -.035em; line-height: 1.05; text-wrap: balance; }
+.modal p { margin: 0; color: var(--ink-2); line-height: 1.55; font-size: 14px; }
+.mbtn-list { display: grid; gap: 8px; }
+.mbtn { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 15px 18px; border-radius: 18px; background: var(--glass); border: 1px solid var(--line); font-size: 17px; font-weight: 400; letter-spacing: -.01em; text-align: left; transition: background .2s; }
+.mbtn:hover { background: var(--glass-hi); }
+.mbtn small { font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; }
+.mbtn svg { width: 18px; height: 18px; }
+.mbtn.lime { background: var(--lime); color: var(--lime-ink); border-color: transparent; font-weight: 500; }
+.mbtn.lime:hover { background: #EEFF7A; }
+.mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mini div { padding: 12px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); }
+.mini span { display: block; font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.mini b { font-family: var(--f-dot); font-weight: 800; font-size: 24px; }
+.flabel { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: -8px; }
+.tinput, .tarea, .tselect { width: 100%; box-sizing: border-box; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid var(--line); color: var(--ink); font: inherit; }
+.tinput { height: 50px; padding: 0 16px; font-size: 17px; }
+.tarea { min-height: 90px; padding: 12px; font-family: var(--f-mono); font-size: 11px; resize: vertical; word-break: break-all; }
+.tselect { height: 38px; padding: 0 12px; width: auto; }
+.slotpick { display: grid; gap: 8px; }
+.sp { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); cursor: pointer; }
+.sp:has(input:checked) { border-color: var(--lime); background: rgba(226,255,61,.07); }
+.sp input { accent-color: var(--lime); width: 18px; height: 18px; margin: 0; }
+.sp b { display: block; font-weight: 500; }
+.sp small { display: block; font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.slot { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 14px; align-items: center; padding: 14px; border-radius: 20px; background: var(--glass); border: 1px solid var(--line); }
+.slot.cur { border-color: rgba(226,255,61,.5); }
+.slot-n { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font-family: var(--f-dot); font-weight: 900; font-size: 26px; background: rgba(255,255,255,.07); }
+.slot.cur .slot-n { background: var(--lime); color: var(--lime-ink); }
+.slot b { display: block; font-weight: 500; font-size: 15px; }
+.slot small { display: block; font-size: 12px; color: var(--ink-2); margin-top: 3px; }
+.slot-a { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.slot.empty b { color: var(--ink-3); }
+details.import { border-radius: 18px; background: var(--glass); border: 1px solid var(--line); padding: 4px 14px; }
+details.import summary { cursor: pointer; padding: 10px 0; font-size: 14px; }
+details.import .in { display: grid; gap: 10px; padding-bottom: 12px; }
+.row-end { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
+.switch { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); cursor: pointer; }
+.switch b { display: block; font-weight: 500; }
+.switch small { display: block; font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.switch input { appearance: none; -webkit-appearance: none; width: 46px; height: 28px; border-radius: 999px; background: rgba(255,255,255,.15); position: relative; flex: none; margin: 0; cursor: pointer; transition: background .2s; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.switch input:checked { background: var(--lime); }
+.switch input:checked::after { transform: translateX(18px); background: var(--lime-ink); }
+.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.steps li::before { content: counter(s); font-family: var(--f-dot); font-weight: 900; font-size: 20px; color: var(--lime); line-height: 1.2; }
+.steps b { color: var(--ink); font-weight: 500; }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: 13px; color: var(--ink-2); }
+.keys kbd { font-family: var(--f-mono); font-size: 11px; padding: 3px 8px; border-radius: 7px; background: rgba(255,255,255,.08); border: 1px solid var(--line); color: var(--ink); white-space: nowrap; justify-self: start; }
+.wlist { display: grid; gap: 6px; }
+.wlist div { display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--ink-2); }
+.wlist i { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+.wlist b { color: var(--ink); font-weight: 500; }
+.lvl-hero { text-align: center; padding: 10px 0; }
+.lvl-num { font-family: var(--f-dot); font-weight: 900; font-size: 140px; line-height: .9; background: linear-gradient(160deg, var(--lime), #7CFFB2); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.unlocks { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill { padding: 7px 12px; border-radius: 999px; background: var(--glass-hi); border: 1px solid var(--line); font-size: 12.5px; }
+
+/* ---------- Toasts ---------- */
+.toasts { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); z-index: 60; width: min(92vw, 460px); display: grid; gap: 8px; justify-items: center; pointer-events: none; }
+.toast { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px; background: rgba(14,12,20,.9); border: 1px solid var(--line-hi); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); font-size: 13px; line-height: 1.35; box-shadow: 0 16px 40px -20px #000; animation: tIn .3s ease, tOut .4s 2.7s ease forwards; }
+.toast .d { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); flex: none; }
+.toast.err .d { background: var(--danger); }
+.toast.info .d { background: var(--water); }
+@keyframes tIn { from { opacity: 0; transform: translateY(-8px); } }
+@keyframes tOut { to { opacity: 0; transform: translateY(-6px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .blob, .is-ready .t-glow, .is-dry .t-water { animation: none !important; }
+  :root { transition: none; }
+}
+</style>
+
+<div class="ambient" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="nightveil"></div><div class="grain"></div>
+</div>
+
+<!-- ============ MENU ============ -->
+<section class="screen menu" id="menu" aria-label="Hauptmenü">
+  <div class="corners"><span class="brand">Harvest <span>OS</span></span><span>Fabian Visuals</span></div>
+  <div class="menu-main">
+    <div class="menu-hero">
+      <h1 class="menu-title">Harvest<em>OS</em></h1>
+      <p class="tagline">Eine Hydro-Farm im Orbit-Takt. <b>Säen, gießen, automatisieren</b> und den Markt lesen, bevor die Preise kippen.</p>
+    </div>
+    <div class="menu-grid">
+      <div>
+        <nav class="menu-list" id="menu-list"></nav>
+        <div class="store-note" id="store-note" hidden>Browser-Speicher ist blockiert. Spielstände lassen sich nur per Export-Code sichern.</div>
+      </div>
+      <div class="deck" id="deck" aria-hidden="true"></div>
+    </div>
+  </div>
+  <div class="corners"><span>Version 1.0</span><span>Vom Samen zur Skyline</span></div>
+</section>
+
+<!-- ============ GAME ============ -->
+<section class="screen game" id="game" aria-label="Spiel" hidden>
+  <header class="hud">
+    <div class="hud-l">
+      <div class="brand">Harvest <span>OS</span></div>
+      <div class="farm" id="h-farm">–</div>
+    </div>
+    <div class="hud-c">
+      <div class="clock" id="h-clock">06:00</div>
+      <div class="clock-sub" id="h-clocksub">Tag 1 · Morgen</div>
+    </div>
+    <div class="hud-r">
+      <div class="chip"><span class="lbl">Credits</span><span class="val" id="h-credits">0</span></div>
+      <div class="chip"><span class="lbl">Energie</span><span class="ebar" id="h-ebar"><i></i></span><span class="val sm" id="h-energy">100</span></div>
+      <div class="chip"><span class="ring" id="h-ring"><b id="h-level">1</b></span><span class="lbl" id="h-xp">0 / 40 XP</span></div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="field-wrap" id="field-wrap" aria-label="Feld">
+      <div class="field-head">
+        <h2 id="f-title">Feld <span>4×4</span></h2>
+        <div class="fstat" id="f-stat"></div>
+      </div>
+      <div class="field" id="field"></div>
+      <div class="inspector" id="inspector" aria-live="polite"></div>
+    </section>
+
+    <aside class="panel" id="panel" aria-label="Konsole">
+      <div class="daycard" id="daycard"></div>
+      <nav class="tabs" id="tabs" role="tablist">
+        <button class="tab on" role="tab" data-act="tab" data-id="shop">Shop</button>
+        <button class="tab" role="tab" data-act="tab" data-id="market">Markt</button>
+        <button class="tab" role="tab" data-act="tab" data-id="orders">Aufträge</button>
+        <button class="tab" role="tab" data-act="tab" data-id="stats">Stats</button>
+      </nav>
+      <div class="tabbody" id="panel-body"></div>
+    </aside>
+  </main>
+</section>
+
+<div class="dockwrap" id="dockwrap" hidden>
+  <div class="seedbar" id="seedbar" aria-label="Saatgut"></div>
+  <div class="dock">
+    <button class="round" id="btn-pause" aria-label="Pause-Menü"></button>
+    <div class="tools" id="tools" role="radiogroup" aria-label="Werkzeug"></div>
+    <button class="round speed" id="btn-speed" aria-label="Spieltempo">1×</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" hidden></div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= DATA ================= */
+const CROPS = [
+  { id: 'lumen',   name: 'Lumen-Salat',    seed: 10,  time: 30,  price: 22,  xp: 4,  lvl: 1,  c1: '#8DFFC0', c2: '#139E6E', ink: '#03140c' },
+  { id: 'neon',    name: 'Neon-Karotte',   seed: 25,  time: 55,  price: 55,  xp: 8,  lvl: 1,  c1: '#FFB13D', c2: '#FF3D6E', ink: '#1d0700' },
+  { id: 'photon',  name: 'Photon-Paprika', seed: 45,  time: 80,  price: 105, xp: 13, lvl: 3,  c1: '#FF6A4D', c2: '#8E0F2E', ink: '#ffffff' },
+  { id: 'quantum', name: 'Quanten-Mais',   seed: 80,  time: 120, price: 190, xp: 20, lvl: 5,  c1: '#F2FF5C', c2: '#7FB11A', ink: '#141500' },
+  { id: 'aurora',  name: 'Aurora-Beere',   seed: 140, time: 170, price: 330, xp: 32, lvl: 7,  c1: '#FF6AD5', c2: '#6A3DFF', ink: '#ffffff' },
+  { id: 'void',    name: 'Void-Melone',    seed: 260, time: 260, price: 640, xp: 55, lvl: 10, c1: '#5AD2FF', c2: '#2B25E0', ink: '#ffffff' },
+];
+const CROP = Object.fromEntries(CROPS.map(c => [c.id, c]));
+
+const UPGS = [
+  { id: 'field',        name: 'Feld-Erweiterung', desc: '+1 Reihe und Spalte Beete', costs: [600, 1800, 4800], max: 3, lvl: 1, icon: 'grid' },
+  { id: 'solar',        name: 'Solar-Array',      desc: '+0,4 Energie pro Sekunde (tagsüber)', base: 220, g: 1.65, max: 5, lvl: 1, icon: 'sun' },
+  { id: 'battery',      name: 'Akku-Zelle',       desc: '+50 maximale Energie', base: 180, g: 1.7, max: 4, lvl: 1, icon: 'cell' },
+  { id: 'waterDrone',   name: 'Hydro-Drohne',     desc: 'Gießt trockene Beete automatisch', base: 450, g: 1.9, max: 4, lvl: 2, icon: 'drone' },
+  { id: 'sprinkler',    name: 'Sprinkler-Matrix', desc: 'Gießen wirkt auf 3×3 Beete', costs: [1200], max: 1, lvl: 3, icon: 'drop' },
+  { id: 'lamp',         name: 'Growth-Lampen',    desc: '+15 % Wachstum, kein Nacht-Malus', base: 750, g: 2.1, max: 3, lvl: 3, icon: 'lamp' },
+  { id: 'harvestDrone', name: 'Ernte-Drohne',     desc: 'Erntet reife Beete automatisch', base: 950, g: 2, max: 3, lvl: 4, icon: 'drone' },
+  { id: 'replant',      name: 'Replant-Modul',    desc: 'Sät nach jeder Ernte automatisch nach', costs: [1600], max: 1, lvl: 6, icon: 'loop' },
+];
+const UPG = Object.fromEntries(UPGS.map(u => [u.id, u]));
+
+const ITEMS = [
+  { id: 'fert',    name: 'Nährstoff-Kapsel', desc: '60 % schneller, höhere Chance auf Doppelernte', cost: 35,  lvl: 1, icon: 'flask', stock: true },
+  { id: 'cell',    name: 'Energie-Zelle',    desc: 'Füllt sofort 60 Energie auf', cost: 45,  lvl: 1, icon: 'bolt' },
+  { id: 'crystal', name: 'Zeitkristall',     desc: 'Alle wachsenden Pflanzen +25 s', cost: 160, lvl: 4, icon: 'crystal' },
+];
+const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
+
+const WEATHER = {
+  clear: { name: 'Klar',        temp: [19, 27], grow: 1,    dry: 1,   energy: 1,   c: ['#FF5A3D', '#B3123A', '#2a0610'], desc: 'Normales Wachstum, normale Verdunstung.' },
+  rain:  { name: 'Regen',       temp: [11, 16], grow: 1.05, dry: .2,  energy: .7,  c: ['#3B6BFF', '#1B2C9F', '#060a2a'], desc: 'Beete werden automatisch bewässert.', rain: true },
+  heat:  { name: 'Hitzewelle',  temp: [31, 38], grow: 1.2,  dry: 2.1, energy: 1.2, c: ['#FF8A3D', '#FF2E63', '#2a0a06'], desc: '+20 % Wachstum, Beete trocknen doppelt so schnell.' },
+  storm: { name: 'Sonnensturm', temp: [22, 29], grow: .9,   dry: 1,   energy: 3,   c: ['#8B5CFF', '#FF4FC3', '#14062c'], desc: 'Solar lädt dreifach, Pflanzen wachsen etwas langsamer.' },
+  fog:   { name: 'Nebel',       temp: [8, 13],  grow: .9,   dry: .6,  energy: .6,  c: ['#16A584', '#1F5F7A', '#04161a'], desc: 'Langsame Verdunstung, wenig Sonnenstrom.' },
+};
+const MENU_AMBIENT = ['#7B5CFF', '#FF4D6D', '#140a26'];
+
+const P = {
+  pause: '<path d="M9 6v12M15 6v12"/>',
+  hand: '<path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12M11 11V5a1.5 1.5 0 0 1 3 0v6M14 11V6.5a1.5 1.5 0 0 1 3 0V14c0 4-2.5 7-6 7-2.5 0-4-1.3-5.5-3.5L4 14.5c-.6-1 .6-2.2 1.6-1.5L8 15"/>',
+  drop: '<path d="M12 3.5c3.5 4.2 6 7.5 6 10.5a6 6 0 0 1-12 0c0-3 2.5-6.3 6-10.5z"/>',
+  flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.5 15h9"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  grid: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 12h16M12 4v16"/>',
+  drone: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/><path d="M8 8l1 1M16 8l-1 1M8 16l1-1M16 16l-1-1"/>',
+  lamp: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+  loop: '<path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/>',
+  crystal: '<path d="M12 2l6 7-6 13-6-13zM6 9h12"/>',
+  cell: '<rect x="6" y="4" width="12" height="17" rx="2.5"/><path d="M10 2h4M12.5 8.5l-2 4h3.5l-2 4"/>',
+};
+const I = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+const GLYPH = {
+  lumen: '<path d="M12 20c-4 0-7-3-7-7 3 0 5.2 1.2 7 4 1.8-2.8 4-4 7-4 0 4-3 7-7 7z"/><path d="M12 17c-1.2-4-.6-8 0-12 1.5 2.6 3 5 3 8"/>',
+  neon: '<path d="M14.5 6.5l3 3L8.6 19.6c-1 1-3.2-1.2-2.2-2.2z"/><path d="M15.5 5.5c-.2-1.8.6-3 2-3.5M18.5 8.5c1.8.2 3-.6 3.5-2M10 14l1.5 1.5M12.5 11l1.2 1.2"/>',
+  photon: '<path d="M12 8c-4 0-6 2.8-6 6.5S8.8 21 12 21s6-2.8 6-6.5S16 8 12 8z"/><path d="M12 8c0-2 1-3.5 3.2-4.5M9.5 12c-.8 1-1.2 2.2-1.2 3.5"/>',
+  quantum: '<path d="M12 3c3 0 4.2 4 4.2 9S14 21 12 21s-4.2-4-4.2-9S9 3 12 3z"/><path d="M8.2 12h7.6M8.6 8h6.8M8.8 16h6.4M12 3v18"/>',
+  aurora: '<circle cx="9" cy="15" r="3.2"/><circle cx="15" cy="15" r="3.2"/><circle cx="12" cy="9.5" r="3.2"/><path d="M12 6.3V3l2-1"/>',
+  void: '<circle cx="12" cy="13" r="8"/><path d="M12 5c-3.5 3-3.5 13 0 16M12 5c3.5 3 3.5 13 0 16M4 13h16"/>',
+};
+const G = id => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GLYPH[id]}</svg>`;
+
+const MAXN = 7, MIN_PER_SEC = 6, COLS = 'ABCDEFG';
+const SLOTS_KEY = 'harvestos.v1.slots', SET_KEY = 'harvestos.v1.settings';
+
+/* ================= UTIL ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rnd = (a, b) => a + Math.random() * (b - a);
+const rint = (a, b) => Math.floor(rnd(a, b + 1));
+const pad = n => String(n).padStart(2, '0');
+const hm = m => pad(Math.floor(m / 60) % 24) + ':' + pad(Math.floor(m % 60));
+const fmt = n => Math.round(n).toLocaleString('de-DE');
+const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const store = {
+  ok: (() => { try { localStorage.setItem('__hos', '1'); localStorage.removeItem('__hos'); return true; } catch (e) { return false; } })(),
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+};
+function ago(ts) {
+  const s = Math.max(0, (Date.now() - ts) / 1000);
+  if (s < 60) return 'gerade eben';
+  if (s < 3600) return `vor ${Math.floor(s / 60)} Min.`;
+  if (s < 86400) return `vor ${Math.floor(s / 3600)} Std.`;
+  const d = Math.floor(s / 86400); return `vor ${d} Tag${d > 1 ? 'en' : ''}`;
+}
+
+/* ================= STATE ================= */
+let settings = Object.assign({ sound: true, motion: true, autosave: true }, store.get(SET_KEY, {}));
+let S = null, slot = null;
+const ui = { inGame: false, modalName: null, tool: 'hand', seed: 'lumen', tab: 'shop', speed: 1, pointerDown: false, painting: false, painted: null, hover: -1, lastPanel: '', lastSeedbar: '', lastDay: '', fieldN: 0, tiles: [], tileMap: {}, tileKey: {}, lvlInfo: null, exportCode: null, exportSlot: null, confirmDel: null, confirmWipe: false };
+
+function newState(name) {
+  const st = {
+    v: 1, name, created: Date.now(), clock: 6 * 60, day: 1, credits: 150, energy: 100, xp: 0, level: 1, size: 4,
+    plots: Array.from({ length: MAXN * MAXN }, emptyPlot),
+    seeds: { lumen: 6 }, produce: {}, items: { fert: 2 }, up: {}, market: {}, weather: null, contracts: [],
+    stats: { harvested: 0, earned: 0, spent: 0, perCrop: {}, hist: [150], contractsDone: 0 },
+    timers: { wd: 0, hd: 0, mk: 0, hist: 0 }, playTime: 0, cid: 0,
+  };
+  UPGS.forEach(u => st.up[u.id] = 0);
+  return st;
+}
+function emptyPlot() { return { s: 'empty', c: null, p: 0, w: 0, f: 0, d: 0 }; }
+function hydrate(st) {
+  const d = newState(st.name || 'Farm');
+  for (const k in d) if (st[k] === undefined || st[k] === null && k !== 'weather') st[k] = d[k];
+  for (const grp of ['up', 'stats', 'timers', 'items']) for (const k in d[grp]) if (st[grp][k] === undefined) st[grp][k] = d[grp][k];
+  if (!Array.isArray(st.plots) || st.plots.length !== MAXN * MAXN) st.plots = d.plots;
+  st.size = clamp(st.size | 0, 4, MAXN);
+  CROPS.forEach(c => {
+    if (!st.market[c.id]) {
+      const h = []; let m = 1;
+      for (let k = 0; k < 30; k++) { m = clamp(m + (Math.random() - .5) * .09 + (1 - m) * .06, .6, 1.5); h.push(+m.toFixed(3)); }
+      st.market[c.id] = { m, h };
+    }
+  });
+  if (!st.weather || !WEATHER[st.weather.id]) rollWeather(st, true);
+  st.contracts = (st.contracts || []).filter(k => CROP[k.crop]);
+  while (st.contracts.length < 3) st.contracts.push(genContract(st));
+  return st;
+}
+function pickWeather() {
+  const ws = [['clear', 4], ['rain', 2], ['heat', 1.4], ['storm', 1], ['fog', 1.4]];
+  let t = Math.random() * ws.reduce((a, b) => a + b[1], 0);
+  for (const [id, w] of ws) if ((t -= w) <= 0) return id;
+  return 'clear';
+}
+function rollWeather(st, first) {
+  const id = first ? 'clear' : (st.weather && st.weather.next) || pickWeather();
+  const W = WEATHER[id];
+  st.weather = { id, t: rint(W.temp[0], W.temp[1]), left: rint(360, 660), next: pickWeather() };
+}
+function genContract(st) {
+  const pool = CROPS.filter(c => c.lvl <= st.level);
+  let tw = pool.reduce((a, c, i) => a + i + 1, 0), r = Math.random() * tw, c = pool[0];
+  for (let i = 0; i < pool.length; i++) { if ((r -= i + 1) <= 0) { c = pool[i]; break; } }
+  const qty = rint(3, 6) + Math.floor(st.level / 2);
+  return { id: ++st.cid, crop: c.id, qty, reward: Math.round(qty * c.price * rnd(1.4, 1.8) / 5) * 5, xp: Math.round(qty * c.xp * 1.3), due: st.day + 2 };
+}
+const maxEnergy = () => 100 + 50 * S.up.battery;
+const xpFor = l => Math.round(40 * Math.pow(l, 1.55));
+const price = id => Math.round(CROP[id].price * S.market[id].m);
+const isNightAt = m => m < 360 || m >= 1200;
+function activeIdx() { const a = []; for (let r = 0; r < S.size; r++) for (let c = 0; c < S.size; c++) a.push(r * MAXN + c); return a; }
+const coord = i => COLS[i % MAXN] + (Math.floor(i / MAXN) + 1);
+const unlockedCrops = () => CROPS.filter(c => c.lvl <= S.level);
+
+/* ================= SIM ================= */
+function tick(dt) {
+  S.playTime += dt;
+  S.clock += dt * MIN_PER_SEC;
+  while (S.clock >= 1440) { S.clock -= 1440; S.day++; onNewDay(); }
+  S.weather.left -= dt * MIN_PER_SEC;
+  if (S.weather.left <= 0) { rollWeather(S); const W = WEATHER[S.weather.id]; setAmbient(W.c); toast(`Wetter: ${W.name}. ${W.desc}`, 'info'); }
+  const W = WEATHER[S.weather.id], night = isNightAt(S.clock);
+  S.energy = Math.min(maxEnergy(), S.energy + dt * (.6 + .4 * S.up.solar * (night ? .2 : 1)) * W.energy);
+  const growMul = (1 + .15 * S.up.lamp) * W.grow * (night && !S.up.lamp ? .6 : 1);
+  for (const i of activeIdx()) {
+    const pl = S.plots[i];
+    if (pl.s !== 'grow') continue;
+    if (W.rain) pl.w = Math.min(1, pl.w + dt * .05);
+    pl.w = Math.max(0, pl.w - dt * W.dry / 75);
+    if (pl.w > 0) {
+      pl.d = 0;
+      pl.p += dt / CROP[pl.c].time * growMul * (pl.f ? 1.6 : 1);
+      if (pl.p >= 1) { pl.p = 1; pl.s = 'ready'; }
+    } else {
+      pl.d += dt;
+      if (pl.d >= 45) { pl.s = 'dead'; toast(`${CROP[pl.c].name} auf ${coord(i)} ist verdorrt.`, 'err'); }
+    }
+  }
+  if (S.up.waterDrone) {
+    S.timers.wd += dt; const iv = 6 / S.up.waterDrone;
+    while (S.timers.wd >= iv) {
+      S.timers.wd -= iv;
+      let best = -1, bw = .55;
+      for (const i of activeIdx()) { const pl = S.plots[i]; if (pl.s === 'grow' && pl.w < bw) { bw = pl.w; best = i; } }
+      if (best >= 0) { S.plots[best].w = 1; S.plots[best].d = 0; ping(best, 'water'); }
+    }
+  }
+  if (S.up.harvestDrone) {
+    S.timers.hd += dt; const iv = 5 / S.up.harvestDrone;
+    while (S.timers.hd >= iv) {
+      S.timers.hd -= iv;
+      const t = activeIdx().find(i => S.plots[i].s === 'ready');
+      if (t !== undefined) harvest(t, true);
+    }
+  }
+  S.timers.mk += dt;
+  if (S.timers.mk >= 8) { S.timers.mk = 0; updateMarket(); }
+  S.timers.hist += dt;
+  if (S.timers.hist >= 20) { S.timers.hist = 0; S.stats.hist.push(Math.round(S.credits)); if (S.stats.hist.length > 60) S.stats.hist.shift(); }
+}
+function updateMarket() {
+  CROPS.forEach(c => {
+    const mk = S.market[c.id];
+    mk.m = clamp(mk.m + (Math.random() - .5) * .09 + (1 - mk.m) * .06, .6, 1.5);
+    mk.h.push(+mk.m.toFixed(3)); if (mk.h.length > 40) mk.h.shift();
+  });
+}
+function onNewDay() {
+  const before = S.contracts.length;
+  S.contracts = S.contracts.filter(c => c.due >= S.day);
+  const expired = before - S.contracts.length;
+  while (S.contracts.length < 3) S.contracts.push(genContract(S));
+  toast(`Tag ${S.day} beginnt${expired ? ` · ${expired} Auftrag abgelaufen` : ''}. Neue Aufträge verfügbar.`, 'info');
+}
+
+/* ================= ACTIONS ================= */
+function useEnergy(n, i) {
+  if (S.energy < n) { toast('Zu wenig Energie. Kurz warten oder eine Energie-Zelle kaufen.', 'err'); sfx('err'); shake(i); return false; }
+  S.energy -= n; return true;
+}
+function plant(i, id, auto) {
+  const pl = S.plots[i];
+  if (pl.s !== 'empty') return false;
+  if (!(S.seeds[id] > 0)) {
+    if (!auto) { toast(`Keine ${CROP[id].name}-Samen mehr. Im Shop nachkaufen.`, 'err'); sfx('err'); shake(i); }
+    return false;
+  }
+  if (!auto && !useEnergy(2, i)) return false;
+  S.seeds[id]--;
+  Object.assign(pl, { s: 'grow', c: id, p: 0, w: .35, f: 0, d: 0 });
+  if (!auto) sfx('plant');
+  return true;
+}
+function neighbors(i) {
+  const r0 = Math.floor(i / MAXN), c0 = i % MAXN, out = [];
+  for (let r = r0 - 1; r <= r0 + 1; r++) for (let c = c0 - 1; c <= c0 + 1; c++) if (r >= 0 && c >= 0 && r < S.size && c < S.size) out.push(r * MAXN + c);
+  return out;
+}
+function water(i, drag) {
+  const targets = (S.up.sprinkler ? neighbors(i) : [i]).filter(t => S.plots[t].s === 'grow');
+  if (!targets.length) { if (!drag) toast('Hier wächst nichts, das Wasser braucht.'); return; }
+  if (!useEnergy(S.up.sprinkler ? 5 : 3, i)) return;
+  targets.forEach(t => { S.plots[t].w = 1; S.plots[t].d = 0; ping(t, 'water'); });
+  sfx('water');
+}
+function fertilize(i, drag) {
+  const pl = S.plots[i];
+  if (pl.s !== 'grow') { if (!drag) toast('Dünger wirkt nur auf wachsende Pflanzen.'); return; }
+  if (pl.f) { if (!drag) toast('Dieses Beet ist schon gedüngt.'); return; }
+  if (!(S.items.fert > 0)) { toast('Keine Nährstoff-Kapseln. Im Shop unter Verbrauch.', 'err'); sfx('err'); shake(i); return; }
+  S.items.fert--; pl.f = 1; ping(i, 'harvest'); sfx('plant'); floater(i, 'gedüngt', true);
+}
+function harvest(i, drone) {
+  const pl = S.plots[i];
+  if (pl.s !== 'ready') return;
+  if (!drone && !useEnergy(1, i)) return;
+  const c = CROP[pl.c];
+  const qty = Math.random() < (pl.f ? .6 : .2) ? 2 : 1;
+  S.produce[c.id] = (S.produce[c.id] || 0) + qty;
+  S.stats.harvested += qty; S.stats.perCrop[c.id] = (S.stats.perCrop[c.id] || 0) + qty;
+  Object.assign(pl, emptyPlot());
+  floater(i, `+${qty} ${c.name}${qty > 1 ? ' · Bonus' : ''}`, qty > 1);
+  ping(i, 'harvest');
+  if (!drone) sfx('harvest');
+  if (S.up.replant) plant(i, c.id, true);
+  addXP(c.xp * qty);
+}
+function clearPlot(i) {
+  if (!useEnergy(1, i)) return;
+  Object.assign(S.plots[i], emptyPlot()); sfx('click');
+}
+function act(i, drag) {
+  if (!ui.inGame || ui.modalName || !S) return;
+  const pl = S.plots[i];
+  if (ui.tool === 'hand') {
+    if (pl.s === 'empty') plant(i, ui.seed, false);
+    else if (pl.s === 'ready') harvest(i, false);
+    else if (pl.s === 'dead') clearPlot(i);
+    else if (pl.s === 'grow' && !drag) {
+      if (pl.w < .6) water(i);
+      else toast(`${CROP[pl.c].name}: ${Math.floor(pl.p * 100)} % gewachsen, gut bewässert.`);
+    }
+  } else if (ui.tool === 'water') water(i, drag);
+  else if (ui.tool === 'fert') fertilize(i, drag);
+  refreshQuick();
+}
+function noMoney() { toast('Nicht genug Credits.', 'err'); sfx('err'); }
+function buySeed(id, n) {
+  const c = CROP[id]; if (S.level < c.lvl) return;
+  const cost = c.seed * n; if (S.credits < cost) return noMoney();
+  S.credits -= cost; S.stats.spent += cost; S.seeds[id] = (S.seeds[id] || 0) + n;
+  if (!(S.seeds[ui.seed] > 0) || ui.seed === id) ui.seed = id;
+  sfx('buy'); toast(`${n}× ${c.name}-Samen gekauft`);
+}
+function upCost(u) { const l = S.up[u.id]; return u.costs ? u.costs[l] : Math.round(u.base * Math.pow(u.g, l) / 10) * 10; }
+function buyUp(id) {
+  const u = UPG[id], l = S.up[id];
+  if (l >= u.max || S.level < u.lvl) return;
+  const cost = upCost(u); if (S.credits < cost) return noMoney();
+  S.credits -= cost; S.stats.spent += cost; S.up[id]++;
+  if (id === 'field') { S.size = Math.min(MAXN, S.size + 1); buildField(); }
+  sfx('buy'); toast(u.max > 1 ? `${u.name}: Stufe ${S.up[id]} aktiv` : `${u.name} installiert`);
+}
+function buyItem(id, n) {
+  const it = ITEM[id]; if (S.level < it.lvl) return;
+  const cost = it.cost * n; if (S.credits < cost) return noMoney();
+  if (id === 'cell') {
+    if (S.energy >= maxEnergy() - 1) { toast('Energie ist schon voll.'); return; }
+    S.energy = Math.min(maxEnergy(), S.energy + 60);
+  } else if (id === 'crystal') {
+    const g = activeIdx().filter(i => S.plots[i].s === 'grow');
+    if (!g.length) { toast('Keine wachsenden Pflanzen für den Zeitkristall.'); return; }
+    g.forEach(i => { const pl = S.plots[i]; pl.p = Math.min(1, pl.p + 25 / CROP[pl.c].time); if (pl.p >= 1) pl.s = 'ready'; ping(i, 'harvest'); });
+  } else {
+    S.items[id] = (S.items[id] || 0) + n;
+  }
+  S.credits -= cost; S.stats.spent += cost; sfx('buy');
+  toast(it.stock ? `${n}× ${it.name} gekauft` : `${it.name} eingesetzt`);
+}
+function sellUnits(id, n) {
+  const mk = S.market[id]; let total = 0;
+  for (let k = 0; k < n; k++) { total += Math.round(CROP[id].price * mk.m); mk.m = Math.max(.6, mk.m - .006); }
+  S.produce[id] -= n; return total;
+}
+function sell(id, n) {
+  const have = S.produce[id] || 0; n = Math.min(n, have); if (n <= 0) return;
+  const total = sellUnits(id, n);
+  S.credits += total; S.stats.earned += total; sfx('coin');
+  toast(`+${fmt(total)} ₵ für ${n}× ${CROP[id].name}`);
+}
+function sellAll() {
+  let total = 0, units = 0;
+  CROPS.forEach(c => { const n = S.produce[c.id] || 0; if (n > 0) { total += sellUnits(c.id, n); units += n; } });
+  if (!units) return;
+  S.credits += total; S.stats.earned += total; sfx('coin');
+  toast(`Lager geräumt: +${fmt(total)} ₵ für ${units} Einheiten`);
+}
+function deliver(k) {
+  const c = S.contracts[k]; if (!c) return;
+  const have = S.produce[c.crop] || 0; if (have < c.qty) return;
+  S.produce[c.crop] = have - c.qty; S.credits += c.reward; S.stats.earned += c.reward; S.stats.contractsDone++;
+  S.contracts.splice(k, 1, genContract(S));
+  sfx('coin'); toast(`Auftrag erfüllt: +${fmt(c.reward)} ₵`);
+  addXP(c.xp);
+}
+function addXP(x) {
+  S.xp += x; let ups = 0, bonus = 0;
+  while (S.xp >= xpFor(S.level)) { S.xp -= xpFor(S.level); S.level++; ups++; bonus += 40 * S.level; }
+  if (!ups) return;
+  S.credits += bonus;
+  const lo = S.level - ups, hi = S.level, inR = o => o.lvl > lo && o.lvl <= hi;
+  ui.lvlInfo = { bonus, unl: [...CROPS.filter(inR).map(c => c.name + '-Samen'), ...UPGS.filter(inR).map(u => u.name), ...ITEMS.filter(inR).map(i => i.name)] };
+  sfx('level');
+  if (!ui.modalName) modal('levelup'); else toast(`Level ${S.level} erreicht! +${fmt(bonus)} ₵`);
+}
+
+/* ================= FX ================= */
+let actx = null;
+function tone(f, d, type, g, when, slide) {
+  const t = actx.currentTime + (when || 0), o = actx.createOscillator(), v = actx.createGain();
+  o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + d);
+  v.gain.setValueAtTime(.0001, t); v.gain.exponentialRampToValueAtTime(g || .05, t + .01); v.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(v); v.connect(actx.destination); o.start(t); o.stop(t + d + .03);
+}
+function noise(d) {
+  const len = Math.floor(actx.sampleRate * d), b = actx.createBuffer(1, len, actx.sampleRate), ch = b.getChannelData(0);
+  for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const s = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+  s.buffer = b; f.type = 'bandpass'; f.frequency.value = 1800; g.gain.value = .07;
+  s.connect(f); f.connect(g); g.connect(actx.destination); s.start();
+}
+function sfx(k) {
+  if (!settings.sound) return;
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    switch (k) {
+      case 'plant': tone(420, .12, 'sine', .05, 0, 760); break;
+      case 'water': noise(.2); break;
+      case 'harvest': tone(660, .12, 'triangle', .06); tone(990, .18, 'triangle', .05, .07); break;
+      case 'coin': tone(1046, .08, 'square', .02); tone(1568, .16, 'square', .018, .06); break;
+      case 'buy': tone(523, .1, 'sine', .05); tone(784, .15, 'sine', .05, .06); break;
+      case 'err': tone(150, .16, 'sawtooth', .03); break;
+      case 'level': [523, 659, 784, 1046].forEach((f, i) => tone(f, .24, 'triangle', .05, i * .09)); break;
+      case 'click': tone(900, .04, 'sine', .02); break;
+    }
+  } catch (e) { /* audio unavailable */ }
+}
+const recent = new Map();
+function toast(msg, type) {
+  const now = Date.now(); if (recent.get(msg) > now - 1800) return; recent.set(msg, now);
+  const box = $('#toasts'), el = document.createElement('div');
+  el.className = 'toast ' + (type || ''); el.innerHTML = `<span class="d"></span><span>${esc(msg)}</span>`;
+  box.appendChild(el); setTimeout(() => el.remove(), 3200);
+  while (box.children.length > 3) box.firstElementChild.remove();
+}
+function ping(i, type) {
+  const el = ui.tileMap[i]; if (!el) return;
+  const cls = 'ping-' + type; el.classList.remove('ping-water', 'ping-harvest'); void el.offsetWidth; el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), 700);
+}
+function shake(i) {
+  const el = ui.tileMap[i]; if (!el) return;
+  el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 350);
+}
+function floater(i, text, lime) {
+  const el = ui.tileMap[i], wrap = $('#field-wrap'); if (!el || !ui.inGame) return;
+  const r = el.getBoundingClientRect(), w = wrap.getBoundingClientRect(), f = document.createElement('div');
+  f.className = 'floater' + (lime ? ' lime' : ''); f.textContent = text;
+  f.style.left = (r.left - w.left + r.width / 2) + 'px'; f.style.top = (r.top - w.top + r.height * .35) + 'px';
+  wrap.appendChild(f); setTimeout(() => f.remove(), 1200);
+}
+function setAmbient(c) { const r = document.documentElement.style; r.setProperty('--a1', c[0]); r.setProperty('--a2', c[1]); r.setProperty('--a3', c[2]); }
+function nightFactor(m) {
+  if (m >= 420 && m <= 1140) return 0;          // 07:00–19:00 day
+  if (m > 1140 && m < 1260) return (m - 1140) / 120; // dusk
+  if (m > 300 && m < 420) return 1 - (m - 300) / 120; // dawn
+  return 1;
+}
+
+/* ================= RENDER: FIELD ================= */
+function buildField() {
+  const f = $('#field'), n = S.size; let h = '';
+  f.style.setProperty('--n', n); f.classList.toggle('dense', n >= 6);
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    const i = r * MAXN + c;
+    h += `<button class="tile" data-i="${i}" aria-label="Beet ${coord(i)}"><span class="t-glow"></span><span class="t-ring"></span><span class="t-glyph"></span><span class="t-water"><i></i></span><span class="t-tag"></span><span class="t-badge">${I('check')}</span><span class="t-fert"></span></button>`;
+  }
+  f.innerHTML = h; ui.tiles = [...f.children]; ui.tileMap = {}; ui.tileKey = {};
+  ui.tiles.forEach(t => ui.tileMap[t.dataset.i] = t);
+  ui.fieldN = n; drawField();
+}
+function drawField() {
+  if (ui.fieldN !== S.size) return buildField();
+  let grow = 0, ready = 0, dry = 0;
+  for (const el of ui.tiles) {
+    const i = +el.dataset.i, pl = S.plots[i];
+    const isDry = pl.s === 'grow' && pl.w < .18;
+    if (pl.s === 'grow') grow++; if (pl.s === 'ready') ready++; if (isDry) dry++;
+    const key = `${pl.s}|${pl.c}|${Math.floor(pl.p * 100)}|${Math.round(pl.w * 40)}|${pl.f}|${isDry}`;
+    if (ui.tileKey[i] === key) continue;
+    const prevCrop = (ui.tileKey[i] || '').split('|')[1];
+    ui.tileKey[i] = key;
+    el.className = `tile is-${pl.s}${isDry ? ' is-dry' : ''}${pl.f ? ' is-fert' : ''}`;
+    el.style.setProperty('--p', pl.p.toFixed(3)); el.style.setProperty('--w', pl.w.toFixed(3));
+    if (pl.c) { el.style.setProperty('--c1', CROP[pl.c].c1); el.style.setProperty('--c2', CROP[pl.c].c2); }
+    if (String(pl.c) !== prevCrop) el.querySelector('.t-glyph').innerHTML = pl.c ? G(pl.c) : '';
+    el.querySelector('.t-tag').textContent = pl.s === 'grow' ? Math.floor(pl.p * 100) + '%' : pl.s === 'ready' ? 'REIF' : pl.s === 'dead' ? 'VERDORRT' : coord(i);
+    el.setAttribute('aria-label', `Beet ${coord(i)}: ${tileText(i)}`);
+  }
+  $('#f-title').innerHTML = `Feld <span>${S.size}×${S.size}</span>`;
+  const drones = [];
+  if (S.up.waterDrone) drones.push(`<span class="drone">Hydro ×${S.up.waterDrone}</span>`);
+  if (S.up.harvestDrone) drones.push(`<span class="drone">Ernte ×${S.up.harvestDrone}</span>`);
+  const fs = `<span><b>${grow}</b> wachsen</span><span><b>${ready}</b> reif</span>${dry ? `<span class="down"><b>${dry}</b> trocken</span>` : ''}${drones.join('')}`;
+  const fsEl = $('#f-stat'); if (fsEl.innerHTML !== fs) fsEl.innerHTML = fs;
+}
+function tileText(i) {
+  const pl = S.plots[i];
+  if (pl.s === 'empty') return 'frei';
+  if (pl.s === 'dead') return `${CROP[pl.c].name}, verdorrt`;
+  if (pl.s === 'ready') return `${CROP[pl.c].name}, erntereif`;
+  return `${CROP[pl.c].name}, ${Math.floor(pl.p * 100)} %, Wasser ${Math.round(pl.w * 100)} %${pl.f ? ', gedüngt' : ''}`;
+}
+function hint() {
+  const idx = activeIdx(), pls = idx.map(i => S.plots[i]);
+  if (pls.some(p => p.s === 'dead')) return 'Verdorrte Beete mit der Hand räumen.';
+  if (pls.some(p => p.s === 'grow' && p.w < .18)) return 'Trockene Beete! Mit Gießen (2) bewässern.';
+  if (pls.some(p => p.s === 'ready')) return 'Reife Ernte wartet. Mit der Hand (1) ernten.';
+  const seeds = CROPS.reduce((a, c) => a + (S.seeds[c.id] || 0), 0);
+  if (!seeds && !pls.some(p => p.s === 'grow')) return 'Keine Samen mehr. Im Shop nachkaufen.';
+  if (pls.some(p => p.s === 'empty') && seeds) return 'Freie Beete: Saatgut unten wählen, dann Beet antippen.';
+  if (CROPS.some(c => S.produce[c.id] > 0)) return 'Ernte im Markt verkaufen oder Aufträge beliefern.';
+  return 'Alles wächst. Zeit für ein Upgrade?';
+}
+function updateInspector() {
+  const el = $('#inspector'); let h;
+  if (ui.hover >= 0 && S.plots[ui.hover]) h = `<b>${coord(ui.hover)}</b><span>${esc(tileText(ui.hover))}</span>`;
+  else h = `<span class="hint">${esc(hint())}</span>`;
+  if (el.innerHTML !== h) el.innerHTML = h;
+}
+
+/* ================= RENDER: HUD / DOCK ================= */
+function phase(m) { const h = m / 60; return h < 5 ? 'Nacht' : h < 11 ? 'Morgen' : h < 14 ? 'Mittag' : h < 18 ? 'Nachmittag' : h < 21 ? 'Abend' : 'Nacht'; }
+function drawHUD() {
+  $('#h-clock').textContent = hm(S.clock);
+  $('#h-clocksub').textContent = `Tag ${S.day} · ${phase(S.clock)}`;
+  $('#h-credits').textContent = fmt(S.credits);
+  const mx = maxEnergy(), e = S.energy;
+  $('#h-ebar i').style.width = (e / mx * 100).toFixed(1) + '%';
+  $('#h-ebar').classList.toggle('low', e < 10);
+  $('#h-energy').textContent = Math.floor(e);
+  $('#h-level').textContent = S.level;
+  $('#h-ring').style.setProperty('--x', (S.xp / xpFor(S.level)).toFixed(3));
+  $('#h-xp').textContent = `${fmt(S.xp)} / ${fmt(xpFor(S.level))} XP`;
+  document.documentElement.style.setProperty('--night', nightFactor(S.clock).toFixed(3));
+}
+function renderTools() {
+  const tools = [['hand', 'Hand', 'hand', '1'], ['water', 'Gießen', 'drop', '2'], ['fert', 'Dünger', 'flask', '3']];
+  const h = tools.map(([id, l, ic, k]) => `<button class="tool${ui.tool === id ? ' on' : ''}" role="radio" aria-checked="${ui.tool === id}" data-tool="${id}" aria-label="${l}">${I(ic)}<span class="lbl">${l}</span>${id === 'fert' ? `<span class="cnt">${S ? S.items.fert || 0 : 0}</span>` : ''}<kbd>${k}</kbd></button>`).join('');
+  const el = $('#tools'); if (el.innerHTML !== h) el.innerHTML = h;
+  const sp = $('#btn-speed'); sp.textContent = ui.speed + '×'; sp.classList.toggle('fast', ui.speed > 1);
+}
+function renderSeedbar() {
+  const list = unlockedCrops();
+  if (!list.some(c => c.id === ui.seed)) ui.seed = list[0].id;
+  const h = list.map(c => { const n = S.seeds[c.id] || 0; return `<button class="seed${ui.seed === c.id ? ' on' : ''}${n ? '' : ' none'}" data-seed="${c.id}" style="--c1:${c.c1};--c2:${c.c2}" aria-pressed="${ui.seed === c.id}"><span class="sw2">${G(c.id)}</span>${c.name}<span class="n">${n}</span></button>`; }).join('');
+  if (h !== ui.lastSeedbar) { $('#seedbar').innerHTML = h; ui.lastSeedbar = h; }
+}
+function drawDay() {
+  const W = WEATHER[S.weather.id], N = WEATHER[S.weather.next];
+  const t = clamp((S.clock - 360) / 840, 0, 1), day = !isNightAt(S.clock);
+  const bx = (1 - t) ** 2 * 16 + 2 * (1 - t) * t * 150 + t * t * 284, by = (1 - t) ** 2 * 92 + 2 * (1 - t) * t * (-30) + t * t * 92;
+  const hLeft = Math.max(1, Math.ceil(S.weather.left / 60));
+  const sun = day
+    ? `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="14" fill="#fff" opacity=".22"/><circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="6.5" fill="#fff"/>`
+    : `<circle cx="150" cy="44" r="9" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="154" cy="40" r="8" fill="#14101c" opacity=".9"/>`;
+  const ticks = Array.from({ length: 29 }, (_, k) => `<line x1="${16 + k * 9.57}" y1="100" x2="${16 + k * 9.57}" y2="${k % 7 === 0 ? 94 : 97}" stroke="#fff" stroke-opacity=".45"/>`).join('');
+  const h = `<div class="dc-row"><div><h3>Wetter</h3><span class="mono">${W.name}</span></div><span class="mono">${hm(S.clock)} · Tag ${S.day}</span></div>
+    <div class="temp">${S.weather.t}°</div>
+    <p class="wdesc">${W.desc}</p>
+    <svg class="arc" viewBox="0 0 300 106" aria-hidden="true"><path d="M16 92 Q150 -30 284 92" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.4" stroke-dasharray="2 5"/><line x1="0" y1="92" x2="300" y2="92" stroke="#fff" stroke-opacity=".3"/>${ticks}${sun}</svg>
+    <div class="dc-meta"><span>06:00<small>Aufgang</small></span><span class="c">${N.name}<small>in ${hLeft} h</small></span><span class="r">20:00<small>Untergang</small></span></div>`;
+  if (h !== ui.lastDay) { $('#daycard').innerHTML = h; ui.lastDay = h; }
+}
+
+/* ================= RENDER: PANEL ================= */
+function spark(h, w, ht, lo, hi, color, base) {
+  const n = h.length, sx = w / Math.max(1, n - 1), y = v => (ht - 4) - (v - lo) / (hi - lo || 1) * (ht - 8);
+  const pts = h.map((v, k) => `${(k * sx).toFixed(1)},${y(v).toFixed(1)}`);
+  const area = `M0,${ht} L${pts.join(' L')} L${((n - 1) * sx).toFixed(1)},${ht} Z`;
+  const last = pts[pts.length - 1].split(',');
+  const gid = 'g' + Math.random().toString(36).slice(2, 8);
+  return `<svg class="spark" viewBox="0 0 ${w} ${ht}" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".35"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${base != null ? `<line x1="0" x2="${w}" y1="${y(base).toFixed(1)}" y2="${y(base).toFixed(1)}" stroke="#fff" stroke-opacity=".22" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>` : ''}<path d="${area}" fill="url(#${gid})"/><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/><circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="${color}"/></svg>`;
+}
+function panelShop() {
+  let h = `<div class="sect-h"><span>Saatgut</span><span>${fmt(S.credits)} ₵ verfügbar</span></div>`;
+  for (const c of CROPS) {
+    const locked = S.level < c.lvl;
+    h += `<div class="card${locked ? ' locked' : ''}" style="--c1:${c.c1};--c2:${c.c2}">
+      <div class="sw">${G(c.id)}</div>
+      <div><h4>${c.name}</h4><p>${locked ? `Freischaltung ab Level ${c.lvl}` : `${c.time} s Wachstum · Markt ${price(c.id)} ₵ · ${S.seeds[c.id] || 0} Samen`}</p></div>
+      <div class="price">${c.seed} ₵<small>pro Samen</small></div>
+      ${locked ? '' : `<div class="acts">${[1, 5, 10].map(n => `<button class="btn" data-act="seed" data-id="${c.id}" data-n="${n}"${S.credits < c.seed * n ? ' disabled' : ''}>+${n} · ${fmt(c.seed * n)} ₵</button>`).join('')}</div>`}
+    </div>`;
+  }
+  h += `<div class="sect-h"><span>Technik</span><span>dauerhaft</span></div>`;
+  for (const u of UPGS) {
+    const l = S.up[u.id], locked = S.level < u.lvl, maxed = l >= u.max, cost = maxed ? 0 : upCost(u);
+    h += `<div class="card${locked ? ' locked' : ''}">
+      <div class="sw tech">${I(u.icon)}</div>
+      <div><h4>${u.name}</h4><p>${locked ? `Freischaltung ab Level ${u.lvl}` : u.desc}</p>${u.max > 1 ? `<div class="pips">${Array.from({ length: u.max }, (_, k) => `<i class="${k < l ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>
+      ${locked ? '<div></div>' : maxed ? `<div class="price up">${u.max > 1 ? 'Max.' : 'Aktiv'}</div>` : `<button class="btn${S.credits >= cost ? ' lime' : ''}" data-act="up" data-id="${u.id}"${S.credits < cost ? ' disabled' : ''}>${fmt(cost)} ₵</button>`}
+    </div>`;
+  }
+  h += `<div class="sect-h"><span>Verbrauch</span><span>sofort</span></div>`;
+  for (const it of ITEMS) {
+    const locked = S.level < it.lvl;
+    h += `<div class="card${locked ? ' locked' : ''}">
+      <div class="sw tech">${I(it.icon)}</div>
+      <div><h4>${it.name}</h4><p>${locked ? `Freischaltung ab Level ${it.lvl}` : it.desc + (it.stock ? ` · ${S.items[it.id] || 0} im Lager` : '')}</p></div>
+      <div class="price">${it.cost} ₵</div>
+      ${locked ? '' : `<div class="acts">${(it.stock ? [1, 5] : [1]).map(n => `<button class="btn" data-act="item" data-id="${it.id}" data-n="${n}"${S.credits < it.cost * n ? ' disabled' : ''}>${it.stock ? `+${n} · ${fmt(it.cost * n)} ₵` : 'Einsetzen'}</button>`).join('')}</div>`}
+    </div>`;
+  }
+  return h;
+}
+function panelMarket() {
+  const total = CROPS.reduce((a, c) => a + (S.produce[c.id] || 0) * price(c.id), 0);
+  let h = `<div class="mtop"><div><span class="k">Lagerwert</span><span class="v">${fmt(total)} ₵</span></div><button class="btn lime" data-act="sellall"${total ? '' : ' disabled'}>Alles verkaufen</button></div>
+    <div class="sect-h"><span>Kurse · letzte ${S.market.lumen.h.length} Ticks</span><span>– – Basispreis</span></div>`;
+  const list = CROPS.filter(c => c.lvl <= S.level || S.produce[c.id] > 0);
+  for (const c of list) {
+    const have = S.produce[c.id] || 0, p = price(c.id), d = Math.round((S.market[c.id].m - 1) * 100);
+    h += `<div class="card" style="--c1:${c.c1};--c2:${c.c2}">
+      <div class="sw">${G(c.id)}</div>
+      <div><h4>${c.name}</h4><p>${have} im Lager · Basis ${c.price} ₵</p></div>
+      <div class="price">${p} ₵<small class="${d >= 0 ? 'up' : 'down'}">${d >= 0 ? '▲ +' : '▼ '}${d} %</small></div>
+      ${spark(S.market[c.id].h, 300, 44, .6, 1.5, c.c1, 1)}
+      <div class="acts"><button class="btn" data-act="sell" data-id="${c.id}" data-n="1"${have ? '' : ' disabled'}>1 verkaufen</button><button class="btn" data-act="sell" data-id="${c.id}" data-n="all"${have ? '' : ' disabled'}>Alle ${have ? `· ~${fmt(have * p)} ₵` : ''}</button></div>
+    </div>`;
+  }
+  return h;
+}
+function panelOrders() {
+  let h = `<div class="sect-h"><span>Lieferaufträge</span><span>neu jeden Morgen</span></div>`;
+  S.contracts.forEach((k, idx) => {
+    const c = CROP[k.crop], have = S.produce[k.crop] || 0, pct = Math.min(1, have / k.qty), left = k.due - S.day, ok = have >= k.qty;
+    h += `<div class="contract" style="--c1:${c.c1};--c2:${c.c2};--ink-c:${c.ink}">
+      <div class="row"><span>Auftrag #${pad(k.id)}</span><span>${left <= 0 ? 'endet heute' : `endet in ${left} Tag${left > 1 ? 'en' : ''}`}</span></div>
+      <div><div class="big">${k.qty}×</div><div class="cname">${c.name}</div></div>
+      <div class="bar"><i style="width:${(pct * 100).toFixed(0)}%"></i></div>
+      <div class="row"><span>${have} / ${k.qty} im Lager</span><span class="reward">+${fmt(k.reward)} ₵</span></div>
+      <button class="btn${ok ? ' go' : ''}" data-act="deliver" data-k="${idx}"${ok ? '' : ' disabled'}>${ok ? `Liefern · +${k.xp} XP` : `Noch ${k.qty - have} ernten`}</button>
+    </div>`;
+  });
+  return h;
+}
+function panelStats() {
+  const hist = S.stats.hist.concat([Math.round(S.credits)]);
+  const lo = Math.min(...hist), hi = Math.max(...hist);
+  const maxC = Math.max(1, ...CROPS.map(c => S.stats.perCrop[c.id] || 0));
+  const mins = Math.floor(S.playTime / 60);
+  return `<div class="stats">
+      <div class="stat"><span class="k">Level</span><span class="v">${S.level}</span><span class="s">${fmt(xpFor(S.level) - S.xp)} XP bis ${S.level + 1}</span></div>
+      <div class="stat"><span class="k">Geerntet</span><span class="v">${fmt(S.stats.harvested)}</span><span class="s">Einheiten gesamt</span></div>
+      <div class="stat"><span class="k">Umsatz</span><span class="v">${fmt(S.stats.earned)}</span><span class="s">₵ verdient</span></div>
+      <div class="stat"><span class="k">Aufträge</span><span class="v">${S.stats.contractsDone}</span><span class="s">erfüllt</span></div>
+    </div>
+    <div class="statcard"><h4>Kontostand <span>${fmt(lo)} – ${fmt(hi)} ₵</span></h4>${spark(hist.length > 1 ? hist : [hist[0], hist[0]], 300, 64, lo, hi, '#E2FF3D')}</div>
+    <div class="statcard"><h4>Ernte nach Sorte <span>max. ${fmt(maxC)}</span></h4><div class="bars">${CROPS.map(c => { const v = S.stats.perCrop[c.id] || 0; return `<div class="b" style="--c1:${c.c1};--c2:${c.c2}"><span>${v}</span><i style="height:${(v / maxC * 100).toFixed(0)}%"></i><span>${c.name.split('-')[0]}</span></div>`; }).join('')}</div></div>
+    <div class="statcard"><h4>Betrieb <span>Spielzeit ${mins} Min.</span></h4><p class="dim" style="margin:0;font-size:12.5px;line-height:1.6">Tag ${S.day} · ${S.size}×${S.size} Beete · ${S.up.waterDrone + S.up.harvestDrone} Drohnen · ${fmt(S.stats.spent)} ₵ investiert</p></div>`;
+}
+function renderTabs() {
+  document.querySelectorAll('.tab').forEach(t => { const on = t.dataset.id === ui.tab; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); });
+  const canDeliver = S.contracts.some(k => (S.produce[k.crop] || 0) >= k.qty);
+  const ot = document.querySelector('.tab[data-id="orders"]');
+  const has = !!ot.querySelector('.badge');
+  if (canDeliver && !has) ot.insertAdjacentHTML('beforeend', '<span class="badge"></span>');
+  if (!canDeliver && has) ot.querySelector('.badge').remove();
+}
+function renderPanel(force) {
+  if (!S || (ui.pointerDown && !force)) return;
+  const h = ({ shop: panelShop, market: panelMarket, orders: panelOrders, stats: panelStats })[ui.tab]();
+  if (h !== ui.lastPanel) { $('#panel-body').innerHTML = h; ui.lastPanel = h; }
+  renderTabs();
+}
+function refreshQuick() { drawField(); drawHUD(); renderSeedbar(); renderTools(); renderPanel(); updateInspector(); }
+function refreshAll() { drawField(); drawHUD(); renderSeedbar(); renderTools(); renderPanel(true); drawDay(); updateInspector(); }
+
+/* ================= SAVE ================= */
+function readSlots() { const s = store.get(SLOTS_KEY, {}); return s && typeof s === 'object' ? s : {}; }
+function flashSaved() { const el = $('#h-farm .saved'); if (!el) return; el.classList.add('show'); clearTimeout(flashSaved.t); flashSaved.t = setTimeout(() => el.classList.remove('show'), 1600); }
+function saveGame(silent, toSlot) {
+  if (!S) return false;
+  if (toSlot) slot = String(toSlot);
+  if (!slot) return false;
+  const slots = readSlots();
+  slots[slot] = { meta: { name: S.name, day: S.day, level: S.level, credits: Math.round(S.credits), savedAt: Date.now() }, state: S };
+  const ok = store.set(SLOTS_KEY, slots);
+  if (!silent) ok ? toast(`Gespeichert in Slot ${slot}`) : toast('Speichern blockiert. Nutze den Export-Code unter Spielstände.', 'err');
+  if (ok) flashSaved();
+  return ok;
+}
+function loadSlot(n) {
+  const s = readSlots()[n];
+  if (!s || !s.state) { toast('Dieser Slot ist leer.', 'err'); return; }
+  if (ui.inGame && S && slot && String(n) !== slot) saveGame(true);
+  try { S = hydrate(JSON.parse(JSON.stringify(s.state))); slot = String(n); closeModal(); startGame(); toast(`${S.name} geladen`); }
+  catch (e) { toast('Spielstand ist beschädigt und konnte nicht geladen werden.', 'err'); }
+}
+function latestSlot() {
+  const s = readSlots(); let best = null;
+  for (const k of ['1', '2', '3']) if (s[k] && s[k].meta && (!best || s[k].meta.savedAt > s[best].meta.savedAt)) best = k;
+  return best;
+}
+const encode = st => 'HOS1.' + btoa(unescape(encodeURIComponent(JSON.stringify(st))));
+function decode(str) {
+  const t = String(str || '').trim();
+  if (!t.startsWith('HOS1.')) throw new Error('format');
+  const st = JSON.parse(decodeURIComponent(escape(atob(t.slice(5)))));
+  if (!st || !Array.isArray(st.plots)) throw new Error('data');
+  return st;
+}
+
+/* ================= SCREENS ================= */
+function renderMenu() {
+  const s = readSlots(), latest = latestSlot(), m = latest && s[latest].meta;
+  const canResume = !!m || (!!S && !store.ok);
+  const items = [
+    { id: 'continue', t: 'Fortsetzen', sub: m ? `${esc(m.name)} · Tag ${m.day} · Level ${m.level} · ${ago(m.savedAt)}` : (S && !store.ok ? 'Aktuelle Sitzung' : 'Noch kein Spielstand'), dis: !canResume, primary: canResume },
+    { id: 'new', t: 'Neues Spiel', sub: '3 Speicherplätze', primary: !canResume },
+    { id: 'saves', t: 'Spielstände', sub: 'Laden, exportieren, importieren' },
+    { id: 'settings', t: 'Einstellungen', sub: 'Sound, Bewegung, Autosave' },
+    { id: 'help', t: 'So funktioniert’s', sub: 'Steuerung und Tipps' },
+  ];
+  $('#menu-list').innerHTML = items.map(it => `<button class="menu-item${it.primary ? ' primary' : ''}" data-menu="${it.id}"${it.dis ? ' disabled' : ''}><span><span class="t">${it.t}</span><small>${it.sub}</small></span><span class="arr">${I('arrow')}</span></button>`).join('');
+  $('#store-note').hidden = store.ok;
+  const deckCrops = ['lumen', 'neon', 'quantum', 'aurora', 'void'].map(id => CROP[id]);
+  $('#deck').innerHTML = deckCrops.map((c, k) => `<div class="dcard" style="--k:${k};--c1:${c.c1};--c2:${c.c2};--ink-c:${c.ink}"><div class="h">${c.name}<span>LVL ${pad(c.lvl)}</span></div>${k === deckCrops.length - 1 ? `<div class="big">${c.price}</div><div class="foot"><span>₵ Basispreis</span><span>${c.time} s Wachstum</span></div>` : ''}</div>`).join('');
+}
+function showMenu() {
+  ui.inGame = false;
+  $('#game').hidden = true; $('#dockwrap').hidden = true; $('#menu').hidden = false;
+  document.documentElement.style.setProperty('--night', 0);
+  setAmbient(MENU_AMBIENT); renderMenu(); window.scrollTo(0, 0);
+}
+function startGame() {
+  ui.inGame = true; ui.lastPanel = ''; ui.lastSeedbar = ''; ui.lastDay = ''; ui.hover = -1;
+  if (!unlockedCrops().some(c => c.id === ui.seed)) ui.seed = 'lumen';
+  $('#menu').hidden = true; $('#game').hidden = false; $('#dockwrap').hidden = false;
+  $('#h-farm').innerHTML = `${esc(S.name)} · Slot ${slot || '–'} <span class="saved">· gespeichert</span>`;
+  setAmbient(WEATHER[S.weather.id].c);
+  buildField(); refreshAll(); window.scrollTo(0, 0);
+}
+function newGame(name, n) {
+  S = hydrate(newState(name)); slot = String(n); ui.tab = 'shop'; ui.tool = 'hand'; ui.seed = 'lumen';
+  closeModal(); startGame(); saveGame(true);
+  toast(`Willkommen auf ${name}. Pflanz deinen ersten Lumen-Salat.`);
+}
+
+/* ================= MODALS ================= */
+const closeBtn = `<button class="round sm" data-m="close" aria-label="Schließen">${I('close')}</button>`;
+const MODALS = {
+  pause() {
+    return `<div class="modal-h"><div><span class="eyebrow">Pausiert · Slot ${slot || '–'}</span><h2>${esc(S.name)}</h2></div>${closeBtn}</div>
+      <div class="mini"><div><span>Tag</span><b>${S.day}</b></div><div><span>Level</span><b>${S.level}</b></div><div><span>Credits</span><b>${fmt(S.credits)}</b></div></div>
+      <div class="mbtn-list">
+        <button class="mbtn lime" data-m="close">Weiterspielen ${I('arrow')}</button>
+        <button class="mbtn" data-m="save">Speichern <small>Slot ${slot || '–'}</small></button>
+        <button class="mbtn" data-m="saves">Spielstände <small>Laden · Export</small></button>
+        <button class="mbtn" data-m="settings">Einstellungen</button>
+        <button class="mbtn" data-m="help">So funktioniert’s</button>
+        <button class="mbtn" data-m="to-menu">Speichern und Hauptmenü</button>
+      </div>`;
+  },
+  newgame() {
+    const s = readSlots(), def = ['1', '2', '3'].find(k => !s[k]) || '1';
+    return `<div class="modal-h"><div><span class="eyebrow">Neues Spiel</span><h2>Farm gründen</h2></div>${closeBtn}</div>
+      <label class="flabel" for="farm-name">Name deiner Farm</label>
+      <input class="tinput" id="farm-name" maxlength="24" autocomplete="off" value="Sektor ${rint(2, 99)}">
+      <div class="flabel">Speicherplatz</div>
+      <div class="slotpick">${['1', '2', '3'].map(k => { const m = s[k] && s[k].meta; return `<label class="sp" for="slot-r${k}"><input type="radio" name="slot" id="slot-r${k}" value="${k}"${k === def ? ' checked' : ''}><span><b>Slot ${k}</b><small>${m ? `Belegt: ${esc(m.name)}, Tag ${m.day}. Wird überschrieben.` : 'Frei'}</small></span></label>`; }).join('')}</div>
+      <p>Du startest mit 150 ₵, 6 Lumen-Samen, 2 Nährstoff-Kapseln und einem 4×4-Feld.</p>
+      <button class="mbtn lime" data-m="new-start">Farm starten ${I('arrow')}</button>`;
+  },
+  saves() {
+    const s = readSlots();
+    const rows = ['1', '2', '3'].map(k => {
+      const m = s[k] && s[k].meta, cur = ui.inGame && k === slot;
+      return `<div class="slot${m ? '' : ' empty'}${cur ? ' cur' : ''}">
+        <div class="slot-n">${k}</div>
+        <div>${m ? `<b>${esc(m.name)}${cur ? ' · aktiv' : ''}</b><small>Tag ${m.day} · Level ${m.level} · ${fmt(m.credits)} ₵ · ${ago(m.savedAt)}</small>` : '<b>Leer</b><small>Freier Speicherplatz</small>'}</div>
+        <div class="slot-a">
+          ${m && !cur ? `<button class="btn lime" data-m="slot-load" data-k="${k}">Laden</button>` : ''}
+          ${ui.inGame ? `<button class="btn" data-m="slot-save" data-k="${k}">${cur ? 'Jetzt speichern' : 'Hierhin speichern'}</button>` : ''}
+          ${m ? `<button class="btn" data-m="slot-export" data-k="${k}">Export-Code</button>` : ''}
+          ${m ? (ui.confirmDel === k ? `<button class="btn danger" data-m="slot-del-yes" data-k="${k}">Endgültig löschen</button><button class="btn ghost" data-m="slot-del-no">Abbrechen</button>` : `<button class="btn ghost" data-m="slot-del" data-k="${k}">Löschen</button>`) : ''}
+        </div>
+      </div>`;
+    }).join('');
+    const exp = ui.exportCode ? `<label class="flabel" for="export-code">Export-Code · Slot ${ui.exportSlot}</label><textarea class="tarea" id="export-code" readonly>${esc(ui.exportCode)}</textarea><div class="row-end"><button class="btn lime" data-m="copy">Code kopieren</button></div>` : '';
+    return `<div class="modal-h"><div><span class="eyebrow">Speicher</span><h2>Spielstände</h2></div>${closeBtn}</div>
+      ${store.ok ? '' : '<p class="down">Browser-Speicher ist blockiert. Sichere deinen Fortschritt mit dem Export-Code.</p>'}
+      <div class="slotpick">${rows}</div>
+      ${exp}
+      <details class="import"${ui.importOpen ? ' open' : ''}><summary>Spielstand per Code importieren</summary><div class="in">
+        <label class="flabel" for="import-code">Code einfügen</label>
+        <textarea class="tarea" id="import-code" placeholder="HOS1.…"></textarea>
+        <div class="row-end"><label class="dim" for="import-slot" style="font-size:12px">Ziel</label><select class="tselect" id="import-slot">${['1', '2', '3'].map(k => `<option value="${k}">Slot ${k}${s[k] ? ' (überschreiben)' : ''}</option>`).join('')}</select><button class="btn lime" data-m="import">Importieren und spielen</button></div>
+      </div></details>`;
+  },
+  settings() {
+    const sw = (id, key, t, d) => `<label class="switch" for="${id}"><span><b>${t}</b><small>${d}</small></span><input type="checkbox" id="${id}" data-set="${key}"${settings[key] ? ' checked' : ''}></label>`;
+    return `<div class="modal-h"><div><span class="eyebrow">System</span><h2>Einstellungen</h2></div>${closeBtn}</div>
+      <div class="slotpick">
+        ${sw('set-sound', 'sound', 'Sound', 'Synth-Effekte bei Aktionen')}
+        ${sw('set-motion', 'motion', 'Ambient-Bewegung', 'Wandernde Farbflächen im Hintergrund')}
+        ${sw('set-autosave', 'autosave', 'Autosave', 'Alle 20 Sekunden in den aktiven Slot')}
+      </div>
+      <div class="flabel">Daten</div>
+      ${ui.confirmWipe ? `<div class="row-end" style="justify-content:flex-start"><button class="btn danger" data-m="wipe-yes">Ja, alle 3 Slots löschen</button><button class="btn ghost" data-m="wipe-no">Abbrechen</button></div>` : `<div><button class="btn danger" data-m="wipe">Alle Spielstände löschen</button></div>`}`;
+  },
+  help() {
+    return `<div class="modal-h"><div><span class="eyebrow">Anleitung</span><h2>So funktioniert’s</h2></div>${closeBtn}</div>
+      <ol class="steps">
+        <li><span><b>Saatgut wählen</b> in der Leiste über dem Dock.</span></li>
+        <li><span>Mit der <b>Hand</b> auf ein freies Beet tippen, um zu säen. Kostet 2 Energie.</span></li>
+        <li><span><b>Gießen</b>, bevor der blaue Balken leer ist. Rot heißt trocken. Nach 45 Sekunden ohne Wasser verdorrt die Pflanze.</span></li>
+        <li><span>Leuchtender Rand und Haken heißt <b>reif</b>. Mit der Hand ernten. Mit etwas Glück gibt es eine Doppelernte.</span></li>
+        <li><span>Im <b>Markt</b> verkaufen, wenn der Kurs über der gestrichelten Basislinie liegt, oder <b>Aufträge</b> für Bonus-Credits beliefern.</span></li>
+        <li><span>Mit <b>Drohnen</b>, Lampen und dem Replant-Modul automatisierst du die Farm.</span></li>
+      </ol>
+      <div class="flabel">Steuerung</div>
+      <div class="keys"><kbd>1 · 2 · 3</kbd><span>Hand, Gießen, Dünger</span><kbd>Q · E</kbd><span>Saatgut wechseln</span><kbd>Esc</kbd><span>Pause-Menü</span><kbd>Maus halten + ziehen</kbd><span>Mehrere Beete in einem Zug bearbeiten</span></div>
+      <div class="flabel">Wetter</div>
+      <div class="wlist">${Object.values(WEATHER).map(w => `<div><i style="background:linear-gradient(135deg,${w.c[0]},${w.c[1]})"></i><span><b>${w.name}</b> · ${w.desc}</span></div>`).join('')}</div>
+      <p>Nachts (20:00 bis 06:00) wachsen Pflanzen ohne Growth-Lampen 40 % langsamer.</p>`;
+  },
+  levelup() {
+    const L = ui.lvlInfo || { bonus: 0, unl: [] };
+    return `<div class="lvl-hero"><span class="eyebrow">Level aufgestiegen</span><div class="lvl-num">${S.level}</div><p>+${fmt(L.bonus)} ₵ Bonus gutgeschrieben</p></div>
+      ${L.unl.length ? `<div class="flabel">Neu freigeschaltet</div><div class="unlocks">${L.unl.map(u => `<span class="pill">${esc(u)}</span>`).join('')}</div>` : ''}
+      <button class="mbtn lime" data-m="close">Weiter ${I('arrow')}</button>`;
+  },
+};
+function modal(name) {
+  const ov = $('#overlay');
+  if (!ui.modalName) ui.lastFocus = document.activeElement;
+  ui.modalName = name;
+  ov.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="${name}">${MODALS[name]()}</div>`;
+  ov.hidden = false;
+  const first = ov.querySelector('#farm-name') || ov.querySelector('.mbtn.lime, .btn.lime, .mbtn, .btn');
+  if (first) try { first.focus({ preventScroll: true }); } catch (e) { /* noop */ }
+}
+function rerenderModal() {
+  if (!ui.modalName) return;
+  const keepOpen = $('#overlay details.import'); ui.importOpen = keepOpen ? keepOpen.open : false;
+  $('#overlay .modal').innerHTML = MODALS[ui.modalName]();
+}
+function closeModal() {
+  $('#overlay').hidden = true; $('#overlay').innerHTML = '';
+  ui.modalName = null; ui.exportCode = null; ui.exportSlot = null; ui.confirmDel = null; ui.confirmWipe = false; ui.importOpen = false;
+  if (ui.lastFocus && document.contains(ui.lastFocus)) try { ui.lastFocus.focus({ preventScroll: true }); } catch (e) { /* noop */ }
+  if (ui.inGame) refreshAll();
+}
+function modalBack() {
+  if (ui.inGame && ['saves', 'settings', 'help'].includes(ui.modalName)) { ui.exportCode = null; ui.confirmDel = null; ui.confirmWipe = false; return modal('pause'); }
+  closeModal();
+}
+
+/* ================= EVENTS ================= */
+$('#menu-list').addEventListener('click', e => {
+  const b = e.target.closest('[data-menu]'); if (!b || b.disabled) return;
+  sfx('click');
+  const id = b.dataset.menu;
+  if (id === 'continue') {
+    const l = latestSlot();
+    if (l) loadSlot(l); else if (S) startGame();
+  } else if (id === 'new') modal('newgame');
+  else modal(id);
+});
+
+$('#overlay').addEventListener('click', e => {
+  if (e.target.id === 'overlay') { if (ui.modalName !== 'newgame') modalBack(); return; }
+  const b = e.target.closest('[data-m]'); if (!b) return;
+  const k = b.dataset.k;
+  switch (b.dataset.m) {
+    case 'close': modalBack(); break;
+    case 'save': saveGame(false); rerenderModal(); break;
+    case 'saves': case 'settings': case 'help': modal(b.dataset.m); break;
+    case 'to-menu': saveGame(true); closeModal(); showMenu(); break;
+    case 'new-start': {
+      const name = ($('#farm-name').value || '').trim() || 'Sektor 7';
+      const sel = $('#overlay input[name="slot"]:checked');
+      newGame(name.slice(0, 24), sel ? sel.value : '1'); break;
+    }
+    case 'slot-load': loadSlot(k); break;
+    case 'slot-save': saveGame(false, k); $('#h-farm').innerHTML = `${esc(S.name)} · Slot ${slot} <span class="saved">· gespeichert</span>`; rerenderModal(); break;
+    case 'slot-export': {
+      const s = readSlots()[k]; if (!s) break;
+      ui.exportCode = encode(ui.inGame && k === slot ? S : s.state); ui.exportSlot = k; rerenderModal(); break;
+    }
+    case 'copy': {
+      const ta = $('#export-code'); if (!ta) break;
+      const sel = () => { ta.focus(); ta.select(); toast('Code markiert. Mit Strg+C / Cmd+C kopieren.'); };
+      try { navigator.clipboard.writeText(ui.exportCode).then(() => toast('Export-Code kopiert'), sel); } catch (err) { sel(); }
+      break;
+    }
+    case 'slot-del': ui.confirmDel = k; rerenderModal(); break;
+    case 'slot-del-no': ui.confirmDel = null; rerenderModal(); break;
+    case 'slot-del-yes': {
+      const s = readSlots(); delete s[k]; store.set(SLOTS_KEY, s);
+      if (ui.inGame && k === slot) slot = null;
+      ui.confirmDel = null; toast(`Slot ${k} gelöscht`); rerenderModal(); if (!ui.inGame) renderMenu(); break;
+    }
+    case 'import': {
+      try {
+        const st = decode($('#import-code').value), n = $('#import-slot').value;
+        if (ui.inGame && S && slot) saveGame(true);
+        S = hydrate(st); slot = n; saveGame(true); closeModal(); startGame(); toast(`${S.name} importiert in Slot ${n}`);
+      } catch (err) { toast('Der Code ist ungültig. Er muss mit HOS1. beginnen und vollständig sein.', 'err'); }
+      break;
+    }
+    case 'wipe': ui.confirmWipe = true; rerenderModal(); break;
+    case 'wipe-no': ui.confirmWipe = false; rerenderModal(); break;
+    case 'wipe-yes': store.set(SLOTS_KEY, {}); if (ui.inGame) slot = null; ui.confirmWipe = false; toast('Alle Spielstände gelöscht'); rerenderModal(); if (!ui.inGame) renderMenu(); break;
+  }
+});
+$('#overlay').addEventListener('change', e => {
+  const key = e.target.dataset && e.target.dataset.set; if (!key) return;
+  settings[key] = e.target.checked; store.set(SET_KEY, settings); applySettings();
+});
+$('#overlay').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'farm-name') { e.preventDefault(); $('#overlay [data-m="new-start"]').click(); }
+});
+function applySettings() { document.body.classList.toggle('still', !settings.motion); }
+
+const field = $('#field');
+field.addEventListener('pointerdown', e => {
+  const t = e.target.closest('.tile'); if (!t) return;
+  ui.ptype = e.pointerType;
+  if (e.pointerType !== 'mouse' || e.button !== 0) return; // touch/pen act on click, so scrolling never plants
+  ui.painting = true; ui.painted = new Set([t.dataset.i]);
+  act(+t.dataset.i, false);
+});
+field.addEventListener('pointerover', e => {
+  const t = e.target.closest('.tile'); if (!t) return;
+  ui.hover = +t.dataset.i; updateInspector();
+  if (ui.painting && !ui.painted.has(t.dataset.i)) { ui.painted.add(t.dataset.i); act(+t.dataset.i, true); }
+});
+field.addEventListener('pointerleave', () => { ui.hover = -1; updateInspector(); });
+field.addEventListener('click', e => {
+  const t = e.target.closest('.tile'); if (!t) return;
+  if (e.detail === 0 || ui.ptype !== 'mouse') act(+t.dataset.i, false);
+  ui.ptype = null;
+});
+field.addEventListener('focusin', e => { const t = e.target.closest('.tile'); if (t) { ui.hover = +t.dataset.i; updateInspector(); } });
+
+const panel = $('#panel');
+panel.addEventListener('pointerdown', () => { ui.pointerDown = true; });
+window.addEventListener('pointerup', () => { ui.painting = false; if (ui.pointerDown) { ui.pointerDown = false; } });
+window.addEventListener('pointercancel', () => { ui.painting = false; ui.pointerDown = false; });
+panel.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled || !S) return;
+  const { act: a, id, n, k } = b.dataset;
+  if (a === 'tab') { ui.tab = id; sfx('click'); }
+  else if (a === 'seed') buySeed(id, +n);
+  else if (a === 'up') buyUp(id);
+  else if (a === 'item') buyItem(id, +n);
+  else if (a === 'sell') sell(id, n === 'all' ? Infinity : +n);
+  else if (a === 'sellall') sellAll();
+  else if (a === 'deliver') deliver(+k);
+  ui.pointerDown = false;
+  refreshAll();
+});
+
+$('#seedbar').addEventListener('click', e => { const b = e.target.closest('[data-seed]'); if (!b) return; ui.seed = b.dataset.seed; ui.tool = 'hand'; sfx('click'); renderSeedbar(); renderTools(); });
+$('#tools').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (!b) return; ui.tool = b.dataset.tool; sfx('click'); renderTools(); });
+$('#btn-pause').innerHTML = I('pause');
+$('#btn-pause').addEventListener('click', () => { if (ui.inGame && !ui.modalName) modal('pause'); });
+$('#btn-speed').addEventListener('click', () => { ui.speed = ui.speed >= 3 ? 1 : ui.speed + 1; sfx('click'); renderTools(); toast(`Spieltempo ${ui.speed}×`); });
+
+window.addEventListener('keydown', e => {
+  const tag = e.target && e.target.tagName || '';
+  if (/INPUT|TEXTAREA|SELECT/.test(tag) && e.key !== 'Escape') return;
+  if (e.key === 'Escape') {
+    if (ui.modalName) { modalBack(); e.preventDefault(); }
+    else if (ui.inGame) { modal('pause'); e.preventDefault(); }
+    return;
+  }
+  if (!ui.inGame || ui.modalName || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === '1') ui.tool = 'hand'; else if (k === '2') ui.tool = 'water'; else if (k === '3') ui.tool = 'fert';
+  else if (k === 'q' || k === 'e') {
+    const list = unlockedCrops(), i = list.findIndex(c => c.id === ui.seed);
+    ui.seed = list[(i + (k === 'e' ? 1 : -1) + list.length) % list.length].id; ui.tool = 'hand';
+  } else return;
+  renderTools(); renderSeedbar();
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && ui.inGame && settings.autosave) saveGame(true); });
+window.addEventListener('pagehide', () => { if (ui.inGame && settings.autosave) saveGame(true); });
+
+/* ================= LOOP ================= */
+let last = performance.now(), tF = 0, tH = 0, tP = 0, tS = 0;
+function frame(now) {
+  const rdt = Math.min(.25, (now - last) / 1000); last = now;
+  if (S && ui.inGame && !ui.modalName) {
+    let d = rdt * ui.speed;
+    while (d > 1e-6) { const s = Math.min(d, .25); tick(s); d -= s; }
+    tF += rdt; tH += rdt; tP += rdt; tS += rdt;
+    if (tF > .12) { tF = 0; drawField(); }
+    if (tH > .2) { tH = 0; drawHUD(); }
+    if (tP > 1) { tP = 0; renderPanel(); renderSeedbar(); renderTools(); drawDay(); updateInspector(); }
+    if (settings.autosave && tS > 20) { tS = 0; saveGame(true); }
+  }
+  requestAnimationFrame(frame);
+}
+
+applySettings();
+showMenu();
+requestAnimationFrame(frame);
+})();
+</script>
+
+</html>
