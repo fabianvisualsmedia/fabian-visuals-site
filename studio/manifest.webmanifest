@@ -1,0 +1,23 @@
+{
+  "name": "FV Studio – Fabian Visuals",
+  "short_name": "FV Studio",
+  "description": "Golden-Hour-Planer, Voice-to-Shotlist und Projekt-Briefings für Videografen.",
+  "id": "/studio/",
+  "start_url": "/studio/",
+  "scope": "/studio/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05060a",
+  "theme_color": "#05060a",
+  "lang": "de",
+  "categories": ["photo", "productivity", "business"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Voice Brief", "url": "/studio/#/voice", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Lichtplan", "url": "/studio/#/licht", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

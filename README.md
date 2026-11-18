@@ -26,3 +26,12 @@ Offen: Custom Domain `fabianvisuals.de` unter dem Pages-Projekt-Tab "Custom doma
 - [ ] Domain `fabianvisuals.de` auf Cloudflare Pages verbinden (Deployment selbst läuft bereits live über `fabian-visuals-site.pages.dev`)
 - [ ] Rechtstexte in `impressum.html`/`datenschutz.html` von Fabian gegenlesen lassen (Basisdaten aus dem Second-Brain-Kontext übernommen, kein Ersatz für Rechtsberatung)
 - [ ] Beide im Chat geteilten Cloudflare-API-Tokens im Dashboard rotieren (Settings → API Tokens) — waren im Klartext in der Konversation
+
+## FV Studio (Web-App unter `/studio/`)
+
+Installierbare PWA für den Videografie-Alltag: Golden-Hour-/Lichtplaner (lokale Sonnenberechnung + Open-Meteo-Wetter, ohne Key), Voice-to-Briefing (Web Speech API → Briefing, Shotlist Audio|Visual, 5 Hooks) und Projekt-Briefings mit Abhak-Modus fürs Set.
+
+- Live nach Merge auf `main`: https://fabian-visuals-site.pages.dev/studio/
+- Daten liegen nur lokal im Browser (localStorage), Backup über Setup → Export.
+- KI: optionaler eigener Claude-API-Key in Setup (wird nur lokal gespeichert, nie ins Backup exportiert). Ohne Key läuft ein Offline-Generator mit Vorlagen.
+- Kein Build-Schritt. Lokal testen: `python3 -m http.server 8080` → http://localhost:8080/studio/
