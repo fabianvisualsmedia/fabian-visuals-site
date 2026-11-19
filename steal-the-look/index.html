@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050608">
+<title>Steal the Look · Lumic Cloud</title>
+<meta name="description" content="Screenshot rein, LUT raus. Erzeuge aus jedem Frame einen .cube-LUT für DaVinci Resolve, Final Cut Pro und Premiere. Alles läuft lokal im Browser.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="aurora" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand"><span class="brand-mark" aria-hidden="true"></span>Lumic Cloud</div>
+  <span class="pill pill-ghost">Steal the Look <em>Beta</em></span>
+</header>
+
+<main class="shell">
+  <section class="hero">
+    <h1>Klau dir den Look.</h1>
+    <p>Screenshot aus Film, Reel oder Musikvideo rein – fertiger <strong>.cube-LUT</strong> raus. Deine Bilder verlassen nie dein Gerät.</p>
+  </section>
+
+  <section class="grid">
+    <!-- 1. Reference -->
+    <label class="card glow-card drop" id="drop" for="file">
+      <input type="file" id="file" accept="image/*" hidden>
+      <div class="drop-empty" id="dropEmpty">
+        <span class="orb" aria-hidden="true">+</span>
+        <strong>Referenz-Screenshot hierher ziehen</strong>
+        <span class="muted">oder tippen zum Auswählen · JPG, PNG, WebP</span>
+      </div>
+      <figure class="drop-preview" id="dropPreview" hidden>
+        <img id="refImg" alt="Referenzbild">
+        <figcaption class="chip" id="refMeta"></figcaption>
+      </figure>
+    </label>
+
+    <!-- 2. Analysis -->
+    <article class="card analysis" id="analysis" aria-live="polite">
+      <header class="card-head">
+        <h2>Erkannter Look</h2>
+        <span class="pill pill-small" id="lookBadge">wartet</span>
+      </header>
+
+      <div class="curve-wrap">
+        <svg id="curve" viewBox="0 0 200 120" preserveAspectRatio="none" role="img" aria-label="Tonkurve"></svg>
+        <span class="curve-label">Tonkurve</span>
+      </div>
+
+      <div class="tints">
+        <div class="tint" id="tintS"><span class="tint-label">Schatten</span><span class="tint-val">–</span></div>
+        <div class="tint" id="tintM"><span class="tint-label">Mitten</span><span class="tint-val">–</span></div>
+        <div class="tint" id="tintH"><span class="tint-label">Lichter</span><span class="tint-val">–</span></div>
+      </div>
+
+      <dl class="stats">
+        <div><dt>Schwarzwert</dt><dd id="statBlack">–</dd></div>
+        <div><dt>Kontrast</dt><dd id="statContrast">–</dd></div>
+        <div><dt>Sättigung</dt><dd id="statSat">–</dd></div>
+      </dl>
+    </article>
+
+    <!-- 3. Export -->
+    <article class="card glow-card export">
+      <header class="card-head">
+        <h2>Export</h2>
+        <span class="pill pill-small">33³ · Rec.709</span>
+      </header>
+      <label class="field">
+        <span>Name deines Looks</span>
+        <input type="text" id="lookName" maxlength="40" placeholder="z. B. Teal Dusk 01" disabled>
+      </label>
+      <button class="btn-primary" id="download" disabled>
+        <span>LUT herunterladen</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <p class="hint" id="fileHint">Funktioniert in DaVinci Resolve, Final Cut Pro und Premiere Pro.</p>
+    </article>
+  </section>
+
+  <p class="note">
+    <span class="note-dot" aria-hidden="true">i</span>
+    Ein LUT überträgt nur Farbe und Tonwerte – Licht, Grain und Linsencharakter der Szene kann er nicht nachbauen.
+    Für beste Ergebnisse: Screenshot in hoher Qualität, ohne Untertitel.
+  </p>
+  <p class="error" id="error" role="alert" hidden></p>
+</main>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
