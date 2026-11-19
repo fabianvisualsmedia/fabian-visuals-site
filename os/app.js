@@ -531,9 +531,11 @@
     return pageHead('Script Video Dashboard', 'Audio & Visuals nebeneinander', `<button class="circ solid" data-act="new-script" aria-label="Neues Script">${ic('plus')}</button>`) +
       (db.scripts.length ? `<div class="list">${db.scripts.map(scriptRow).join('')}</div>` : '<div class="empty">Noch keine Scripts</div>');
   }
+  let snEdit = false, snOpen = false, snId = '';
   function vScript(id) {
     const s = get('scripts', id);
     if (!s) return null;
+    if (snId !== id) { snEdit = false; snOpen = false; snId = id; }
     return topbar('Script', projectTitle(s.projectId) || 'Script Video Dashboard', `<button class="circ" data-act="del" data-col="scripts" data-id="${id}" aria-label="Löschen">${ic('trash')}</button>`, 'scripts') + `
       <section class="dhero electric">
         <textarea class="t" rows="1" placeholder="Script-Titel" ${bind('scripts', id, 'title')}>${esc(s.title)}</textarea>
@@ -542,8 +544,9 @@
       </section>
       ${seg('scripts', id, 'status', SSTATUS, s.status)}
       <div class="field"><div class="fl"><label>Projekt</label><select data-rerender ${bind('scripts', id, 'projectId')}>${options(db.projects, s.projectId, 'title')}</select></div></div>
-      <div class="sec-h" style="margin-top:20px"><h2>Konzept & Notizen</h2></div>
-      <textarea class="notes" style="min-height:90px" placeholder="Idee, Zielgruppe, Hook, Look & Feel…" ${bind('scripts', id, 'notes')}>${esc(s.notes || '')}</textarea>
+      <div class="sec-h" style="margin-top:20px"><h2>Konzept & Notizen</h2><button data-act="sn-edit">${snEdit ? 'Fertig' : 'Bearbeiten'}</button></div>
+      ${snEdit || !s.notes ? `<textarea class="notes" style="min-height:90px" placeholder="Idee, Zielgruppe, Hook, Look & Feel…" ${bind('scripts', id, 'notes')}>${esc(s.notes || '')}</textarea>`
+        : `<div class="fold ${snOpen ? 'open' : ''}"><article class="md">${md(s.notes)}</article>${s.notes.length > 400 ? `<button class="more" data-act="sn-open">${snOpen ? 'Weniger anzeigen' : 'Alles anzeigen'}</button>` : ''}</div>`}
       <div class="sh" style="margin-top:20px"><span>🎙 Audio / Voiceover</span><span>🎬 Visuals / B-Roll</span></div>
       ${s.rows.map((r, i) => `<div class="srow">
         <span class="num">${pad(i + 1)}</span>
@@ -999,6 +1002,8 @@
         break;
       }
       case 'doc-filter': docFilter = d.val; render(); break;
+      case 'sn-edit': snEdit = !snEdit; render(); break;
+      case 'sn-open': snOpen = !snOpen; render(); break;
       case 'doc-mode': docEdit = d.val === 'edit'; render(); break;
       case 'copy-doc': { const x = get('docs', d.id); navigator.clipboard?.writeText(x?.body || '').then(() => toast('Kopiert'), () => toast('Kopieren nicht möglich')); break; }
       case 'idea-tag': ideaTag = d.val; el.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === el)); break;
