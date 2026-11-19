@@ -1,11 +1,11 @@
 // Overview (home) and full project list.
 
 import { STATUSES } from '../config.js';
-import { escapeHtml, fmtClock, fmtEUR, fmtDur, greeting } from '../format.js';
+import { escapeHtml, fmtClock, fmtEUR, fmtDur, fmtRate, greeting } from '../format.js';
 import { icon, phaseIcon } from '../icons.js';
 import { delegate } from '../ui.js';
 import { entryMs } from '../logic/timer.js';
-import { sumMs, projectFee } from '../logic/calc.js';
+import { sumMs, projectFee, projectMetrics } from '../logic/calc.js';
 import { loadAll, projectCard, waveSvg, emptyState, statusChip, typeLabel } from './shared.js';
 
 function wireCardActions(el, ctx) {
@@ -35,6 +35,11 @@ export async function renderOverview(el, ctx) {
     const es = entriesByProject.get(p.id) || [];
     return es.reduce((m, e) => Math.max(m, Date.parse(e.start)), 0);
   }
+
+  // Projects whose (projected) hourly rate is below the pain threshold.
+  const alarms = active
+    .map((p) => ({ p, m: projectMetrics(p, entriesByProject.get(p.id) || [], ctx.settings) }))
+    .filter(({ m }) => m.light === 'bad');
 
   const runningProject = r ? projects.find((p) => p.id === r.projectId) : null;
   const lastProject = !r
@@ -81,11 +86,17 @@ export async function renderOverview(el, ctx) {
 
     ${hero}
 
+    ${alarms.map(({ p, m }) => `<a class="alarm" href="#/project/${p.id}">
+      ${icon('alert', 18)}
+      <span><b>${escapeHtml(p.title)}</b> rutscht unter deine Schmerzgrenze: ${m.headlineIsProjection ? 'Prognose' : 'aktuell'} ${fmtRate(m.headlineRate)} statt mind. ${fmtRate(ctx.settings.minHourlyRate)}</span>
+      ${icon('chevron', 16)}
+    </a>`).join('')}
+
     <section class="block">
       <div class="block-head"><h2>Aktive Projekte</h2><a class="link" href="#/projects">Alle</a></div>
       ${active.length
         ? `<div class="card-grid">${active
-            .map((p) => projectCard(p, { client: clientById.get(p.clientId), entries: entriesByProject.get(p.id) || [], running: r, phases }))
+            .map((p) => projectCard(p, { client: clientById.get(p.clientId), entries: entriesByProject.get(p.id) || [], running: r, phases, settings: ctx.settings }))
             .join('')}</div>`
         : emptyState('Keine aktiven Projekte', 'Projekte mit Status „Aktiv“ landen hier – mit Schnellstart pro Phase.', `<a class="btn ghost" href="#/project/new">${icon('plus', 16)}Neues Projekt</a>`)}
     </section>
@@ -144,6 +155,7 @@ export async function renderProjects(el, ctx) {
               entries: entriesByProject.get(p.id) || [],
               running: r,
               phases: ctx.settings.phases,
+              settings: ctx.settings,
               quick: ['active', 'offer'].includes(p.status) || r?.projectId === p.id,
             }),
           )

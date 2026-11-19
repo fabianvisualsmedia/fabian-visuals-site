@@ -144,6 +144,15 @@ function tick() {
 }
 setInterval(tick, 1000);
 
+// Figures (rates, warnings, chart) are recomputed once a minute while a timer runs,
+// unless the user is in a form or sheet.
+setInterval(() => {
+  if (!ctx.running || document.hidden) return;
+  if (document.querySelector('.sheet-backdrop') || document.body.classList.contains('is-form')) return;
+  if (document.activeElement?.matches('input, textarea, select')) return;
+  render();
+}, 60_000);
+
 /* ---------------- Timer flows ---------------- */
 
 async function startFlow(projectId, phase = null) {

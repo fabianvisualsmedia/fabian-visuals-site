@@ -3,7 +3,8 @@
 import { PROJECT_TYPES, STATUSES, labelOf } from '../config.js';
 import { escapeHtml, fmtH, fmtDur } from '../format.js';
 import { phaseIcon, icon } from '../icons.js';
-import { sumMs, estimatedHours } from '../logic/calc.js';
+import { sumMs, estimatedHours, projectMetrics } from '../logic/calc.js';
+import { fmtRate } from '../format.js';
 import { recentPhases, isRunning } from '../logic/timer.js';
 
 export async function loadAll(store) {
@@ -49,7 +50,19 @@ export function progressBlock(entries, project, running) {
     </div>`;
 }
 
-export function projectCard(project, { client, entries = [], running, phases, quick = true }) {
+const LIGHT = { ok: 'Ziel erreicht', warn: 'Unter Ziel', bad: 'Unter Schmerzgrenze' };
+
+/** Compact rate + traffic light line for cards. */
+export function rateLine(m) {
+  if (m.headlineRate == null) return '';
+  return `<div class="card-rate">
+    <span class="light-pill sm l-${m.light}"><i></i>${fmtRate(m.headlineRate)}</span>
+    <span class="muted">${m.headlineIsProjection ? 'Prognose' : 'echter Satz'} · ${LIGHT[m.light]}</span>
+  </div>`;
+}
+
+export function projectCard(project, { client, entries = [], running, phases, quick = true, settings }) {
+  const m = settings ? projectMetrics(project, entries, settings) : null;
   const runningHere = running && running.projectId === project.id;
   const quickPhases = [...recentPhases(entries, 3)];
   for (const k of DEFAULT_QUICK) if (quickPhases.length < 3 && !quickPhases.includes(k)) quickPhases.push(k);
@@ -64,6 +77,7 @@ export function projectCard(project, { client, entries = [], running, phases, qu
         <h3>${escapeHtml(project.title)}</h3>
         <p class="muted">${escapeHtml(client?.name || 'Ohne Kunde')}</p>
         ${progressBlock(entries, project, running)}
+        ${m ? rateLine(m) : ''}
       </a>
       ${quick ? `<div class="quick" aria-label="Schnellstart">
         ${quickPhases

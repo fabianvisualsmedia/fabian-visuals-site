@@ -70,3 +70,11 @@ export const DEFAULT_SETTINGS = {
 };
 
 export const labelOf = (list, key) => list.find((x) => x.key === key)?.label ?? key;
+
+export const COST_CATEGORIES = [
+  { key: 'assistant', label: 'Assistenz' },
+  { key: 'rental', label: 'Miete / Equipment' },
+  { key: 'music', label: 'Musiklizenz' },
+  { key: 'travel', label: 'Fahrtkosten' },
+  { key: 'other', label: 'Sonstiges' },
+];
