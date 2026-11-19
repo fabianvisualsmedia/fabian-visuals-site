@@ -600,3 +600,11 @@ body.no-dock .dock { display: none; }
 .add-row .input { height: 52px; font-size: 16px; }
 .add-row select.input { width: auto; padding: 0 12px; font-size: 14px; }
 .add-row .icon-btn { width: 52px; height: 52px; }
+
+/* iOS Safari: overflow:hidden + border-radius does not reliably clip animated, blurred
+   or blended descendants. clip-path always does – applied to every aurora container. */
+.glow-card { clip-path: inset(0 round var(--r-xl)); box-shadow: none; }
+.date-tile { clip-path: inset(0 round 18px); }
+.type-opt { clip-path: inset(0 round var(--r-md)); }
+.stat-pill { clip-path: inset(0 round 30px); }
+:root[data-theme="light"] .glow-card { outline: 1px solid rgba(12, 16, 32, .06); outline-offset: -1px; }
