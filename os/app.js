@@ -51,6 +51,17 @@
     link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
     archive: '<rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>',
     undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
+    play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/>',
+    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+    file: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>',
+    bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
+    shuffle: '<path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
+    star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    copy: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
     refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
   };
   const ic = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ''}</svg>`;
@@ -77,7 +88,8 @@
 
   /* ---------- storage ---------- */
   function migrate(d) {
-    for (const k of ['clients', 'projects', 'scripts', 'events', 'notes']) d[k] = Array.isArray(d[k]) ? d[k] : [];
+    for (const k of ['clients', 'projects', 'scripts', 'events', 'notes', 'docs', 'ideas']) d[k] = Array.isArray(d[k]) ? d[k] : [];
+    d.scripts.forEach((x) => { if (x.notes == null) x.notes = ''; });
     d.settings = d.settings || { name: 'Fabian' };
     d.settings.theme = d.settings.theme || 'system';
     d.v = 1;
@@ -113,25 +125,25 @@
   /* ---------- router ---------- */
   const route = () => { const [p = 'home', a = ''] = (location.hash.replace(/^#\/?/, '') || 'home').split('/'); return { p, a: decodeURIComponent(a) }; };
   const go = (path) => { location.hash = '#/' + path; };
-  const SECTION = { home: 'home', projects: 'projects', project: 'projects', calendar: 'calendar', crm: 'crm', client: 'crm', more: 'more', scripts: 'more', script: 'more', notes: 'more', note: 'more' };
+  const SECTION = { home: 'home', projects: 'projects', project: 'projects', calendar: 'calendar', crm: 'crm', client: 'crm', more: 'more', scripts: 'more', script: 'more', notes: 'more', note: 'more', ideas: 'more', docs: 'more', doc: 'more' };
 
   let lastHash = '';
   function render() {
     const { p, a } = route();
     const view = $('#view');
-    const views = { home: vHome, projects: vProjects, project: vProject, calendar: vCalendar, crm: vCrm, client: vClient, scripts: vScripts, script: vScript, notes: vNotes, note: vNote, more: vMore };
+    const views = { home: vHome, projects: vProjects, project: vProject, calendar: vCalendar, crm: vCrm, client: vClient, scripts: vScripts, script: vScript, notes: vNotes, note: vNote, more: vMore, ideas: vIdeas, docs: vDocs, doc: vDoc };
     const fn = views[p] || vHome;
     const changed = location.hash !== lastHash;
     const y = scrollY;
     const html = fn(a);
-    if (html === null) { go(SECTION[p] === 'more' ? p.replace(/(script|note)$/, '$1s') : (SECTION[p] || 'home')); return; }
+    if (html === null) { go(SECTION[p] === 'more' ? p.replace(/(script|note|doc)$/, '$1s') : (SECTION[p] || 'home')); return; }
     view.classList.remove('enter');
     view.innerHTML = html;
     if (changed) {
       void view.offsetWidth;
       view.classList.add('enter');
       [...view.children].forEach((c, i) => c.style.setProperty('--i', Math.min(i, 12)));
-      view.querySelectorAll('.hscroll, .board, .list, .ngrid, .tiles, .stats, .col, .alist').forEach((g) =>
+      view.querySelectorAll('.hscroll, .board, .list, .ngrid, .tiles, .stats, .col, .alist, .dgrid, .masonry').forEach((g) =>
         [...g.children].forEach((c, j) => { c.classList.add('stg'); c.style.setProperty('--j', Math.min(j, 12)); }));
       countUp(view);
       scrollTo(0, 0);
@@ -140,6 +152,7 @@
     document.querySelectorAll('#dock [data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === SECTION[p]));
     moveInd();
     view.querySelectorAll('textarea').forEach(grow);
+    hydrate(view);
     if (pendingPop) { view.querySelector(pendingPop)?.classList.add(pendingPop.startsWith('.seg') ? 'just' : 'pop'); pendingPop = ''; }
     afterRender.splice(0).forEach((f) => f());
   }
@@ -316,6 +329,8 @@
             ['users', 'CRM', `${db.clients.length} Kunden`, '#/crm', 'linear-gradient(135deg,#f89abf,#a59af8)'],
             ['film', 'Script Video Dashboard', `${db.scripts.length} Scripts`, '#/scripts', 'linear-gradient(135deg,#a59af8,#2236cc)'],
             ['note', 'Notes', `${db.notes.length} Notizen`, '#/notes', 'linear-gradient(135deg,#fff,#a59af8)'],
+            ['bulb', 'Brainstorming', `${db.ideas.length} Ideen`, '#/ideas', 'linear-gradient(135deg,#ffb923,#f89abf)'],
+            ['folder', 'Docs & Uploads', `${db.docs.length} Dokumente`, '#/docs', 'linear-gradient(135deg,#307af4,#a59af8)'],
           ].map(([i, t, s, href, g]) => `<a class="row" href="${href}"><span class="ico" style="background:${g};border:0;color:${i === 'note' ? '#15122e' : '#fff'}">${ic(i)}</span><span class="body"><b>${t}</b><small>${s}</small></span><span class="end">${ic('chev')}</span></a>`).join('')}
         </div>
       </div>`;
@@ -399,6 +414,7 @@
       <div class="sec-h" style="margin-top:22px"><h2>Termine</h2><button data-act="new-event" data-pid="${id}">+ Termin</button></div>
       ${events.length ? events.map((e) => eventRow(e, true)).join('') : '<div class="hint">Noch keine Termine.</div>'}
 
+      ${docSection('projectId', id)}
       <div class="sec-h" style="margin-top:22px"><h2>Notizen</h2></div>
       <textarea class="notes" placeholder="Briefing, Ideen, Links…" ${bind('projects', id, 'notes')}>${esc(p.notes)}</textarea>`;
   }
@@ -499,6 +515,7 @@
       </div>
       <div class="sec-h" style="margin-top:22px"><h2>Projekte</h2><button data-act="new-project" data-status="planning" data-client="${id}">+ Projekt</button></div>
       ${projects.length ? `<div class="hscroll" style="margin-bottom:12px">${projects.map(projectCard).join('')}</div>` : '<div class="hint">Noch keine Projekte mit diesem Kunden.</div>'}
+      ${docSection('clientId', id)}
       <div class="sec-h" style="margin-top:22px"><h2>Notizen</h2></div>
       <textarea class="notes" placeholder="Ansprechpartner, Preise, Besonderheiten…" ${bind('clients', id, 'notes')}>${esc(c.notes)}</textarea>`;
   }
@@ -525,6 +542,8 @@
       </section>
       ${seg('scripts', id, 'status', SSTATUS, s.status)}
       <div class="field"><div class="fl"><label>Projekt</label><select data-rerender ${bind('scripts', id, 'projectId')}>${options(db.projects, s.projectId, 'title')}</select></div></div>
+      <div class="sec-h" style="margin-top:20px"><h2>Konzept & Notizen</h2></div>
+      <textarea class="notes" style="min-height:90px" placeholder="Idee, Zielgruppe, Hook, Look & Feel…" ${bind('scripts', id, 'notes')}>${esc(s.notes || '')}</textarea>
       <div class="sh" style="margin-top:20px"><span>🎙 Audio / Voiceover</span><span>🎬 Visuals / B-Roll</span></div>
       ${s.rows.map((r, i) => `<div class="srow">
         <span class="num">${pad(i + 1)}</span>
@@ -557,7 +576,9 @@
       <div class="tiles">
         <a class="tile electric" href="#/scripts">${ic('film')}<div><b>Scripts</b><br><small>${db.scripts.length} Videos</small></div></a>
         <a class="tile dream" href="#/notes">${ic('note')}<div><b>Notes</b><br><small>${db.notes.length} Notizen</small></div></a>
-        <a class="tile warm" href="#/calendar">${ic('calendar')}<div><b>Content Planner</b><br><small>Termine vom Typ „Content“</small></div></a>
+        <a class="tile warm" href="#/ideas">${ic('bulb')}<div><b>Brainstorming</b><br><small>${db.ideas.length} Ideen</small></div></a>
+        <a class="tile electric" href="#/docs">${ic('folder')}<div><b>Docs & Uploads</b><br><small>${db.docs.length} Dokumente</small></div></a>
+        <a class="tile dream" href="#/calendar">${ic('calendar')}<div><b>Content Planner</b><br><small>Termine vom Typ „Content“</small></div></a>
         <a class="tile glass" href="https://www.notion.so" target="_blank" rel="noopener">${ic('receipt')}<div><b>Rechnungen</b><br><small>bleiben in Notion ↗</small></div></a>
       </div>
       <div class="sec-h"><h2>Profil</h2></div>
@@ -577,9 +598,277 @@
         <button class="btn white" data-act="export">${ic('down')} Backup</button>
         <button class="btn" data-act="import">${ic('up')} Import</button>
       </div>
+      <button class="btn" data-act="export-full">${ic('folder')} Backup inkl. hochgeladener Dateien</button>
+      <p class="hint" style="margin-top:10px">Das normale Backup enthält nur Texte und Daten. Hochgeladene Dateien sichert nur „inkl. Dateien“ (kann groß werden).</p>
       <button class="btn danger" data-act="reset">${ic('refresh')} Auf Startdaten zurücksetzen</button>
       <input type="file" id="importfile" accept="application/json,.json" hidden>
-      <p class="hint" style="margin-top:20px">Fabian.Visuals OS · v2</p>`;
+      <p class="hint" style="margin-top:20px">Fabian.Visuals OS · v3</p>`;
+  }
+
+
+  /* ---------- FILE STORE (IndexedDB, Dateien bleiben lokal) ---------- */
+  const fileStore = (() => {
+    let dbp;
+    const open = () => dbp || (dbp = new Promise((res, rej) => {
+      const r = indexedDB.open('fvos-files', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('files');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }));
+    const tx = (mode, fn) => open().then((d) => new Promise((res, rej) => {
+      const t = d.transaction('files', mode); const req = fn(t.objectStore('files'));
+      t.oncomplete = () => res(req.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    }));
+    return {
+      put: (id, blob) => tx('readwrite', (st) => st.put(blob, id)),
+      get: (id) => tx('readonly', (st) => st.get(id)),
+      del: (id) => tx('readwrite', (st) => st.delete(id)),
+    };
+  })();
+  const blobUrls = {};
+  async function fileUrl(id) {
+    if (blobUrls[id]) return blobUrls[id];
+    const b = await fileStore.get(id).catch(() => null);
+    return b ? (blobUrls[id] = URL.createObjectURL(b)) : '';
+  }
+  function hydrate(root) {
+    root.querySelectorAll('[data-thumb]').forEach(async (el) => {
+      const u = await fileUrl(el.dataset.thumb); if (!u) return;
+      if (el.tagName === 'A') el.href = u; else el.src = u;
+    });
+  }
+  const FKIND = (m = '') => (m.startsWith('image/') ? 'image' : m.startsWith('video/') ? 'video' : m.startsWith('audio/') ? 'audio' : m === 'application/pdf' ? 'pdf' : 'file');
+  const KMETA = {
+    image: { label: 'Bild', g: 'linear-gradient(135deg,#f89abf,#a59af8)', i: 'image' },
+    video: { label: 'Video', g: 'linear-gradient(135deg,#ffb923,#fd290d)', i: 'play' },
+    audio: { label: 'Audio', g: 'linear-gradient(135deg,#7ef0a8,#1f9a57)', i: 'mic' },
+    pdf: { label: 'PDF', g: 'linear-gradient(135deg,#fd290d,#7a0d02)', i: 'file' },
+    file: { label: 'Datei', g: 'linear-gradient(135deg,#307af4,#2236cc)', i: 'file' },
+    text: { label: 'Dokument', g: 'linear-gradient(135deg,#a59af8,#2236cc)', i: 'note' },
+  };
+  const fmtSize = (b = 0) => (b > 1e6 ? (b / 1e6).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1e3)) + ' KB');
+  const docKind = (d) => (d.kind === 'file' ? FKIND(d.mime) : 'text');
+  const sortedClients = () => [...db.clients].sort((a, b) => a.name.localeCompare(b.name));
+
+  let uploadCtx = { projectId: '', clientId: '' };
+  async function uploadFiles(files) {
+    navigator.storage?.persist?.().catch(() => {});
+    let done = 0, last = '';
+    for (const f of files) {
+      const id = uid();
+      try {
+        await fileStore.put(id, f);
+        db.docs.unshift({ id, kind: 'file', title: f.name.replace(/\.[^.]+$/, ''), name: f.name, mime: f.type, size: f.size, tags: [], clientId: uploadCtx.clientId, projectId: uploadCtx.projectId, updated: Date.now() });
+        done++; last = id;
+      } catch (e) { toast('Speicher voll oder Datei zu groß: ' + f.name); }
+    }
+    save(true);
+    if (done === 1 && !uploadCtx.projectId && !uploadCtx.clientId) go('doc/' + last);
+    else render();
+    if (done) toast(done === 1 ? 'Hochgeladen' : `${done} Dateien hochgeladen`);
+    uploadCtx = { projectId: '', clientId: '' };
+  }
+  async function exportFull() {
+    toast('Backup wird erstellt…');
+    const files = {};
+    for (const d of db.docs.filter((x) => x.kind === 'file')) {
+      const b = await fileStore.get(d.id).catch(() => null);
+      if (b) files[d.id] = await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); });
+    }
+    downloadJson({ ...db, files }, `fv-os-backup-komplett-${todayIso()}.json`);
+  }
+  function downloadJson(obj, name) {
+    const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  function importNotion(d) {
+    const cols = ['clients', 'projects', 'scripts', 'events', 'notes', 'docs', 'ideas'];
+    const n = cols.map((k) => (d[k] || []).length);
+    const msg = `Notion-Import: ${n[0]} Kunden, ${n[1]} Projekte, ${n[2]} Scripts, ${n[3]} Termine, ${n[4]} Notizen, ${n[5]} Dokumente.\n\nDie Beispiel-Startdaten werden entfernt, alles was du selbst angelegt hast bleibt. Bereits importierte Notion-Einträge werden aktualisiert.`;
+    if (!confirm(msg)) return;
+    const seed = window.FV_SEED();
+    for (const k of cols) {
+      const seedKeys = new Set((seed[k] || []).map((x) => x.title || x.name || x.text));
+      const seedIds = new Set((seed[k] || []).map((x) => x.id));
+      db[k] = db[k].filter((x) => !x.fromSeed && !seedIds.has(x.id) && !(seedKeys.has(x.title || x.name || x.text) && !x.notionUrl && x.id.length < 12));
+      for (const it of d[k] || []) {
+        const i = db[k].findIndex((x) => x.id === it.id);
+        if (i >= 0) db[k][i] = { ...db[k][i], ...it }; else db[k].push(it);
+      }
+    }
+    db = migrate(db); save(true); go('home'); render(); toast('Notion-Daten importiert');
+  }
+
+  /* ---------- markdown (sicher: erst escapen) ---------- */
+  function inline(t) {
+    const L = [];
+    const keep = (h) => { L.push(h); return `\u0000${L.length - 1}\u0000`; };
+    let s = esc(t)
+      .replace(/\[([^\]]+)\]\(((?:https?:|mailto:)[^)\s]+)\)/g, (_, a, h) => keep(`<a href="${h}" target="_blank" rel="noopener">${a}</a>`))
+      .replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)]/g, (u) => keep(`<a href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40)}</a>`))
+      .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, (m) => keep(`<a href="mailto:${m}">${m}</a>`));
+    s = s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[\s(])[*_](?!\s)(.+?)[*_](?=$|[\s.,;:!?)])/g, '$1<i>$2</i>').replace(/`([^`]+)`/g, '<code>$1</code>');
+    return s.replace(/\u0000(\d+)\u0000/g, (_, i) => L[i]);
+  }
+  function md(src) {
+    if (!src) return '';
+    const out = [], lines = String(src).replace(/\r/g, '').split('\n');
+    const isList = (l) => /^\s*([-*•]|\d+\.)\s+/.test(l);
+    let i = 0;
+    while (i < lines.length) {
+      const l = lines[i]; let m;
+      if (/^\s*$/.test(l)) { i++; continue; }
+      if ((m = l.match(/^(#{1,4})\s+(.*)/))) { const h = Math.min(m[1].length + 1, 4); out.push(`<h${h}>${inline(m[2])}</h${h}>`); i++; continue; }
+      if (/^\s*(---|\*\*\*)\s*$/.test(l)) { out.push('<hr>'); i++; continue; }
+      if (/^\s*\|/.test(l)) {
+        const rows = [];
+        while (i < lines.length && /^\s*\|/.test(lines[i])) {
+          if (!/^\s*\|?[\s:|-]+\|?\s*$/.test(lines[i])) rows.push(lines[i].trim().replace(/^\||\|$/g, '').split('|').map((c) => inline(c.trim())));
+          i++;
+        }
+        out.push(`<div class="tbl"><table>${rows.map((r, ri) => `<tr>${r.map((c) => (ri === 0 ? `<th>${c}</th>` : `<td>${c}</td>`)).join('')}</tr>`).join('')}</table></div>`);
+        continue;
+      }
+      if (isList(l)) {
+        const ordered = /^\s*\d+\./.test(l), items = [];
+        while (i < lines.length && isList(lines[i])) {
+          const t = lines[i].replace(/^\s*([-*•]|\d+\.)\s+/, ''), cb = t.match(/^\[( |x|X)\]\s*(.*)/);
+          items.push(cb ? `<li class="cb ${cb[1] !== ' ' ? 'on' : ''}">${inline(cb[2])}</li>` : `<li>${inline(t)}</li>`);
+          i++;
+        }
+        out.push(ordered ? `<ol>${items.join('')}</ol>` : `<ul>${items.join('')}</ul>`);
+        continue;
+      }
+      if (/^>\s?/.test(l)) { const q = []; while (i < lines.length && /^>\s?/.test(lines[i])) { q.push(inline(lines[i].replace(/^>\s?/, ''))); i++; } out.push(`<blockquote>${q.join('<br>')}</blockquote>`); continue; }
+      const p = [inline(l)]; i++;
+      while (i < lines.length && !/^\s*$/.test(lines[i]) && !/^(#{1,4}\s|\s*\||>|\s*(---|\*\*\*)\s*$)/.test(lines[i]) && !isList(lines[i])) { p.push(inline(lines[i])); i++; }
+      out.push(`<p>${p.join('<br>')}</p>`);
+    }
+    return out.join('');
+  }
+
+  /* ---------- DOCS ---------- */
+  let docFilter = 'all', docQuery = '', docEdit = false, lastDocId = '';
+  function filteredDocs() {
+    const q = docQuery.toLowerCase();
+    return db.docs
+      .filter((d) => docFilter === 'all' || (docFilter === 'files' ? d.kind === 'file' : docFilter === 'texts' ? d.kind === 'text' : (d.tags || []).includes(docFilter)))
+      .filter((d) => !q || [d.title, d.name, d.body, (d.tags || []).join(' '), clientName(d.clientId), projectTitle(d.projectId)].join(' ').toLowerCase().includes(q))
+      .sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  }
+  function docCards(list) {
+    return list.map((d) => {
+      const k = docKind(d), m = KMETA[k];
+      const date = d.updated ? new Date(d.updated).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' }) : '';
+      return `<a class="dcard" href="#/doc/${d.id}"><span class="th" style="background:${m.g}">${k === 'image' ? `<img data-thumb="${d.id}" alt="">` : ic(m.i)}</span>
+        <b>${esc(d.title || d.name || 'Ohne Titel')}</b><small>${[m.label, d.size ? fmtSize(d.size) : '', date].filter(Boolean).join(' · ')}</small></a>`;
+    }).join('') || '<div class="empty" style="grid-column:1/-1">Keine Dokumente</div>';
+  }
+  function docRow(d) {
+    const k = docKind(d), m = KMETA[k];
+    return `<a class="row" href="#/doc/${d.id}"><span class="ico" style="background:${m.g};border:0;color:#fff">${ic(m.i)}</span>
+      <span class="body"><b>${esc(d.title || d.name || 'Ohne Titel')}</b><small>${m.label}${d.size ? ' · ' + fmtSize(d.size) : ''}</small></span><span class="end">${ic('chev')}</span></a>`;
+  }
+  function docSection(field, id) {
+    const list = db.docs.filter((d) => d[field] === id);
+    const ctx = field === 'projectId' ? `data-pid="${id}"` : `data-cid="${id}"`;
+    return `<div class="sec-h" style="margin-top:22px"><h2>Dokumente</h2><span><button data-act="upload" ${ctx}>+ Upload</button> · <button data-act="new-doc" ${ctx}>+ Text</button></span></div>
+      ${list.length ? `<div class="list" style="margin-bottom:12px">${list.map(docRow).join('')}</div>` : '<div class="hint">Noch keine Dokumente verknüpft.</div>'}`;
+  }
+  function vDocs() {
+    const tags = [...new Set(db.docs.flatMap((d) => d.tags || []))].sort((a, b) => a.localeCompare(b));
+    const chips = [['all', 'Alle'], ['files', 'Dateien'], ['texts', 'Texte'], ...tags.map((t) => [t, '#' + t])];
+    return pageHead('Docs & Uploads', `${db.docs.length} Dokumente`, `<button class="circ solid" data-act="new-doc" aria-label="Text-Dokument">${ic('plus')}</button>`) + `
+      <button class="drop" data-act="upload"><span class="dico">${ic('up')}</span><span><b>Dateien hochladen</b><small>Fotos, PDFs, Verträge, Moodboards, Videos</small></span></button>
+      <div class="searchbox">${ic('search')}<input id="docq" placeholder="Dokumente durchsuchen" value="${esc(docQuery)}" autocomplete="off"></div>
+      <div class="chips">${chips.map(([k, l]) => `<button class="${docFilter === k ? 'on' : ''}" data-act="doc-filter" data-val="${esc(k)}">${esc(l)}</button>`).join('')}</div>
+      <div class="dgrid" id="doclist">${docCards(filteredDocs())}</div>`;
+  }
+  function vDoc(id) {
+    const d = get('docs', id);
+    if (!d) return null;
+    if (lastDocId !== id) { docEdit = d.kind === 'text' && !d.body; lastDocId = id; }
+    const k = docKind(d), m = KMETA[k];
+    let main;
+    if (d.kind === 'file') {
+      const prev = k === 'image' ? `<img class="pv" data-thumb="${id}" alt="">`
+        : k === 'video' ? `<video class="pv" data-thumb="${id}" controls playsinline></video>`
+        : k === 'audio' ? `<div class="pv ph" style="background:${m.g}">${ic('mic')}<audio data-thumb="${id}" controls></audio></div>`
+        : `<div class="pv ph" style="background:${m.g}">${ic(m.i)}<span>${esc(d.name)}</span></div>`;
+      main = `${prev}
+        <div class="btns2" style="margin-top:12px"><a class="btn white" data-thumb="${id}" target="_blank" rel="noopener">${ic('eye')} Öffnen</a><a class="btn" data-thumb="${id}" download="${esc(d.name)}">${ic('down')} Sichern</a></div>
+        <div class="field"><div class="fl"><label>Titel</label><input value="${esc(d.title)}" ${bind('docs', id, 'title')}></div>
+          <div class="fl"><label>Datei</label><input value="${esc(d.name)} · ${fmtSize(d.size)}" disabled></div></div>
+        <textarea class="notes" style="min-height:80px" placeholder="Notiz zur Datei…" ${bind('docs', id, 'body')}>${esc(d.body || '')}</textarea>`;
+    } else {
+      main = `<textarea class="doc-t" rows="1" placeholder="Titel" ${bind('docs', id, 'title')}>${esc(d.title)}</textarea>
+        <div class="seg" style="margin-top:6px"><button class="${!docEdit ? 'on' : ''}" data-act="doc-mode" data-val="read">Lesen</button><button class="${docEdit ? 'on' : ''}" data-act="doc-mode" data-val="edit">Bearbeiten</button></div>
+        ${docEdit ? `<textarea class="notes" style="min-height:50vh" placeholder="Text, Mail-Vorlage, Briefing… (Markdown: # Überschrift, - Liste, **fett**)" ${bind('docs', id, 'body')}>${esc(d.body)}</textarea>`
+          : `<article class="md">${md(d.body) || '<p class="hint">Noch leer. Tippe auf „Bearbeiten“.</p>'}</article>`}
+        ${d.body ? `<button class="btn" data-act="copy-doc" data-id="${id}" style="margin-top:12px">${ic('copy')} Text kopieren</button>` : ''}`;
+    }
+    return topbar(m.label, d.kind === 'file' ? 'Upload' : 'Docs & Uploads', `<button class="circ" data-act="del" data-col="docs" data-id="${id}" aria-label="Löschen">${ic('trash')}</button>`, 'docs') + main + `
+      <div class="sec-h" style="margin-top:22px"><h2>Zuordnung</h2></div>
+      <div class="field">
+        <div class="fl"><label>Tags</label><input placeholder="Vertrag, Moodboard…" value="${esc((d.tags || []).join(', '))}" data-doctags="${id}"></div>
+        <div class="fl"><label>Kunde</label><select data-rerender ${bind('docs', id, 'clientId')}>${options(sortedClients(), d.clientId, 'name')}</select></div>
+        <div class="fl"><label>Projekt</label><select data-rerender ${bind('docs', id, 'projectId')}>${options(db.projects, d.projectId, 'title')}</select></div>
+      </div>
+      ${d.notionUrl ? `<p class="hint"><a href="${esc(d.notionUrl)}" target="_blank" rel="noopener">Original in Notion ↗</a></p>` : ''}`;
+  }
+
+  /* ---------- BRAINSTORMING ---------- */
+  const ITAGS = {
+    hook: { label: 'Hook', c: '#fd290d', g: 'linear-gradient(135deg,#ffb923,#fd290d)' },
+    konzept: { label: 'Konzept', c: '#a59af8', g: 'linear-gradient(135deg,#a59af8,#2236cc)' },
+    shot: { label: 'Shot', c: '#307af4', g: 'linear-gradient(135deg,#307af4,#2236cc)' },
+    location: { label: 'Location', c: '#1f9a57', g: 'linear-gradient(135deg,#7ef0a8,#1f9a57)' },
+    musik: { label: 'Musik', c: '#f89abf', g: 'linear-gradient(135deg,#f89abf,#a59af8)' },
+    business: { label: 'Business', c: '#ffb923', g: 'linear-gradient(135deg,#ffb923,#f66515)' },
+  };
+  let ideaFilter = 'all', ideaTag = 'hook';
+  function ideaCard(x) {
+    const t = ITAGS[x.tag] || ITAGS.konzept;
+    return `<button class="icard" data-act="idea-open" data-id="${x.id}" style="--c:${t.c};--g:${t.g}">
+      <span class="it">${t.label}${x.pinned ? ic('star') : ''}</span><p>${esc(x.text)}</p>
+      <small>${new Date(x.created).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}${x.projectId ? ' · ' + esc(projectTitle(x.projectId)) : ''}</small></button>`;
+  }
+  function vIdeas() {
+    const list = db.ideas.filter((x) => ideaFilter === 'all' || x.tag === ideaFilter).sort((a, b) => (b.pinned - a.pinned) || (b.created - a.created));
+    return pageHead('Brainstorming', `${db.ideas.length} Ideen · Hooks, Shots, Konzepte`, `<button class="circ solid" data-act="shuffle" aria-label="Ideen mixen">${ic('shuffle')}</button>`) + `
+      <div class="capture">
+        <textarea id="idea-in" rows="2" placeholder="Idee festhalten… z. B. Hook, Shot, Location"></textarea>
+        <div class="capbar"><div class="chips sm">${Object.entries(ITAGS).map(([k, t]) => `<button class="${ideaTag === k ? 'on' : ''}" style="--c:${t.c}" data-act="idea-tag" data-val="${k}">${t.label}</button>`).join('')}</div>
+          <button class="circ solid" data-act="idea-add" aria-label="Idee speichern">${ic('plus')}</button></div>
+      </div>
+      <div class="chips">${[['all', 'Alle'], ...Object.entries(ITAGS).map(([k, t]) => [k, t.label])].map(([k, l]) => `<button class="${ideaFilter === k ? 'on' : ''}" data-act="idea-filter" data-val="${k}">${l}</button>`).join('')}</div>
+      ${list.length ? `<div class="masonry">${list.map(ideaCard).join('')}</div>` : '<div class="empty">Noch keine Ideen. Schreib oben einfach los.<br>Mit dem Mix-Button oben rechts kombinierst du zufällig Ideen.</div>'}`;
+  }
+  function sheetIdea(id) {
+    const x = get('ideas', id); if (!x) return;
+    openSheet(`<h3>Idee</h3>
+      <textarea class="notes" style="min-height:120px;margin-bottom:12px" ${bind('ideas', id, 'text')}>${esc(x.text)}</textarea>
+      <div class="chips sm" style="margin-bottom:12px">${Object.entries(ITAGS).map(([k, t]) => `<button class="${x.tag === k ? 'on' : ''}" style="--c:${t.c}" data-act="idea-set-tag" data-id="${id}" data-val="${k}">${t.label}</button>`).join('')}</div>
+      <div class="field"><div class="fl"><label>Projekt</label><select data-rerender ${bind('ideas', id, 'projectId')}>${options(db.projects.filter((p) => p.status !== 'archive'), x.projectId, 'title')}</select></div></div>
+      <div class="btns2"><button class="btn white" data-act="idea-to" data-val="script" data-id="${id}">${ic('film')} → Script</button><button class="btn" data-act="idea-to" data-val="project" data-id="${id}">${ic('kanban')} → Projekt</button></div>
+      <div class="btns2"><button class="btn" data-act="idea-pin" data-id="${id}">${ic('star')} ${x.pinned ? 'Lösen' : 'Anpinnen'}</button><button class="btn danger" data-act="idea-del" data-id="${id}">${ic('trash')} Löschen</button></div>`);
+  }
+  function sheetMix() {
+    const pool = [...db.ideas];
+    if (pool.length < 2) { toast('Mindestens 2 Ideen zum Mixen'); return; }
+    const pick = [];
+    while (pick.length < Math.min(3, pool.length)) {
+      const cand = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+      if (!pick.some((p) => p.tag === cand.tag) || pool.length < 2) pick.push(cand);
+      if (!pool.length) break;
+    }
+    const text = pick.map((p) => `${ITAGS[p.tag]?.label || ''}: ${p.text}`).join('\n+ ');
+    const sh = openSheet(`<h3>Ideen-Mix</h3><p class="hint" style="margin-top:-8px">Zufällige Kombi. Funkt was?</p>
+      <div class="mix">${pick.map((p, j) => `<div class="mcard" style="--j:${j};--g:${(ITAGS[p.tag] || ITAGS.konzept).g}"><span>${ITAGS[p.tag]?.label || ''}</span><p>${esc(p.text)}</p></div>`).join('<div class="mplus">+</div>')}</div>
+      <div class="btns2" style="margin-top:14px"><button class="btn" data-act="shuffle">${ic('shuffle')} Neu mischen</button><button class="btn white" data-act="mix-save">${ic('bulb')} Als Idee speichern</button></div>`);
+    sh.dataset.mix = text;
   }
 
   /* ---------- sheets ---------- */
@@ -606,6 +895,9 @@
       ['new-script', 'film', 'Script', 'linear-gradient(135deg,#a59af8,#2236cc)'],
       ['new-note', 'note', 'Notiz', 'linear-gradient(135deg,#fff,#a59af8)'],
       ['new-content', 'spark', 'Content', 'linear-gradient(135deg,#f89abf,#fd290d)'],
+      ['new-idea', 'bulb', 'Idee', 'linear-gradient(135deg,#ffb923,#f89abf)'],
+      ['upload', 'up', 'Upload', 'linear-gradient(135deg,#307af4,#a59af8)'],
+      ['new-doc', 'file', 'Dokument', 'linear-gradient(135deg,#2236cc,#07082a)'],
     ];
     openSheet(`<h3>Neu anlegen</h3><div class="newgrid">${items.map(([a, i, l, g], j) =>
       `<button style="--j:${j}" data-act="${a}" data-status="planning"><span class="ico" style="background:${g};${i === 'note' ? 'color:#15122e' : ''}">${ic(i)}</span>${l}</button>`).join('')}</div>`);
@@ -646,6 +938,8 @@
       ['Projekte', db.projects.filter((p) => has(p.title, p.notes, ...p.tasks.map((t) => t.text))).map((p) => [`#/project/${p.id}`, 'kanban', p.title, STATUS[p.status].label])],
       ['Kunden', db.clients.filter((c) => has(c.name, c.type, c.email, c.notes)).map((c) => [`#/client/${c.id}`, null, c.name, c.type, c.icon])],
       ['Scripts', db.scripts.filter((s) => has(s.title, ...s.rows.map((r) => r.audio + ' ' + r.visual))).map((s) => [`#/script/${s.id}`, 'film', s.title, projectTitle(s.projectId)])],
+      ['Ideen', db.ideas.filter((x) => has(x.text)).map((x) => ['#/ideas', 'bulb', x.text.split('\n')[0].slice(0, 60), ITAGS[x.tag]?.label])],
+      ['Dokumente', db.docs.filter((x) => has(x.title, x.name, x.body, (x.tags || []).join(' '))).map((x) => [`#/doc/${x.id}`, x.kind === 'file' ? 'file' : 'note', x.title || x.name, (x.tags || []).join(', ')])],
       ['Termine', db.events.filter((e) => has(e.title, e.notes)).map((e) => [`#/calendar/${e.date}`, 'calendar', e.title, fmtDate(e.date) + (e.start ? ' · ' + e.start : '')])],
       ['Notizen', db.notes.filter((n) => has(n.title, n.body)).map((n) => [`#/note/${n.id}`, 'note', n.title, n.body.slice(0, 60)])],
     ].filter(([, l]) => l.length);
@@ -697,6 +991,51 @@
       case 'new-client': createClient(); break;
       case 'new-note': createNote(); break;
       case 'new-content': newEvent({ type: 'content' }); break;
+      case 'new-idea': closeSheet(); go('ideas'); setTimeout(() => $('#idea-in')?.focus(), 400); break;
+      case 'upload': uploadCtx = { projectId: d.pid || '', clientId: d.cid || '' }; closeSheet(); $('#docfile')?.click(); break;
+      case 'new-doc': {
+        const x = { id: uid(), kind: 'text', title: '', body: '', tags: [], clientId: d.cid || '', projectId: d.pid || '', updated: Date.now() };
+        db.docs.unshift(x); save(true); docEdit = true; lastDocId = x.id; closeSheet(); go('doc/' + x.id); setTimeout(() => $('.doc-t')?.focus(), 400);
+        break;
+      }
+      case 'doc-filter': docFilter = d.val; render(); break;
+      case 'doc-mode': docEdit = d.val === 'edit'; render(); break;
+      case 'copy-doc': { const x = get('docs', d.id); navigator.clipboard?.writeText(x?.body || '').then(() => toast('Kopiert'), () => toast('Kopieren nicht möglich')); break; }
+      case 'idea-tag': ideaTag = d.val; el.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === el)); break;
+      case 'idea-filter': ideaFilter = d.val; render(); break;
+      case 'idea-add': {
+        const inp = $('#idea-in'); const text = inp?.value.trim();
+        if (!text) { inp?.focus(); break; }
+        const x = { id: uid(), text, tag: ideaTag, pinned: false, projectId: '', created: Date.now() };
+        db.ideas.unshift(x); save(true); if (ideaFilter !== 'all' && ideaFilter !== ideaTag) ideaFilter = 'all';
+        pendingPop = `.icard[data-id="${x.id}"]`; render(); toast('Idee gespeichert');
+        break;
+      }
+      case 'idea-open': sheetIdea(d.id); break;
+      case 'idea-set-tag': { const x = get('ideas', d.id); if (x) { x.tag = d.val; save(true); el.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === el)); render(); } break; }
+      case 'idea-pin': { const x = get('ideas', d.id); if (x) { x.pinned = !x.pinned; save(true); closeSheet(); render(); toast(x.pinned ? 'Angepinnt' : 'Gelöst'); } break; }
+      case 'idea-del': db.ideas = db.ideas.filter((x) => x.id !== d.id); save(true); closeSheet(); render(); toast('Gelöscht'); break;
+      case 'idea-to': {
+        const x = get('ideas', d.id); if (!x) break;
+        const title = x.text.split('\n')[0].slice(0, 70);
+        if (d.val === 'script') {
+          const sc = { id: uid(), title, projectId: x.projectId || '', status: 'idea', notes: x.text, rows: [{ id: uid(), audio: '', visual: '' }] };
+          db.scripts.unshift(sc); save(true); closeSheet(); go('script/' + sc.id);
+        } else {
+          const p = { id: uid(), title, status: 'planning', priority: 'medium', start: '', end: '', clientId: '', tasks: [], notes: x.text };
+          db.projects.unshift(p); save(true); closeSheet(); go('project/' + p.id);
+        }
+        toast(d.val === 'script' ? 'Script angelegt' : 'Projekt angelegt');
+        break;
+      }
+      case 'shuffle': sheetMix(); break;
+      case 'mix-save': {
+        const t = el.closest('.sheet')?.dataset.mix; if (!t) break;
+        db.ideas.unshift({ id: uid(), text: t, tag: 'konzept', pinned: false, projectId: '', created: Date.now() });
+        save(true); closeSheet(); ideaFilter = 'all'; render(); toast('Kombi gespeichert');
+        break;
+      }
+      case 'export-full': exportFull(); break;
       case 'new-event': if (ev.target.closest('.tev')) break; newEvent({ date: d.date, hour: d.hour, projectId: d.pid }); break;
       case 'edit-event': { const e = get('events', d.id); if (e) sheetEvent({ ...e }, false); break; }
       case 'set': {
@@ -742,8 +1081,9 @@
         db[d.col] = db[d.col].filter((x) => x.id !== d.id);
         if (d.col === 'projects') { db.scripts.forEach((s) => { if (s.projectId === d.id) s.projectId = ''; }); db.events.forEach((e) => { if (e.projectId === d.id) e.projectId = ''; }); }
         if (d.col === 'clients') db.projects.forEach((p) => { if (p.clientId === d.id) p.clientId = ''; });
+        if (d.col === 'docs') { fileStore.del(d.id).catch(() => {}); if (blobUrls[d.id]) { URL.revokeObjectURL(blobUrls[d.id]); delete blobUrls[d.id]; } }
         save(true); toast('Gelöscht');
-        go({ projects: 'projects', clients: 'crm', scripts: 'scripts', notes: 'notes' }[d.col]);
+        go({ projects: 'projects', clients: 'crm', scripts: 'scripts', notes: 'notes', docs: 'docs' }[d.col]);
         break;
       }
       case 'ev-save': {
@@ -792,7 +1132,7 @@
     if (t.tagName === 'TEXTAREA') grow(t);
     if (t.dataset.bind && !t.dataset.rerender) {
       const [col, id, f] = t.dataset.bind.split('|'); const it = get(col, id);
-      if (it) { it[f] = t.value; if (col === 'notes') it.updated = Date.now(); save(); }
+      if (it) { it[f] = t.value; if (col === 'notes' || col === 'docs') it.updated = Date.now(); save(); }
     } else if (t.dataset.task) {
       const [pid, tid] = t.dataset.task.split('|');
       const task = get('projects', pid)?.tasks.find((x) => x.id === tid);
@@ -809,6 +1149,8 @@
       $('#crmlist').innerHTML = [...db.clients].filter((c) => !q || [c.name, c.type, c.email].join(' ').toLowerCase().includes(q))
         .sort((a, b) => a.name.localeCompare(b.name)).map(clientRow).join('') || '<div class="empty" style="border:0">Keine Treffer</div>';
     } else if (t.id === 'gq') runSearch(t.value);
+    else if (t.id === 'docq') { docQuery = t.value; const l = $('#doclist'); if (l) { l.innerHTML = docCards(filteredDocs()); hydrate(l); } }
+    else if (t.dataset.doctags) { const x = get('docs', t.dataset.doctags); if (x) { x.tags = t.value.split(',').map((v) => v.trim()).filter(Boolean); save(); } }
   });
   document.addEventListener('change', (ev) => {
     const t = ev.target;
@@ -817,13 +1159,19 @@
       if (it) { it[f] = t.value; save(true); render(); }
     } else if (t.id === 'avatarfile' && t.files[0]) {
       pickAvatar(t.files[0]); t.value = '';
+    } else if (t.id === 'docfile' && t.files.length) {
+      uploadFiles([...t.files]); t.value = '';
     } else if (t.id === 'importfile' && t.files[0]) {
-      t.files[0].text().then((txt) => {
+      t.files[0].text().then(async (txt) => {
         const d = JSON.parse(txt);
         if (!d || !Array.isArray(d.projects)) throw new Error('format');
+        if (d.source === 'notion') { importNotion(d); t.value = ''; return; }
         if (!confirm('Backup importieren? Die aktuellen Daten auf diesem Gerät werden ersetzt.')) return;
-        db = migrate(d); save(true); render(); toast('Import erfolgreich');
-      }).catch(() => toast('Datei ist kein gültiges Backup'));
+        const files = d.files; delete d.files;
+        db = migrate(d); save(true);
+        if (files) for (const [id, url] of Object.entries(files)) await fileStore.put(id, await (await fetch(url)).blob());
+        render(); toast('Import erfolgreich');
+      }).catch(() => toast('Datei ist kein gültiges Backup')).finally(() => { t.value = ''; });
     }
   });
   document.addEventListener('keydown', (ev) => {
@@ -835,6 +1183,8 @@
       if (p) { p.tasks.push({ id: uid(), text, done: false }); save(true); render(); $(`[data-task-new="${p.id}"]`)?.focus(); }
     } else if (ev.key === 'Enter' && t.dataset.task) {
       ev.preventDefault(); $(`[data-task-new]`)?.focus();
+    } else if (ev.key === 'Enter' && t.id === 'idea-in' && (ev.metaKey || ev.ctrlKey)) {
+      ev.preventDefault(); $('[data-act="idea-add"]')?.click();
     } else if (ev.key === 'Enter' && t.matches('.kcard[data-go]')) go(t.dataset.go);
     else if (ev.key === 'Escape') closeSheet();
   });
