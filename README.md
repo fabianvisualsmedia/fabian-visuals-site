@@ -26,3 +26,12 @@ Offen: Custom Domain `fabianvisuals.de` unter dem Pages-Projekt-Tab "Custom doma
 - [ ] Domain `fabianvisuals.de` auf Cloudflare Pages verbinden (Deployment selbst läuft bereits live über `fabian-visuals-site.pages.dev`)
 - [ ] Rechtstexte in `impressum.html`/`datenschutz.html` von Fabian gegenlesen lassen (Basisdaten aus dem Second-Brain-Kontext übernommen, kein Ersatz für Rechtsberatung)
 - [ ] Beide im Chat geteilten Cloudflare-API-Tokens im Dashboard rotieren (Settings → API Tokens) — waren im Klartext in der Konversation
+
+## Fabian.Visuals OS (`/os/`)
+
+Persönliche Projekt-App (PWA) im Unterordner `os/`, unabhängig von der Website. Kein Build-Schritt, Vanilla JS.
+
+- Module: Home-Dashboard, Projects & Tasks (Kanban), Kalender (Shoots/Meetings/Calls/Content), CRM, Script Video Dashboard (Audio | Visuals), Notes
+- Daten liegen **nur lokal im Browser** (localStorage). Backup/Import als JSON unter „Mehr“.
+- `os/seed.js` = Startdaten beim ersten Öffnen. Liegt öffentlich im Repo, daher keine E-Mails/Privatpersonen eintragen.
+- `noindex` gesetzt. Auf dem iPhone: Safari → Teilen → „Zum Home-Bildschirm“.

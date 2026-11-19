@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#060608">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FV OS">
+  <title>Fabian.Visuals OS</title>
+  <link rel="manifest" href="/os/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/os/icons/icon-180.png">
+  <link rel="icon" href="/os/icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/os/app.css">
+</head>
+<body>
+  <div id="app"><main id="view"></main></div>
+
+  <nav id="dock" aria-label="Navigation">
+    <div class="pill">
+      <button data-tab="home" data-go="home" aria-label="Home"><svg class="i" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
+      <button data-tab="projects" data-go="projects" aria-label="Projekte"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 7.5v7M12 7.5v4M16 7.5v9"/></svg></button>
+      <button data-tab="calendar" data-go="calendar" aria-label="Kalender"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="3.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
+      <button data-tab="crm" data-go="crm" aria-label="CRM"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3.3-5.5 6.5-5.5s5.9 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.2 2.5 3.5 5.2"/></svg></button>
+      <button data-tab="more" data-go="more" aria-label="Mehr"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg></button>
+    </div>
+    <button class="fab" data-act="new" aria-label="Neu anlegen"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  </nav>
+
+  <div id="sheet-root"></div>
+
+  <script src="/os/seed.js"></script>
+  <script src="/os/app.js"></script>
+</body>
+</html>
