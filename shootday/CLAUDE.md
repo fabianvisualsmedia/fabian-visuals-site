@@ -5,7 +5,7 @@
 
 **Ort im Repo:** Die App liegt in `shootday/` innerhalb der Website `fabian-visuals-site` und wird mit ihr über Cloudflare Pages unter `/shootday/` ausgeliefert. Alle Pfade unten sind relativ zu `shootday/`.
 
-**Status:** Phase 1 erledigt (Fundament). Nächster Schritt: Phase 2.
+**Status:** Phase 1 + 2 erledigt. Nächster Schritt: Phase 3 (Erinnerungen & Backup).
 
 ---
 
@@ -198,16 +198,24 @@ Checkliste ab Phase „wrapped“: Karten ausgelesen, Kopie 1, Kopie 2, Kopie 3 
 ## 8. Phasenplan
 
 - **Phase 1 – Fundament** ✅ IndexedDB, Hash-Router, Layout, Dark/Light-Design, Drehs CRUD, Übersicht, Gear mit Defaults.
-- **Phase 2 – Autopilot-Logik:** Packliste, Akku/Speicher, Sonne, Geocoding + Wetter mit Cache, Anfahrt, Drehtag-Ansicht komplett. Abnahme: „Hochzeit, Bonn, Samstag 10–22 Uhr, outdoor“ liefert sinnvolle Liste inkl. Licht und korrekte Sonnenzeiten.
+- **Phase 2 – Autopilot-Logik** ✅ Packliste, Akku/Speicher, Sonne, Geocoding + Wetter mit Cache, Anfahrt, Drehtag-Ansicht komplett. Abnahme: „Hochzeit, Bonn, Samstag 10–22 Uhr, outdoor“ liefert sinnvolle Liste inkl. Licht und korrekte Sonnenzeiten.
 - **Phase 3 – Erinnerungen & Backup:** .ics, Backup-Checkliste + Badges, In-App-Banner.
 - **Phase 4 – PWA & Offline:** Manifest, Icons, Service Worker, iPhone-Homescreen-Hinweis, JSON-Export/-Import.
 - **Phase 5 – Nice to have (nach Rücksprache):** mehrtägige Drehs, Crew-Read-only-Link, Spotfinder-Integration, Notion-Export.
 
 ---
 
+### Umsetzungsnotizen Phase 2
+- `logic/autopilot.js` bündelt alles (reine Funktion) – die Drehtag-Ansicht ruft nur `computeAutopilot()`.
+- Sonne: Meeus/NOAA-Koordinaten + Bisektion (nicht SunCalc – SunCalc weicht um die Tagundnachtgleiche >2 min ab).
+- Geocoding: Straßenadressen → Nominatim zuerst (Open-Meteo kann nur Ortsnamen), Fallback Ortsname aus PLZ-Zeile.
+- Speicher: Bodies = Kameras in der Packliste (vom User entfernte zählen nicht), Video über Bitrate, Foto über Settings `photoGBPerHour` (Schätzwert). Backup-SSD (Tag `backup`) zählt nicht als Karte.
+- Akkus: Profil mit Tag `camera`; Bodies × ceil(Aufnahme/Laufzeit) + 1 Reserve (+1 bei < 5 °C).
+- Entfernte Auto-Items landen in `shoot.excluded`, manuelle Items haben `auto: false`.
+
 ## 9. Tests (`tests/tests.html`)
 
-Laufen im Browser, Ergebnis als grün/rot-Liste und in `window.__testResults`. Tests nutzen eine eigene DB (`useDatabase`). Ab Phase 2 Pflicht: Sonnenzeiten Bonn 21.06./21.12. (±2 min), Speicher-, Akkurechner, Regel-Engine, manuelle Items, Abfahrtszeit über Mitternacht, .ics-Format, Zeitumstellung.
+Laufen im Browser, Ergebnis als grün/rot-Liste und in `window.__testResults`. Zeitumstellungs-Tests brauchen Gerätezeitzone Europe/Berlin (sonst übersprungen). Sonnen-Referenz = NOAA-Spreadsheet-Formeln im Test (unabhängiger Rechenweg) + Almanach-Plausibilität ±5 min. Tests nutzen eine eigene DB (`useDatabase`). Ab Phase 2 Pflicht: Sonnenzeiten Bonn 21.06./21.12. (±2 min), Speicher-, Akkurechner, Regel-Engine, manuelle Items, Abfahrtszeit über Mitternacht, .ics-Format, Zeitumstellung.
 
 ---
 

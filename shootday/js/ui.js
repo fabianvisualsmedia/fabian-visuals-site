@@ -48,6 +48,15 @@ const ICONS = {
   photo: '<rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 15.5l-4.5-4.5-8.5 8"/>',
   video: '<rect x="3" y="6.5" width="12.5" height="11" rx="3"/><path d="M15.5 10.5l5.5-3v9l-5.5-3"/>',
   hybrid: '<rect x="3" y="6.5" width="12.5" height="11" rx="3"/><path d="M15.5 10.5l5.5-3v9l-5.5-3"/><circle cx="9.2" cy="12" r="2.4"/>',
+  rain: '<path d="M7 15.5h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 8.6 3.5 3.5 0 0 0 7 15.5z"/><path d="M8 18.5l-1 2M12 18.5l-1 2M16 18.5l-1 2"/>',
+  snow: '<path d="M7 15.5h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 8.6 3.5 3.5 0 0 0 7 15.5z"/><path d="M8 19h.01M12 20h.01M16 19h.01"/>',
+  storm: '<path d="M7 15.5h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 8.6 3.5 3.5 0 0 0 7 15.5z"/><path d="M12.5 14l-2 3.5h3l-2 3.5"/>',
+  wind: '<path d="M3 9h11a2.5 2.5 0 1 0-2.5-2.5M3 13h15a2.5 2.5 0 1 1-2.5 2.5M3 17h7"/>',
+  drop: '<path d="M12 3.5s6 6.4 6 10.5a6 6 0 0 1-12 0c0-4.1 6-10.5 6-10.5z"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>',
+  sunrise: '<path d="M3 18h18M7 14.5a5 5 0 0 1 10 0M12 4v4M9.5 6.5L12 4l2.5 2.5M4.5 11l1.5 1M19.5 11L18 12"/>',
+  sunset: '<path d="M3 18h18M7 14.5a5 5 0 0 1 10 0M12 4v4M9.5 5.5L12 8l2.5-2.5M4.5 11l1.5 1M19.5 11L18 12"/>',
   download: '<path d="M12 4v11M7 10.5l5 5 5-5M5 19.5h14"/>',
 };
 
@@ -132,6 +141,9 @@ export function durationMin(call, wrap) {
   if (d <= 0) d += 24 * 60;
   return d;
 }
+
+/** "HH:MM" for a Date in local time. */
+export const fmtTime = (d) => (d ? d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '–');
 
 export function fmtDuration(min) {
   const h = Math.floor(min / 60), m = min % 60;

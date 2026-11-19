@@ -75,6 +75,22 @@ export async function render(page, { id }) {
       <div class="field"><span class="label">Location</span>${seg('indoorOutdoor', IO, state.indoorOutdoor)}</div>
       <div class="field"><span class="label">Modus</span>${seg('mode', MODES, state.mode)}</div>
 
+      <div class="grid-2">
+        <div class="field">
+          <label for="f-share">Aufnahmeanteil</label>
+          <div class="unit-input"><input class="input" id="f-share" name="recordShare" type="number" inputmode="numeric" min="1" max="100" placeholder="auto" value="${shoot.recordShare != null ? Math.round(shoot.recordShare * 100) : ''}" style="width:100%">%</div>
+        </div>
+        <div class="field">
+          <label for="f-drive">Fahrzeit</label>
+          <div class="unit-input"><input class="input" id="f-drive" name="driveMin" type="number" inputmode="numeric" min="0" placeholder="–" value="${shoot.travel?.driveMin ?? ''}" style="width:100%">min</div>
+        </div>
+      </div>
+      <p class="hint">Aufnahmeanteil leer lassen = Standard des Shoot-Typs (z. B. Hochzeit Video 40 %).</p>
+      <div class="field">
+        <label for="f-start">Abfahrt von</label>
+        <input class="input" id="f-start" name="startAddress" placeholder="Standard aus den Einstellungen" value="${esc(shoot.travel?.startAddress || '')}" autocomplete="off">
+      </div>
+
       <div class="field">
         <label for="f-notes">Notizen</label>
         <textarea class="input" id="f-notes" name="notes" placeholder="Ansprechpartner, Parken, Shotlist-Link …">${esc(shoot.notes)}</textarea>
@@ -142,6 +158,12 @@ export async function render(page, { id }) {
       indoorOutdoor: state.indoorOutdoor,
       mode: state.mode,
       notes: fe.notes.value.trim(),
+      recordShare: fe.recordShare.value ? Math.min(100, Math.max(1, Number(fe.recordShare.value))) / 100 : null,
+      travel: {
+        ...(shoot.travel || {}),
+        driveMin: fe.driveMin.value === '' ? null : Math.max(0, Math.round(Number(fe.driveMin.value))),
+        startAddress: fe.startAddress.value.trim(),
+      },
     });
     toast(existing ? 'Gespeichert' : 'Dreh angelegt');
     location.hash = `#/shoot/${saved.id}`;

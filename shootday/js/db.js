@@ -4,7 +4,7 @@
 import { DEFAULT_GEAR } from './data/default-gear.js';
 import { DEFAULT_TEMPLATES } from './data/default-templates.js';
 
-const VERSION = 1;
+const VERSION = 2;
 let dbName = 'shootday';
 let dbPromise = null;
 
@@ -24,6 +24,8 @@ function open() {
           if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: 'id' });
         }
         if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
+        // v2: cache for API responses (weather, geocoding) – keyPath "key"
+        if (!db.objectStoreNames.contains('cache')) db.createObjectStore('cache', { keyPath: 'key' });
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
@@ -75,6 +77,7 @@ export const DEFAULT_SETTINGS = {
   setupMin: 30,             // setup time on location before call
   eveningReminder: '19:00', // reminder the evening before
   backupOffsetH: 2,         // backup reminder N hours after wrap
+  photoGBPerHour: 20,       // estimate: GB of photos per hour of actual shooting (edit in settings)
 };
 
 export async function getSettings() {
@@ -102,6 +105,9 @@ export function createShoot(data = {}) {
     mode: 'hybrid',
     notes: '',
     checklist: [],
+    excluded: [],             // keys of auto items the user removed
+    recordShare: null,        // null = template default
+    travel: { driveMin: null, startAddress: '' },
     phase: 'planned',
     backup: { done: false, doneAt: null, copies: 0 },
     createdAt: new Date().toISOString(),
@@ -118,14 +124,24 @@ export function saveShoot(shoot) {
 
 export async function seedIfNeeded() {
   const flag = await get('settings', 'seededV1');
-  if (flag) return false;
+  if (flag) { await migrateData(); return false; }
   await putMany('gear', DEFAULT_GEAR.map((g) => ({ ...g })));
   await putMany('templates', DEFAULT_TEMPLATES.map((t) => ({ ...t })));
   await put('settings', { key: 'seededV1', value: new Date().toISOString() });
+  await put('settings', { key: 'migratedV2', value: true });
   return true;
 }
 
+// Data fixes for inventories seeded by an older version.
+async function migrateData() {
+  if (await get('settings', 'migratedV2')) return;
+  const ssd = await get('gear', 'ssd');
+  // The backup SSD must not count as camera media in the storage calculator.
+  if (ssd && !ssd.tags?.includes('backup')) await put('gear', { ...ssd, tags: [...(ssd.tags || []), 'backup'] });
+  await put('settings', { key: 'migratedV2', value: true });
+}
+
 export async function resetAll() {
-  for (const s of ['shoots', 'gear', 'templates', 'settings']) await clear(s);
+  for (const s of ['shoots', 'gear', 'templates', 'settings', 'cache']) await clear(s);
   await seedIfNeeded();
 }

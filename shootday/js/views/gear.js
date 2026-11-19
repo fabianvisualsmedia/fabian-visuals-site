@@ -39,7 +39,7 @@ function itemRow(item) {
 
 function stats(items) {
   const sum = (cat) => items.filter((i) => i.category === cat).reduce((n, i) => n + (i.quantity || 0), 0);
-  const gb = items.filter((i) => i.category === 'storage' && i.capacityGB && i.id !== 'ssd')
+  const gb = items.filter((i) => i.category === 'storage' && i.capacityGB && !i.tags?.includes('backup'))
     .reduce((n, i) => n + i.capacityGB * (i.quantity || 0), 0);
   const cells = [
     ['Bodies', sum('camera'), ''],

@@ -30,7 +30,7 @@ export const DEFAULT_GEAR = [
   { id: 'headlamp', name: 'Stirnlampe', category: 'light', quantity: 1, tags: ['night'] },
 
   // Power
-  { id: 'cam-battery', name: 'Kamera-Akku', category: 'power', quantity: 6, batteryRuntimeMin: 70, needsCheck: true, tags: [] },
+  { id: 'cam-battery', name: 'Kamera-Akku', category: 'power', quantity: 6, batteryRuntimeMin: 70, needsCheck: true, tags: ['camera'] },
   { id: 'light-battery', name: 'Licht-Akku', category: 'power', quantity: 4, batteryRuntimeMin: 90, needsCheck: true, tags: ['night'] },
   { id: 'charger', name: 'Ladegerät (Kamera)', category: 'power', quantity: 1, tags: [] },
   { id: 'powerbank', name: 'Powerbank', category: 'power', quantity: 1, tags: ['long-day'] },
@@ -38,7 +38,7 @@ export const DEFAULT_GEAR = [
   // Storage
   { id: 'card-128', name: 'Speicherkarte 128 GB', category: 'storage', quantity: 4, capacityGB: 128, tags: [] },
   { id: 'card-64', name: 'Speicherkarte 64 GB', category: 'storage', quantity: 2, capacityGB: 64, tags: [] },
-  { id: 'ssd', name: 'Externe SSD', category: 'storage', quantity: 1, capacityGB: 1000, needsCheck: true, tags: [] },
+  { id: 'ssd', name: 'Externe SSD', category: 'storage', quantity: 1, capacityGB: 1000, needsCheck: true, tags: ['backup'] },
   { id: 'card-reader', name: 'Kartenleser', category: 'storage', quantity: 1, tags: [] },
 
   // Grip

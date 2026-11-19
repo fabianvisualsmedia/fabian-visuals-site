@@ -46,6 +46,12 @@ export async function render(page) {
       ${num('setupMin', 'Aufbauzeit', 'vor der Call-Time vor Ort', 'min')}
     </div>
 
+    <div class="section-head"><h3>Rechner</h3></div>
+    <div class="card set-group">
+      ${num('photoGBPerHour', 'Foto-Datenmenge', 'GB pro Stunde reiner Aufnahme (Schätzwert)', 'GB', 1)}
+    </div>
+    <p class="hint" style="margin-top:8px">Bitraten & Akkulaufzeiten pflegst du direkt im Gear.</p>
+
     <div class="section-head"><h3>Erinnerungen</h3></div>
     <div class="card set-group">
       <div class="set-row">
@@ -58,7 +64,7 @@ export async function render(page) {
     <div class="section-head"><h3>Daten</h3></div>
     <button class="btn block danger-ghost" data-reset>${icon('trash', 20)} Alles zurücksetzen</button>
 
-    <p class="about">Shoot Day · Phase 1<br>Fabian Visuals</p>
+    <p class="about">Shoot Day · Phase 2<br>Fabian Visuals</p>
   `;
 
   page.querySelector('[data-theme-seg]').addEventListener('click', async (e) => {
