@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shoot Day Tests</title>
+  <style>
+    body { font: 15px/1.5 -apple-system, system-ui, sans-serif; background: #0b0c10; color: #eee; padding: 24px; }
+    li { list-style: none; padding: 4px 0; }
+    .pass::before { content: "✓ "; color: #3ddc84; }
+    .fail::before { content: "✗ "; color: #ff4d5e; }
+    .fail { color: #ff8a95; }
+    #summary { font-weight: 600; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>Shoot Day – Tests</h1>
+  <p id="summary">läuft …</p>
+  <ul id="out"></ul>
+  <script type="module">
+    import { durationMin, daysUntil, addDaysISO, esc } from '../js/ui.js';
+    import { bucketShoots } from '../js/views/shoots-list.js';
+    import * as db from '../js/db.js';
+
+    const results = [];
+    async function test(name, fn) {
+      try { await fn(); results.push({ name, ok: true }); }
+      catch (e) { results.push({ name, ok: false, msg: e.message }); }
+    }
+    const eq = (a, b, msg = '') => { if (JSON.stringify(a) !== JSON.stringify(b)) throw new Error(`${msg} erwartet ${JSON.stringify(b)}, bekommen ${JSON.stringify(a)}`); };
+
+    await test('Drehdauer normal', () => eq(durationMin('10:00', '22:00'), 720));
+    await test('Drehdauer über Mitternacht', () => eq(durationMin('20:00', '02:30'), 390));
+    await test('Tage bis Datum', () => eq(daysUntil('2026-03-31', new Date(2026, 2, 28, 23, 0)), 3));
+    await test('Tage über Zeitumstellung (März)', () => eq(daysUntil('2026-03-30', new Date(2026, 2, 28)), 2));
+    await test('addDaysISO über Monatsgrenze', () => eq(addDaysISO('2026-01-31', 1), '2026-02-01'));
+    await test('HTML-Escape', () => eq(esc('<b>"&\''), '&lt;b&gt;&quot;&amp;&#39;'));
+
+    await test('Übersicht-Buckets', () => {
+      const s = (id, date, extra = {}) => ({ id, date, callTime: '09:00', phase: 'planned', backup: { done: false }, ...extra });
+      const b = bucketShoots([
+        s('future2', '2026-12-05'), s('future1', '2026-11-20'),
+        s('pastOpen', '2026-11-01'),
+        s('pastDone', '2026-10-01', { backup: { done: true } }),
+        s('todayWrapped', '2026-11-19', { phase: 'wrapped' }),
+      ], '2026-11-19');
+      eq(b.upcoming.map((x) => x.id), ['future1', 'future2'], 'upcoming');
+      eq(b.backupOpen.map((x) => x.id).sort(), ['pastOpen', 'todayWrapped'], 'backup');
+      eq(b.archive.map((x) => x.id), ['pastDone'], 'archive');
+    });
+
+    await test('IndexedDB: Dreh speichern, lesen, löschen + Seed', async () => {
+      db.useDatabase('shootday-test-' + Date.now());
+      await db.seedIfNeeded();
+      const gear = await db.all('gear');
+      if (gear.length < 10) throw new Error('Start-Inventar fehlt');
+      eq(await db.seedIfNeeded(), false, 'zweiter Seed');
+      const shoot = db.createShoot({ title: 'Test', date: '2026-12-01' });
+      await db.saveShoot(shoot);
+      eq((await db.get('shoots', shoot.id)).title, 'Test');
+      await db.del('shoots', shoot.id);
+      eq(await db.get('shoots', shoot.id), undefined);
+      const s = await db.getSettings();
+      eq(s.bufferPct, 20);
+    });
+
+    const out = document.getElementById('out');
+    out.innerHTML = results.map((r) => `<li class="${r.ok ? 'pass' : 'fail'}">${r.name}${r.msg ? ' – ' + r.msg : ''}</li>`).join('');
+    const failed = results.filter((r) => !r.ok).length;
+    document.getElementById('summary').textContent = failed ? `${failed} von ${results.length} fehlgeschlagen` : `Alle ${results.length} Tests grün`;
+    window.__testResults = results;
+  </script>
+</body>
+</html>

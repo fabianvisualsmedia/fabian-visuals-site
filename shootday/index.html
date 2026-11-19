@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050608">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Shoot Day">
+  <title>Shoot Day</title>
+  <script>
+    // Resolve theme before first paint to avoid a flash of the wrong mode.
+    (function () {
+      var pref = 'system';
+      try { pref = localStorage.getItem('sd-theme') || 'system'; } catch (e) {}
+      var dark = pref === 'dark' || (pref === 'system' && !matchMedia('(prefers-color-scheme: light)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <main id="app" aria-live="polite"></main>
+
+  <nav class="dock" aria-label="Hauptnavigation">
+    <div class="dock-pill">
+      <a href="#/" data-nav="list" aria-label="Drehs"></a>
+      <a href="#/gear" data-nav="gear" aria-label="Equipment"></a>
+      <a href="#/settings" data-nav="settings" aria-label="Einstellungen"></a>
+    </div>
+    <a href="#/shoot/new" class="dock-add orb" data-nav="new" aria-label="Neuen Dreh anlegen"></a>
+  </nav>
+
+  <div id="sheet-root"></div>
+  <div id="toast" role="status"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
