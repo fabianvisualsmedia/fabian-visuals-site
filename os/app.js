@@ -62,6 +62,16 @@
     edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
     eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     copy: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+    music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    building: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-3h4v3"/>',
+    bag: '<path d="M5 8h14l-1 13H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    car: '<path d="M3 13l2.2-5.5A2 2 0 0 1 7 6h10a2 2 0 0 1 1.8 1.5L21 13v4H3z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
+    flame: '<path d="M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 3 3 5 1-1 1-3 1-9z"/>',
+    shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12h18"/>',
+    pin: '<path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+    chat: '<path d="M4 20l1.5-4A8 8 0 1 1 9 19.5z"/>',
     refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
   };
   const ic = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ''}</svg>`;
@@ -84,12 +94,37 @@
     deadline: { label: 'Deadline', c: 'var(--red)', g: 'linear-gradient(135deg,#fd290d,#7a0d02)' },
   };
   const SSTATUS = { idea: { label: 'Idee', c: 'var(--st-plan)' }, draft: { label: 'Draft', c: 'var(--st-prog)' }, final: { label: 'Final', c: 'var(--st-done)' } };
-  const EMOJIS = ['📷', '🎬', '🎙️', '🎧', '🎵', '🏢', '💄', '👗', '🛍️', '🚗', '💧', '💸', '⚙️', '🦊', '✋', '🔁', '💃', '⚡️', '🌍', '🏠'];
+  const CICONS = ['user', 'building', 'film', 'camera', 'music', 'mic', 'bag', 'spark', 'flame', 'shield', 'car', 'settings', 'globe', 'briefcase'];
+  function autoIcon(c) {
+    const t = `${c.name} ${c.type}`.toLowerCase();
+    if (/\bdj\b|musik|music|rap|artist|künstler/.test(t)) return 'music';
+    if (/heiz|öl|oel|wärme|sanitär/.test(t)) return 'flame';
+    if (/versicher|allianz|finanz/.test(t)) return 'shield';
+    if (/beauty|kosmetik|sephora|fashion|mode/.test(t)) return 'spark';
+    if (/commerce|shop|deals|handel/.test(t)) return 'bag';
+    if (/stellplatz|auto|kfz|car/.test(t)) return 'car';
+    if (/industrie|technik|maschinen/.test(t)) return 'settings';
+    if (/studio|video|film|agentur/.test(t)) return 'film';
+    if (/foto|photo/.test(t)) return 'camera';
+    if (/gmbh|\bug\b|\bag\b|consult|management|club|e\.v/.test(t)) return 'building';
+    return 'user';
+  }
+  const clientIco = (c) => ic(c.iconKey || autoIcon(c));
 
   /* ---------- storage ---------- */
   function migrate(d) {
     for (const k of ['clients', 'projects', 'scripts', 'events', 'notes', 'docs', 'ideas']) d[k] = Array.isArray(d[k]) ? d[k] : [];
     d.scripts.forEach((x) => { if (x.notes == null) x.notes = ''; });
+    d.clients.forEach((c) => {
+      if (c.contact != null) return;
+      c.contact = ''; c.address = '';
+      c.notes = (c.notes || '').split('\n').filter((l) => {
+        const m = l.match(/^\s*(Ansprechpartner|Adresse)\s*:\s*(.*)$/i);
+        if (!m) return true;
+        if (/^a/i.test(m[1]) && m[1].length > 8) c.contact = m[2].trim(); else c.address = m[2].trim();
+        return false;
+      }).join('\n').trim();
+    });
     d.settings = d.settings || { name: 'Fabian' };
     d.settings.theme = d.settings.theme || 'system';
     d.v = 1;
@@ -478,38 +513,45 @@
   let crmQuery = '';
   function vCrm() {
     const q = crmQuery.toLowerCase();
-    const list = [...db.clients].filter((c) => !q || [c.name, c.type, c.email].join(' ').toLowerCase().includes(q)).sort((a, b) => a.name.localeCompare(b.name));
+    const list = [...db.clients].filter((c) => !q || [c.name, c.type, c.email, c.contact, c.phone].join(' ').toLowerCase().includes(q)).sort((a, b) => a.name.localeCompare(b.name));
     return pageHead('Clients', `CRM · ${db.clients.length} Kontakte`, `<button class="circ solid" data-act="new-client" aria-label="Neuer Kunde">${ic('plus')}</button>`) + `
       <div class="searchbox">${ic('search')}<input id="crmq" placeholder="Kunden suchen" value="${esc(crmQuery)}" autocomplete="off"></div>
       <div class="list" id="crmlist">${list.map(clientRow).join('') || '<div class="empty" style="border:0">Keine Treffer</div>'}</div>`;
   }
   function clientRow(c) {
     const n = db.projects.filter((p) => p.clientId === c.id).length;
-    return `<a class="row" href="#/client/${c.id}"><span class="ico">${esc(c.icon || '👤')}</span>
-      <span class="body"><b>${esc(c.name || 'Ohne Namen')}</b><small>${esc([c.type, c.email].filter(Boolean).join(' · ') || '—')}</small></span>
-      <span class="end">${n ? n + ' ' + ic('kanban') : ''}${ic('chev')}</span></a>`;
+    const inactive = /inaktiv/i.test(c.type || '');
+    return `<a class="row ${inactive ? 'dimmed' : ''}" href="#/client/${c.id}"><span class="ico cli">${clientIco(c)}</span>
+      <span class="body"><b>${esc(c.name || 'Ohne Namen')}</b><small>${esc([c.contact, (c.type || '').split(' · ')[0]].filter(Boolean).join(' · ') || '—')}</small></span>
+      <span class="end">${c.phone ? `<span class="has" title="Telefon">${ic('phone')}</span>` : ''}${c.email ? `<span class="has" title="E-Mail">${ic('mail')}</span>` : ''}${ic('chev')}</span></a>`;
   }
   function vClient(id) {
     const c = get('clients', id);
     if (!c) return null;
     const projects = db.projects.filter((p) => p.clientId === id);
-    const tel = (c.phone || '').replace(/[^\d+]/g, '');
+    const tel = (c.phone || '').split(/[\/,;]/)[0].replace(/[^\d+]/g, '');
+    const mail = (c.email || '').split(/[\/,;\s]+/).find((x) => x.includes('@')) || '';
+    const wa = tel ? tel.replace(/^\+/, '').replace(/^00/, '').replace(/^0/, '49') : '';
     const ig = (c.instagram || '').replace(/^@/, '');
     const web = c.website && !/^https?:\/\//.test(c.website) ? 'https://' + c.website : c.website;
     return topbar('Kunde', 'CRM', `<button class="circ" data-act="del" data-col="clients" data-id="${id}" aria-label="Löschen">${ic('trash')}</button>`, 'crm') + `
       <section class="dhero electric">
-        <button class="emoji-big" data-act="emoji" data-id="${id}" aria-label="Icon ändern">${esc(c.icon || '👤')}</button>
+        <button class="emoji-big" data-act="emoji" data-id="${id}" aria-label="Icon ändern">${clientIco(c)}</button>
         <textarea class="t" rows="1" placeholder="Name / Firma" ${bind('clients', id, 'name')}>${esc(c.name)}</textarea>
         <input style="width:100%;font-size:15px;opacity:.85;margin-top:6px" placeholder="Branche / Typ" value="${esc(c.type)}" ${bind('clients', id, 'type')}>
       </section>
-      <div class="emojis field" id="emojis" hidden>${EMOJIS.map((e) => `<button data-act="set-emoji" data-id="${id}" data-val="${e}">${e}</button>`).join('')}</div>
-      ${c.email || tel ? `<div class="btns2">
-        ${c.email ? `<a class="btn white" href="mailto:${esc(c.email)}">${ic('mail')} Mail</a>` : ''}
-        ${tel ? `<a class="btn" href="tel:${esc(tel)}">${ic('phone')} Anrufen</a>` : ''}
+      <div class="emojis field" id="emojis" hidden>${CICONS.map((k) => `<button class="${(c.iconKey || autoIcon(c)) === k ? 'on' : ''}" data-act="set-emoji" data-id="${id}" data-val="${k}">${ic(k)}</button>`).join('')}</div>
+      ${mail || tel ? `<div class="qacts">
+        ${tel ? `<a href="tel:${esc(tel)}">${ic('phone')}<span>Anrufen</span></a>` : ''}
+        ${wa ? `<a href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">${ic('chat')}<span>WhatsApp</span></a>` : ''}
+        ${mail ? `<a href="mailto:${esc(mail)}">${ic('mail')}<span>Mail</span></a>` : ''}
+        ${c.address ? `<a href="https://maps.apple.com/?q=${encodeURIComponent(c.address)}" target="_blank" rel="noopener">${ic('pin')}<span>Karte</span></a>` : ''}
       </div>` : ''}
       <div class="field">
+        <div class="fl"><label>Kontakt</label><input placeholder="Ansprechpartner" value="${esc(c.contact || '')}" ${bind('clients', id, 'contact')}></div>
         <div class="fl"><label>E-Mail</label><input type="email" inputmode="email" placeholder="name@firma.de" value="${esc(c.email)}" ${bind('clients', id, 'email')}></div>
         <div class="fl"><label>Telefon</label><input type="tel" placeholder="+49…" value="${esc(c.phone)}" ${bind('clients', id, 'phone')}></div>
+        <div class="fl"><label>Adresse</label><input placeholder="Straße, PLZ Ort" value="${esc(c.address || '')}" ${bind('clients', id, 'address')}></div>
         <div class="fl"><label>Instagram</label><input placeholder="@handle" value="${esc(c.instagram)}" ${bind('clients', id, 'instagram')}>${ig ? `<a class="act" href="https://instagram.com/${esc(ig)}" target="_blank" rel="noopener">${ic('arrow')}</a>` : ''}</div>
         <div class="fl"><label>Website</label><input inputmode="url" placeholder="firma.de" value="${esc(c.website)}" ${bind('clients', id, 'website')}>${web ? `<a class="act" href="${esc(web)}" target="_blank" rel="noopener">${ic('arrow')}</a>` : ''}</div>
       </div>
@@ -939,7 +981,7 @@
     const has = (...v) => v.join(' ').toLowerCase().includes(q);
     const groups = [
       ['Projekte', db.projects.filter((p) => has(p.title, p.notes, ...p.tasks.map((t) => t.text))).map((p) => [`#/project/${p.id}`, 'kanban', p.title, STATUS[p.status].label])],
-      ['Kunden', db.clients.filter((c) => has(c.name, c.type, c.email, c.notes)).map((c) => [`#/client/${c.id}`, null, c.name, c.type, c.icon])],
+      ['Kunden', db.clients.filter((c) => has(c.name, c.type, c.email, c.notes, c.contact, c.phone)).map((c) => [`#/client/${c.id}`, c.iconKey || autoIcon(c), c.name, [c.contact, c.type].filter(Boolean).join(' · ')])],
       ['Scripts', db.scripts.filter((s) => has(s.title, ...s.rows.map((r) => r.audio + ' ' + r.visual))).map((s) => [`#/script/${s.id}`, 'film', s.title, projectTitle(s.projectId)])],
       ['Ideen', db.ideas.filter((x) => has(x.text)).map((x) => ['#/ideas', 'bulb', x.text.split('\n')[0].slice(0, 60), ITAGS[x.tag]?.label])],
       ['Dokumente', db.docs.filter((x) => has(x.title, x.name, x.body, (x.tags || []).join(' '))).map((x) => [`#/doc/${x.id}`, x.kind === 'file' ? 'file' : 'note', x.title || x.name, (x.tags || []).join(', ')])],
@@ -963,7 +1005,7 @@
     setTimeout(() => $('.dhero .t')?.focus(), 350);
   }
   function createClient() {
-    const c = { id: uid(), icon: '👤', name: '', type: '', email: '', phone: '', instagram: '', website: '', notes: '' };
+    const c = { id: uid(), name: '', contact: '', type: '', email: '', phone: '', address: '', instagram: '', website: '', notes: '' };
     db.clients.push(c); save(true); closeSheet(); go('client/' + c.id);
     setTimeout(() => $('.dhero .t')?.focus(), 350);
   }
@@ -1078,7 +1120,7 @@
         break;
       }
       case 'emoji': { const e = $('#emojis'); if (e) e.hidden = !e.hidden; break; }
-      case 'set-emoji': { const c = get('clients', d.id); if (c) { c.icon = d.val; save(true); render(); } break; }
+      case 'set-emoji': { const c = get('clients', d.id); if (c) { c.iconKey = d.val; save(true); render(); } break; }
       case 'del': {
         const it = get(d.col, d.id);
         const label = it?.title || it?.name || 'Eintrag';
@@ -1151,7 +1193,7 @@
     } else if (t.id === 'crmq') {
       crmQuery = t.value;
       const q = crmQuery.toLowerCase();
-      $('#crmlist').innerHTML = [...db.clients].filter((c) => !q || [c.name, c.type, c.email].join(' ').toLowerCase().includes(q))
+      $('#crmlist').innerHTML = [...db.clients].filter((c) => !q || [c.name, c.type, c.email, c.contact, c.phone].join(' ').toLowerCase().includes(q))
         .sort((a, b) => a.name.localeCompare(b.name)).map(clientRow).join('') || '<div class="empty" style="border:0">Keine Treffer</div>';
     } else if (t.id === 'gq') runSearch(t.value);
     else if (t.id === 'docq') { docQuery = t.value; const l = $('#doclist'); if (l) { l.innerHTML = docCards(filteredDocs()); hydrate(l); } }

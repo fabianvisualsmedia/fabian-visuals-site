@@ -681,3 +681,19 @@ textarea.notes {
 .fold { position: relative; }
 .fold:not(.open) .md { max-height: 260px; overflow: hidden; -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
 .fold .more { display: block; margin: 8px auto 0; height: 34px; padding: 0 16px; border-radius: 17px; background: var(--surface-2); font-size: 13px; }
+
+/* plain client icons + quick actions */
+.row .ico.cli { color: var(--text); background: var(--surface-2); }
+.row .ico.cli svg.i { width: 19px; height: 19px; stroke-width: 1.6; }
+.row.dimmed .ico.cli { color: var(--dim); }
+.row.dimmed .body b { color: var(--muted); }
+.row .end .has { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); color: var(--muted); }
+.row .end .has svg.i { width: 12px; height: 12px; }
+.emoji-big svg.i { width: 30px; height: 30px; stroke-width: 1.5; }
+.emojis button { display: grid; place-items: center; color: var(--text); }
+.emojis button svg.i { width: 18px; height: 18px; }
+.emojis button.on { background: var(--inv-bg); color: var(--inv-fg); }
+.qacts { display: flex; gap: 8px; margin-bottom: 12px; }
+.qacts a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--card-shadow); font-size: 12px; color: var(--muted); transition: transform .2s var(--ease); }
+.qacts a svg.i { color: var(--blue); width: 22px; height: 22px; }
+.qacts a:active { transform: scale(.94); }
