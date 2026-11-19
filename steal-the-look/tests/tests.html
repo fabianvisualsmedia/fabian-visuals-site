@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Steal the Look – Tests</title>
+<style>
+  body { background: #050608; color: #e8eaf0; font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; padding: 32px 16px; max-width: 860px; margin: 0 auto; }
+  h1 { font-weight: 600; letter-spacing: -0.02em; }
+  li { list-style: none; padding: 10px 14px; margin: 8px 0; border-radius: 14px; background: #0d1016; border: 1px solid #ffffff12; }
+  .pass::before { content: "●"; color: #3ddc84; margin-right: 10px; }
+  .fail::before { content: "●"; color: #ff4d5e; margin-right: 10px; }
+  .fail { border-color: #ff4d5e66; }
+  small { color: #8a90a0; display: block; margin-left: 22px; }
+  #summary { font-weight: 600; }
+  ul { padding: 0; }
+</style>
+</head>
+<body>
+<h1>Steal the Look – Unit-Tests</h1>
+<p id="summary">läuft …</p>
+<ul id="results"></ul>
+
+<script type="module">
+import {
+  srgbToLinear, linearToSrgb, srgbToOklab, oklabToSrgb,
+  vlogToLinear, linearToVlog,
+} from '../js/color.js';
+import { buildToneCurve, resolveParams, neutralLook } from '../js/look.js';
+import { generateLut } from '../js/lut.js';
+import { lutToCube, cubeFileName, suggestName } from '../js/export.js';
+import { analyzePixels } from '../js/analyze.js';
+
+const results = [];
+function test(name, fn) {
+  try {
+    const detail = fn();
+    results.push({ name, ok: true, detail });
+  } catch (e) {
+    results.push({ name, ok: false, detail: e.message });
+  }
+}
+function assert(cond, msg) { if (!cond) throw new Error(msg); }
+
+// A deliberately strong, non-neutral look used by several tests.
+const STRONG_LOOK = {
+  blackPoint: 0.3, whitePoint: 0.8, midpoint: 0.45, contrast: 0.4,
+  shadowsTint: { a: -0.04, b: -0.03 },
+  midsTint: { a: 0.01, b: 0.02 },
+  highlightsTint: { a: 0.02, b: 0.05 },
+  saturation: 1.5,
+};
+
+// 1. Roundtrip sRGB -> Oklab -> sRGB
+test('1 · Roundtrip sRGB → Oklab → sRGB (max. Fehler < 1e-5)', () => {
+  let maxErr = 0;
+  const lab = [0, 0, 0], rgb = [0, 0, 0];
+  const steps = 32;
+  for (let r = 0; r <= steps; r++) for (let g = 0; g <= steps; g++) for (let b = 0; b <= steps; b++) {
+    const R = r / steps, G = g / steps, B = b / steps;
+    srgbToOklab(R, G, B, lab);
+    oklabToSrgb(lab[0], lab[1], lab[2], rgb);
+    maxErr = Math.max(maxErr, Math.abs(rgb[0] - R), Math.abs(rgb[1] - G), Math.abs(rgb[2] - B));
+  }
+  for (let i = 0; i <= 1000; i++) {
+    const c = i / 1000;
+    maxErr = Math.max(maxErr, Math.abs(linearToSrgb(srgbToLinear(c)) - c));
+  }
+  assert(maxErr < 1e-5, `max. Fehler ${maxErr.toExponential(2)}`);
+  return `max. Fehler ${maxErr.toExponential(2)}`;
+});
+
+// 2. Identity at intensity 0
+test('2 · Intensität 0 → Identitäts-LUT (max. Fehler < 1/1023)', () => {
+  const N = 33;
+  const controls = { intensity: 0, contrast: 40, saturation: -30, shadowTint: { a: 0.05, b: 0 }, highlightTint: { a: 0, b: 0.05 } };
+  const lut = generateLut(N, STRONG_LOOK, controls);
+  let maxErr = 0, o = 0;
+  for (let b = 0; b < N; b++) for (let g = 0; g < N; g++) for (let r = 0; r < N; r++) {
+    maxErr = Math.max(maxErr,
+      Math.abs(lut[o++] - r / (N - 1)), Math.abs(lut[o++] - g / (N - 1)), Math.abs(lut[o++] - b / (N - 1)));
+  }
+  assert(maxErr < 1 / 1023, `max. Fehler ${maxErr.toExponential(2)}`);
+  return `max. Fehler ${maxErr.toExponential(2)}`;
+});
+
+// 3. Tone curve strictly increasing
+test('3 · Tonkurve streng monoton steigend (1000 Stützpunkte, diverse Looks)', () => {
+  const variants = [
+    STRONG_LOOK,
+    { ...STRONG_LOOK, contrast: 0.05 },                 // strong contrast reduction
+    { ...STRONG_LOOK, contrast: 0.9, midpoint: 0.75 },  // strong contrast boost, bright
+    { ...STRONG_LOOK, blackPoint: 0, whitePoint: 1, midpoint: 0.2 },
+    neutralLook(),
+  ];
+  const userContrast = [-50, 0, 50];
+  const intensities = [0, 0.5, 1, 1.5];
+  let checked = 0;
+  for (const look of variants) for (const c of userContrast) for (const t of intensities) {
+    const tone = buildToneCurve(resolveParams(look, { intensity: t, contrast: c }));
+    let prev = tone(0);
+    for (let i = 1; i <= 1000; i++) {
+      const v = tone(i / 1000);
+      assert(v > prev, `nicht steigend bei L=${(i / 1000).toFixed(3)} (Kontrast ${c}, Intensität ${t})`);
+      prev = v;
+    }
+    checked++;
+  }
+  return `${checked} Kurven geprüft`;
+});
+
+// 4. Value range
+test('4 · Alle LUT-Werte in 0…1, keine NaN (inkl. Extremwerte & V-Log)', () => {
+  const cases = [
+    [STRONG_LOOK, { intensity: 1.5, contrast: 50, saturation: 50, shadowTint: { a: 0.1, b: -0.1 }, highlightTint: { a: -0.1, b: 0.1 } }],
+    [STRONG_LOOK, { intensity: 1.5, contrast: -50, saturation: -50 }],
+    [STRONG_LOOK, { intensity: 1, input: 'vlog' }],
+    [neutralLook(), { intensity: 1 }],
+  ];
+  let n = 0;
+  for (const [look, ctrl] of cases) {
+    const lut = generateLut(33, look, ctrl);
+    for (let i = 0; i < lut.length; i++) {
+      const v = lut[i];
+      assert(Number.isFinite(v) && v >= 0 && v <= 1, `Wert ${v} an Index ${i}`);
+    }
+    n += lut.length;
+  }
+  return `${n.toLocaleString('de-DE')} Werte geprüft`;
+});
+
+// 5. Cube format
+test('5 · .cube-Format: Header, N³ Datenzeilen, R läuft am schnellsten', () => {
+  const N = 5;
+  const lut = generateLut(N, neutralLook(), { intensity: 0 });
+  const text = lutToCube(lut, N, 'Test Look');
+  assert(!text.includes('\r'), 'enthält \\r');
+  assert(text.endsWith('\n'), 'kein abschließender Zeilenumbruch');
+  const lines = text.trimEnd().split('\n');
+  assert(lines[0] === 'TITLE "Lumic Look - Test Look"', `TITLE: ${lines[0]}`);
+  assert(lines.includes(`LUT_3D_SIZE ${N}`), 'LUT_3D_SIZE fehlt');
+  assert(lines.includes('DOMAIN_MIN 0.0 0.0 0.0'), 'DOMAIN_MIN fehlt');
+  assert(lines.includes('DOMAIN_MAX 1.0 1.0 1.0'), 'DOMAIN_MAX fehlt');
+  const data = lines.filter((l) => /^-?\d/.test(l));
+  assert(data.length === N ** 3, `${data.length} statt ${N ** 3} Datenzeilen`);
+  assert(data.every((l) => /^\d\.\d{6} \d\.\d{6} \d\.\d{6}$/.test(l)), 'Zahlenformat (6 Nachkommastellen, Punkt)');
+  assert(data[0] === '0.000000 0.000000 0.000000', `Zeile 1: ${data[0]}`);
+  assert(data[1] === '0.250000 0.000000 0.000000', `Gitterpunkt (1,0,0) muss Datenzeile 2 sein, ist: ${data[1]}`);
+  assert(data[N] === '0.000000 0.250000 0.000000', `Gitterpunkt (0,1,0) an Zeile N+1: ${data[N]}`);
+  assert(data[N * N] === '0.000000 0.000000 0.250000', `Gitterpunkt (0,0,1) an Zeile N²+1: ${data[N * N]}`);
+  const fn = cubeFileName('Teal Dusk 01', 33, 'rec709');
+  assert(fn === 'lumic_teal-dusk-01_33_rec709.cube', `Dateiname: ${fn}`);
+  return `${fn}`;
+});
+
+// 6. Letterbox detection
+function makeImage(w, h, bars) {
+  const data = new Uint8ClampedArray(w * h * 4);
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4;
+    const inBar = y < bars.top || y >= h - bars.bottom || x < bars.left || x >= w - bars.right;
+    if (inBar) {
+      const n = Math.floor(rnd() * 5); // compressed "black" with noise 0..4 (not all treated as clipped)
+      data[i] = n; data[i + 1] = n; data[i + 2] = n;
+    } else {
+      // content coordinates independent of the bars -> identical content
+      const cx = (x - bars.left) / (w - bars.left - bars.right);
+      const cy = (y - bars.top) / (h - bars.top - bars.bottom);
+      data[i] = 40 + 180 * cx;
+      data[i + 1] = 60 + 120 * cy;
+      data[i + 2] = 120 + 80 * Math.sin(cx * 6) * cy;
+    }
+    data[i + 3] = 255;
+  }
+  return data;
+}
+
+test('6 · Letterbox-Balken werden ignoriert', () => {
+  const W = 240, H = 100;
+  const plain = analyzePixels(makeImage(W, H, { top: 0, bottom: 0, left: 0, right: 0 }), W, H);
+  const barred = analyzePixels(makeImage(W, H + 40, { top: 20, bottom: 20, left: 0, right: 0 }), W, H + 40);
+  const pillar = analyzePixels(makeImage(W + 60, H, { top: 0, bottom: 0, left: 30, right: 30 }), W + 60, H);
+  assert(barred.stats.crop.top === 20 && barred.stats.crop.bottom === 20, `Crop oben/unten: ${JSON.stringify(barred.stats.crop)}`);
+  assert(pillar.stats.crop.left === 30 && pillar.stats.crop.right === 30, `Crop links/rechts: ${JSON.stringify(pillar.stats.crop)}`);
+  const keys = ['blackPoint', 'whitePoint', 'midpoint', 'contrast', 'saturation'];
+  for (const res of [barred, pillar]) for (const k of keys) {
+    const d = Math.abs(res.look[k] - plain.look[k]);
+    assert(d < 0.005, `${k} weicht um ${d.toFixed(4)} ab`);
+  }
+  for (const z of ['shadowsTint', 'midsTint', 'highlightsTint']) {
+    const d = Math.hypot(barred.look[z].a - plain.look[z].a, barred.look[z].b - plain.look[z].b);
+    assert(d < 0.003, `${z} weicht um ${d.toFixed(4)} ab`);
+  }
+  return `Balken erkannt: ${JSON.stringify(barred.stats.crop)} / ${JSON.stringify(pillar.stats.crop)}`;
+});
+
+// 7. V-Log reference values
+test('7 · V-Log-Referenzwerte (Panasonic)', () => {
+  const ref = [
+    [128 / 1023, 0.0, 0.002],   // 0 % black
+    [433 / 1023, 0.18, 0.003],  // 18 % grey
+    [602 / 1023, 0.90, 0.015],  // 90 % white
+  ];
+  const out = [];
+  for (const [code, lin, tol] of ref) {
+    const v = vlogToLinear(code);
+    assert(Math.abs(v - lin) < tol, `V-Log ${(code * 1023).toFixed(0)}/1023 → ${v.toFixed(4)}, erwartet ${lin}`);
+    out.push(`${Math.round(code * 1023)} → ${v.toFixed(4)}`);
+  }
+  assert(Math.abs(linearToVlog(0) - 0.125) < 1e-12, 'Schwarz muss 0.125 ergeben');
+  assert(Math.abs(linearToVlog(0.18) - 0.4233) < 0.001, `18 % → ${linearToVlog(0.18)}`);
+  for (let x = 0; x <= 10; x += 0.01) {
+    // the official cut points (0.01 / 0.181) are only consistent to ~1e-6
+    assert(Math.abs(vlogToLinear(linearToVlog(x)) - x) < 1e-5, `Roundtrip bei ${x}`);
+  }
+  const lo = linearToVlog(0.01 - 1e-9), hi = linearToVlog(0.01);
+  assert(Math.abs(hi - lo) < 1e-4, 'Kurve am Übergang nicht stetig');
+  return out.join(' · ');
+});
+
+// Bonus: auto names never empty and generic
+test('Bonus · Auto-Name ist generisch', () => {
+  const n = suggestName(STRONG_LOOK);
+  assert(/^[A-Z][a-z]+ [A-Z][a-z]+ \d{2}$/.test(n), n);
+  return n;
+});
+
+// Render
+const ul = document.getElementById('results');
+for (const r of results) {
+  const li = document.createElement('li');
+  li.className = r.ok ? 'pass' : 'fail';
+  li.textContent = r.name;
+  if (r.detail) {
+    const s = document.createElement('small');
+    s.textContent = r.detail;
+    li.appendChild(s);
+  }
+  ul.appendChild(li);
+}
+const failed = results.filter((r) => !r.ok).length;
+document.getElementById('summary').textContent =
+  failed ? `${failed} von ${results.length} Tests fehlgeschlagen` : `Alle ${results.length} Tests grün`;
+window.__TEST_RESULTS__ = results;
+</script>
+</body>
+</html>
