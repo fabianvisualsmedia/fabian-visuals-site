@@ -637,6 +637,11 @@
       <div class="seg">${[['system', 'System'], ['light', 'Hell'], ['dark', 'Dunkel']].map(([k, l]) =>
         `<button class="${db.settings.theme === k ? 'on' : ''}" data-act="theme" data-val="${k}">${l}</button>`).join('')}</div>
 
+      <div class="sec-h" style="margin-top:22px"><h2>Notion</h2></div>
+      <div class="field"><div class="fl"><label>Status</label><input disabled value="${db.settings.notionImported ? 'Importiert am ' + new Date(db.settings.notionImported).toLocaleString('de-DE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Noch nicht importiert'}"></div></div>
+      <button class="btn white" data-act="import">${ic('up')} Notion-Datei importieren</button>
+      <p class="hint" style="margin-top:10px">In der Claude-App die Datei antippen → Teilen → „In Dateien sichern“. Dann hier auf den Button und die Datei in „Dateien“ auswählen.</p>
+
       <div class="sec-h" style="margin-top:22px"><h2>Daten</h2></div>
       <p class="hint">Alles liegt nur auf diesem Gerät (${kb} KB). Mach regelmäßig ein Backup – z. B. in iCloud Drive.</p>
       <div class="btns2">
@@ -646,7 +651,7 @@
       <button class="btn" data-act="export-full">${ic('folder')} Backup inkl. hochgeladener Dateien</button>
       <p class="hint" style="margin-top:10px">Das normale Backup enthält nur Texte und Daten. Hochgeladene Dateien sichert nur „inkl. Dateien“ (kann groß werden).</p>
       <button class="btn danger" data-act="reset">${ic('refresh')} Auf Startdaten zurücksetzen</button>
-      <input type="file" id="importfile" accept="application/json,.json" hidden>
+      <input type="file" id="importfile" hidden>
       <p class="hint" style="margin-top:20px">Fabian.Visuals OS · v3</p>`;
   }
 
@@ -743,7 +748,7 @@
         if (i >= 0) db[k][i] = { ...db[k][i], ...it }; else db[k].push(it);
       }
     }
-    db = migrate(db); save(true); go('home'); render(); toast('Notion-Daten importiert');
+    db = migrate(db); db.settings.notionImported = Date.now(); save(true); go('home'); render(); toast('Notion-Daten importiert');
   }
 
   /* ---------- markdown (sicher: erst escapen) ---------- */
@@ -1210,7 +1215,7 @@
       uploadFiles([...t.files]); t.value = '';
     } else if (t.id === 'importfile' && t.files[0]) {
       t.files[0].text().then(async (txt) => {
-        const d = JSON.parse(txt);
+        const d = JSON.parse(txt.replace(/^\uFEFF/, ''));
         if (!d || !Array.isArray(d.projects)) throw new Error('format');
         if (d.source === 'notion') { importNotion(d); t.value = ''; return; }
         if (!confirm('Backup importieren? Die aktuellen Daten auf diesem Gerät werden ersetzt.')) return;
