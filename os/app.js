@@ -49,17 +49,22 @@
     receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/>',
     link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    archive: '<rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>',
+    undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
     refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
   };
   const ic = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ''}</svg>`;
 
   /* ---------- meta ---------- */
   const STATUS = {
-    planning: { label: 'Planning', c: 'var(--lav)' },
-    progress: { label: 'In Progress', c: 'var(--amber)' },
-    done: { label: 'Done', c: 'var(--green)' },
+    planning: { label: 'Planung', c: 'var(--st-plan)' },
+    progress: { label: 'In Bearbeitung', short: 'Bearbeitung', c: 'var(--st-prog)' },
+    done: { label: 'Fertig', c: 'var(--st-done)' },
+    archive: { label: 'Archiv', c: 'var(--st-arch)' },
   };
-  const PRIO = { high: { label: 'High', c: '#ff7a66' }, medium: { label: 'Medium', c: 'var(--amber)' }, low: { label: 'Low', c: 'var(--blue)' } };
+  const BOARD = ['planning', 'progress', 'done'];
+  const isActive = (p) => p.status !== 'done' && p.status !== 'archive';
+  const PRIO = { high: { label: 'High', c: 'var(--prio-high)' }, medium: { label: 'Medium', c: 'var(--amber)' }, low: { label: 'Low', c: 'var(--blue)' } };
   const ETYPE = {
     shoot: { label: 'Shoot', c: 'var(--orange)', g: 'linear-gradient(135deg,#ffb923,#fd290d)' },
     meeting: { label: 'Meeting', c: 'var(--blue)', g: 'linear-gradient(135deg,#307af4,#2236cc)' },
@@ -67,13 +72,14 @@
     content: { label: 'Content', c: 'var(--pink)', g: 'linear-gradient(135deg,#f89abf,#a59af8)' },
     deadline: { label: 'Deadline', c: 'var(--red)', g: 'linear-gradient(135deg,#fd290d,#7a0d02)' },
   };
-  const SSTATUS = { idea: { label: 'Idee', c: 'var(--lav)' }, draft: { label: 'Draft', c: 'var(--amber)' }, final: { label: 'Final', c: 'var(--green)' } };
+  const SSTATUS = { idea: { label: 'Idee', c: 'var(--st-plan)' }, draft: { label: 'Draft', c: 'var(--st-prog)' }, final: { label: 'Final', c: 'var(--st-done)' } };
   const EMOJIS = ['📷', '🎬', '🎙️', '🎧', '🎵', '🏢', '💄', '👗', '🛍️', '🚗', '💧', '💸', '⚙️', '🦊', '✋', '🔁', '💃', '⚡️', '🌍', '🏠'];
 
   /* ---------- storage ---------- */
   function migrate(d) {
     for (const k of ['clients', 'projects', 'scripts', 'events', 'notes']) d[k] = Array.isArray(d[k]) ? d[k] : [];
     d.settings = d.settings || { name: 'Fabian' };
+    d.settings.theme = d.settings.theme || 'system';
     d.v = 1;
     return d;
   }
@@ -119,12 +125,40 @@
     const y = scrollY;
     const html = fn(a);
     if (html === null) { go(SECTION[p] === 'more' ? p.replace(/(script|note)$/, '$1s') : (SECTION[p] || 'home')); return; }
+    view.classList.remove('enter');
     view.innerHTML = html;
-    view.style.animation = changed ? '' : 'none';
-    if (changed) { void view.offsetWidth; scrollTo(0, 0); } else scrollTo(0, y);
+    if (changed) {
+      void view.offsetWidth;
+      view.classList.add('enter');
+      [...view.children].forEach((c, i) => c.style.setProperty('--i', Math.min(i, 12)));
+      view.querySelectorAll('.hscroll, .board, .list, .ngrid, .tiles, .stats, .col, .alist').forEach((g) =>
+        [...g.children].forEach((c, j) => { c.classList.add('stg'); c.style.setProperty('--j', Math.min(j, 12)); }));
+      countUp(view);
+      scrollTo(0, 0);
+    } else scrollTo(0, y);
     lastHash = location.hash;
     document.querySelectorAll('#dock [data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === SECTION[p]));
+    moveInd();
     view.querySelectorAll('textarea').forEach(grow);
+    if (pendingPop) { view.querySelector(pendingPop)?.classList.add(pendingPop.startsWith('.seg') ? 'just' : 'pop'); pendingPop = ''; }
+    afterRender.splice(0).forEach((f) => f());
+  }
+  let pendingPop = '';
+  const afterRender = [];
+  function moveInd() {
+    const on = $('#dock .pill button.on'), ind = $('#dock .pill .ind');
+    if (!ind) return;
+    ind.style.opacity = on ? 1 : 0;
+    if (on) ind.style.transform = `translateX(${on.offsetLeft - 6}px)`;
+  }
+  addEventListener('resize', moveInd);
+  function countUp(root) {
+    root.querySelectorAll('[data-count]').forEach((el) => {
+      const to = Number(el.dataset.count); if (!to) return;
+      const t0 = performance.now(), dur = 900;
+      const step = (t) => { const k = Math.min(1, (t - t0) / dur); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
+      el.textContent = '0'; setTimeout(() => requestAnimationFrame(step), 250);
+    });
   }
   addEventListener('hashchange', render);
 
@@ -142,7 +176,7 @@
     <div class="page-h"><h1>${esc(title)}</h1>${sub ? `<p>${esc(sub)}</p>` : ''}</div>`;
   const bind = (col, id, f) => `data-bind="${col}|${id}|${f}"`;
   const seg = (col, id, f, opts, cur) => `<div class="seg">${Object.entries(opts).map(([k, o]) =>
-    `<button class="${k === cur ? 'on' : ''}" data-act="set" ${bind(col, id, f)} data-val="${k}">${esc(o.label)}</button>`).join('')}</div>`;
+    `<button class="${k === cur ? 'on' : ''}" data-act="set" ${bind(col, id, f)} data-val="${k}">${esc(o.short || o.label)}</button>`).join('')}</div>`;
   const options = (list, cur, labelKey, empty = '—') => `<option value="">${empty}</option>` +
     list.map((x) => `<option value="${x.id}" ${x.id === cur ? 'selected' : ''}>${esc(x[labelKey])}</option>`).join('');
 
@@ -167,12 +201,41 @@
     </button>`;
   }
 
+  function avatarBtn() {
+    const img = db.settings.avatar;
+    return `<button class="avatar" data-act="avatar-pick" aria-label="Profilbild ändern"><span class="in">${img ? `<img src="${img}" alt="">` : 'FV'}</span>${img ? '' : `<span class="cam">${ic('camera')}</span>`}</button>`;
+  }
+  function pickAvatar(file) {
+    const url = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = () => {
+      const S = 320, c = document.createElement('canvas'); c.width = c.height = S;
+      const k = Math.max(S / im.width, S / im.height), w = im.width * k, h = im.height * k;
+      c.getContext('2d').drawImage(im, (S - w) / 2, (S - h) / 2, w, h);
+      db.settings.avatar = c.toDataURL('image/jpeg', 0.85);
+      URL.revokeObjectURL(url); save(true); render(); toast('Profilbild gespeichert');
+    };
+    im.onerror = () => toast('Bild konnte nicht geladen werden');
+    im.src = url;
+  }
+
+  /* ---------- theme ---------- */
+  const mq = matchMedia('(prefers-color-scheme: light)');
+  function applyTheme() {
+    const t = db.settings.theme || 'system';
+    if (t === 'system') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+    const light = t === 'light' || (t === 'system' && mq.matches);
+    const m = $('meta[name="theme-color"]'); if (m) m.content = light ? '#f1f1f5' : '#060608';
+  }
+  mq.addEventListener?.('change', applyTheme);
+  applyTheme();
+
   /* ---------- HOME ---------- */
   function weekChart(ws, selected) {
     const days = [...Array(7)].map((_, i) => iso(addDays(ws, i)));
     const load = days.map((d) => db.events.filter((e) => e.date === d).reduce((s, e) => {
       const a = toMin(e.start), b = toMin(e.end); return s + (a != null && b != null && b > a ? (b - a) / 60 : 1);
-    }, 0) + db.projects.filter((p) => p.end === d && p.status !== 'done').length);
+    }, 0) + db.projects.filter((p) => p.end === d && isActive(p)).length);
     const max = Math.max(4, ...load);
     const W = 320, H = 110, padY = 14;
     const pts = load.map((v, i) => [19 + i * ((W - 38) / 6), H - padY - (v / max) * (H - padY * 2)]);
@@ -191,10 +254,10 @@
         <defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".5" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity=".3"/></linearGradient>
         <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".14"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
         <line x1="0" x2="${W}" y1="${H - padY}" y2="${H - padY}" stroke="rgba(255,255,255,.14)" stroke-dasharray="2 4"/>
-        <path d="${dPath} L${pts[6][0]},${H - padY} L${pts[0][0]},${H - padY}Z" fill="url(#fg)"/>
-        <path d="${dPath}" fill="none" stroke="url(#lg)" stroke-width="1.6"/>
-        <line x1="${sx}" x2="${sx}" y1="${sy}" y2="${H - padY}" stroke="#fff" stroke-width="1.2"/>
-        <circle cx="${sx}" cy="${sy}" r="9" fill="rgba(255,255,255,.22)"/><circle cx="${sx}" cy="${sy}" r="4" fill="#fff"/>
+        <path class="fill" d="${dPath} L${pts[6][0]},${H - padY} L${pts[0][0]},${H - padY}Z" fill="url(#fg)"/>
+        <path class="ln" pathLength="1" stroke-dasharray="1" d="${dPath}" fill="none" stroke="url(#lg)" stroke-width="1.6"/>
+        <line class="vl" x1="${sx}" x2="${sx}" y1="${sy}" y2="${H - padY}" stroke="#fff" stroke-width="1.2"/>
+        <g class="pt"><circle cx="${sx}" cy="${sy}" r="9" fill="rgba(255,255,255,.22)"/><circle cx="${sx}" cy="${sy}" r="4" fill="#fff"/></g>
       </svg>`, hrs };
   }
 
@@ -204,8 +267,8 @@
     const ws = weekStart(new Date());
     const td = todayIso();
     const { days, load, svg } = weekChart(ws, td);
-    const active = db.projects.filter((p) => p.status !== 'done');
-    const openTasks = db.projects.reduce((s, p) => s + p.tasks.filter((t) => !t.done).length, 0);
+    const active = db.projects.filter(isActive);
+    const openTasks = db.projects.filter((p) => p.status !== 'archive').reduce((s, p) => s + p.tasks.filter((t) => !t.done).length, 0);
     const upcoming = db.events.filter((e) => e.date >= td).sort(byDateTime).slice(0, 4);
     const weekHrs = load.reduce((a, b) => a + b, 0);
     const name = db.settings.name || 'Fabian';
@@ -213,7 +276,7 @@
 
     return `
       <div class="hello">
-        <div class="avatar">${esc(name[0] || 'F')}</div>
+        ${avatarBtn()}
         <div class="txt"><small>${greet} 👋</small><b>${esc(name)}</b></div>
         <a class="circ" href="#/more" aria-label="Einstellungen">${ic('settings')}</a>
       </div>
@@ -228,9 +291,9 @@
       </section>
 
       <div class="stats">
-        <a class="stat warm" href="#/projects"><span class="lbl">Aktive Projekte</span><span class="num">${active.length}<span class="chip">${db.projects.filter((p) => p.status === 'progress').length} läuft</span></span></a>
-        <a class="stat electric" href="#/projects"><span class="lbl">Offene Tasks</span><span class="num">${openTasks}</span></a>
-        <a class="stat dream" href="#/crm"><span class="lbl">Kunden</span><span class="num">${db.clients.length}</span></a>
+        <a class="stat warm" href="#/projects"><span class="lbl">Aktive Projekte</span><span class="num"><span data-count="${active.length}">${active.length}</span><span class="chip">${db.projects.filter((p) => p.status === 'progress').length} läuft</span></span></a>
+        <a class="stat electric" href="#/projects"><span class="lbl">Offene Tasks</span><span class="num" data-count="${openTasks}">${openTasks}</span></a>
+        <a class="stat dream" href="#/crm"><span class="lbl">Kunden</span><span class="num" data-count="${db.clients.length}">${db.clients.length}</span></a>
         <button class="stat add" data-act="new" aria-label="Neu anlegen">${ic('plus')}</button>
       </div>
 
@@ -248,7 +311,7 @@
         <div class="sec-h"><h2>Fabian.Visuals OS</h2></div>
         <div class="list">
           ${[
-            ['kanban', 'Projects & Tasks', `${db.projects.length} Projekte`, '#/projects', 'linear-gradient(135deg,#ffb923,#f66515)'],
+            ['kanban', 'Projects & Tasks', `${active.length} aktiv · ${db.projects.filter((p) => p.status === 'archive').length} im Archiv`, '#/projects', 'linear-gradient(135deg,#ffb923,#f66515)'],
             ['calendar', 'Meetings & Content', `${db.events.length} Termine`, '#/calendar', 'linear-gradient(135deg,#307af4,#2236cc)'],
             ['users', 'CRM', `${db.clients.length} Kunden`, '#/crm', 'linear-gradient(135deg,#f89abf,#a59af8)'],
             ['film', 'Script Video Dashboard', `${db.scripts.length} Scripts`, '#/scripts', 'linear-gradient(135deg,#a59af8,#2236cc)'],
@@ -259,26 +322,42 @@
   }
 
   /* ---------- PROJECTS ---------- */
-  function vProjects() {
-    const cols = Object.entries(STATUS).map(([k, s]) => {
+  let lastProjTab = 'board';
+  function vProjects(a) {
+    const tab = a === 'archiv' ? 'archiv' : 'board';
+    const arch = db.projects.filter((p) => p.status === 'archive');
+    const prev = lastProjTab; lastProjTab = tab;
+    afterRender.push(() => requestAnimationFrame(() => $('.tabs')?.classList.toggle('r', tab === 'archiv')));
+    const tabs = `<div class="tabs ${prev === 'archiv' ? 'r' : ''}"><span class="ind"></span>
+      <a href="#/projects" class="${tab === 'board' ? 'on' : ''}">Board</a>
+      <a href="#/projects/archiv" class="${tab === 'archiv' ? 'on' : ''}">Archiv · ${arch.length}</a></div>`;
+    const head = pageHead('Projects & Tasks', 'Fabian.Visuals OS', `<button class="circ solid" data-act="new-project" data-status="planning" aria-label="Neues Projekt">${ic('plus')}</button>`) + tabs;
+    if (tab === 'archiv') {
+      return head + (arch.length ? `<div class="alist">${arch.map((p) => `<div class="arow">
+          <a href="#/project/${p.id}"><b>${esc(p.title || 'Ohne Titel')}</b><small>${esc([clientName(p.clientId), p.end ? fmtDate(p.end) : ''].filter(Boolean).join(' · ') || 'Archiviert')}</small></a>
+          <button data-act="unarchive" data-id="${p.id}">${ic('undo')} Zurückholen</button></div>`).join('')}</div>`
+        : '<div class="empty">Noch nichts im Archiv. Fertige Projekte kannst du mit dem Archiv-Button in der Spalte „Fertig“ ablegen.</div>');
+    }
+    const cols = BOARD.map((k) => {
+      const s = STATUS[k];
       const items = db.projects.filter((p) => p.status === k);
       return `<section class="col" style="--c:${s.c}">
         <div class="col-h"><span class="tag">${s.label}</span><span class="n">${items.length}</span>
           <button data-act="new-project" data-status="${k}" aria-label="Projekt hinzufügen">${ic('plus')}</button></div>
         ${items.map((p) => {
           const pg = progress(p);
-          return `<a class="kcard" href="#/project/${p.id}">
+          return `<div class="kcard ${k === 'done' ? 'has-qa' : ''}" data-go="project/${p.id}" role="link" tabindex="0">
+            ${k === 'done' ? `<button class="qa" data-act="archive" data-id="${p.id}" aria-label="Archivieren">${ic('archive')}</button>` : ''}
             <h4>${ic('target')}<span>${esc(p.title || 'Ohne Titel')}</span></h4>
             ${p.start || p.end ? `<div class="ln">${ic('calendar')}${p.start ? fmtDate(p.start) + ' → ' : ''}${fmtDate(p.end)}</div>` : ''}
             ${p.clientId ? `<div class="ln">${ic('user')}${esc(clientName(p.clientId))}</div>` : ''}
             ${p.tasks.length ? `<div class="pg">${pg} %<div class="bar ${pg === 100 ? 'done' : ''}"><i style="width:${pg}%"></i></div></div>` : ''}
             <span class="prio" style="--c:${PRIO[p.priority]?.c}">${PRIO[p.priority]?.label || ''}</span>
-          </a>`;
-        }).join('') || '<div class="empty" style="border-color:rgba(255,255,255,.08)">Leer</div>'}
+          </div>`;
+        }).join('') || '<div class="empty" style="border-color:var(--line)">Leer</div>'}
       </section>`;
     }).join('');
-    return pageHead('Projects & Tasks', 'Fabian.Visuals OS', `<button class="circ solid" data-act="new-project" data-status="planning" aria-label="Neues Projekt">${ic('plus')}</button>`) +
-      `<div class="board">${cols}</div>`;
+    return head + `<div class="board">${cols}</div>`;
   }
 
   function vProject(id) {
@@ -307,7 +386,7 @@
 
       <div class="sec-h" style="margin-top:22px"><h2>Tasks</h2></div>
       <div class="field">
-        ${p.tasks.map((t) => `<div class="task ${t.done ? 'done' : ''}">
+        ${p.tasks.map((t) => `<div class="task ${t.done ? 'done' : ''}" data-tid="${t.id}">
             <button class="chk" data-act="task-toggle" data-pid="${id}" data-tid="${t.id}" aria-label="Erledigt">${ic('check')}</button>
             <input value="${esc(t.text)}" data-task="${id}|${t.id}" placeholder="Aufgabe">
             <button class="x" data-act="task-del" data-pid="${id}" data-tid="${t.id}" aria-label="Entfernen">${ic('x')}</button></div>`).join('')}
@@ -372,7 +451,7 @@
           const t = ETYPE[e.type] || ETYPE.meeting;
           const top = ((s - startH * 60) / 60) * PX, h = Math.max(((en - s) / 60) * PX - 4, 30);
           const w = 100 / cols;
-          return `<button class="tev" data-act="edit-event" data-id="${e.id}" style="--c:${t.c};top:${top}px;height:${h}px;left:calc(${col * w}% + 6px);right:auto;width:calc(${w}% - 8px)">
+          return `<button class="tev" data-act="edit-event" data-id="${e.id}" style="--j:${col + Math.round(s / 60)};--c:${t.c};top:${top}px;height:${h}px;left:calc(${col * w}% + 6px);right:auto;width:calc(${w}% - 8px)">
             <b>${esc(e.title || 'Ohne Titel')}</b>${h > 40 ? `<small>${e.start}${e.end ? ' – ' + e.end : ''} · ${t.label}</small>` : ''}</button>`;
         }).join('')}
         ${nowLine}
@@ -482,7 +561,15 @@
         <a class="tile glass" href="https://www.notion.so" target="_blank" rel="noopener">${ic('receipt')}<div><b>Rechnungen</b><br><small>bleiben in Notion ↗</small></div></a>
       </div>
       <div class="sec-h"><h2>Profil</h2></div>
-      <div class="field"><div class="fl"><label>Name</label><input value="${esc(db.settings.name)}" data-setting="name"></div></div>
+      <div class="field">
+        <div class="profile">${avatarBtn()}
+          <div class="acts"><button class="pri" data-act="avatar-pick">Foto wählen</button>${db.settings.avatar ? '<button data-act="avatar-del">Entfernen</button>' : ''}</div></div>
+        <div class="fl"><label>Name</label><input value="${esc(db.settings.name)}" data-setting="name"></div>
+      </div>
+
+      <div class="sec-h" style="margin-top:22px"><h2>Darstellung</h2></div>
+      <div class="seg">${[['system', 'System'], ['light', 'Hell'], ['dark', 'Dunkel']].map(([k, l]) =>
+        `<button class="${db.settings.theme === k ? 'on' : ''}" data-act="theme" data-val="${k}">${l}</button>`).join('')}</div>
 
       <div class="sec-h" style="margin-top:22px"><h2>Daten</h2></div>
       <p class="hint">Alles liegt nur auf diesem Gerät (${kb} KB). Mach regelmäßig ein Backup – z. B. in iCloud Drive.</p>
@@ -492,18 +579,24 @@
       </div>
       <button class="btn danger" data-act="reset">${ic('refresh')} Auf Startdaten zurücksetzen</button>
       <input type="file" id="importfile" accept="application/json,.json" hidden>
-      <p class="hint" style="margin-top:20px">Fabian.Visuals OS · v1</p>`;
+      <p class="hint" style="margin-top:20px">Fabian.Visuals OS · v2</p>`;
   }
 
   /* ---------- sheets ---------- */
   function openSheet(html) {
-    closeSheet();
+    closeSheet(true);
     const root = $('#sheet-root');
     root.innerHTML = `<div class="backdrop" data-act="close-sheet"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
     root.querySelectorAll('textarea').forEach(grow);
     return root.querySelector('.sheet');
   }
-  function closeSheet() { $('#sheet-root').innerHTML = ''; }
+  function closeSheet(instant) {
+    const nodes = [...$('#sheet-root').children];
+    if (!nodes.length) return;
+    if (instant) { nodes.forEach((n) => n.remove()); return; }
+    nodes.forEach((n) => n.classList.add('closing'));
+    setTimeout(() => nodes.forEach((n) => n.remove()), 240);
+  }
 
   function sheetNew() {
     const items = [
@@ -514,8 +607,8 @@
       ['new-note', 'note', 'Notiz', 'linear-gradient(135deg,#fff,#a59af8)'],
       ['new-content', 'spark', 'Content', 'linear-gradient(135deg,#f89abf,#fd290d)'],
     ];
-    openSheet(`<h3>Neu anlegen</h3><div class="newgrid">${items.map(([a, i, l, g]) =>
-      `<button data-act="${a}" data-status="planning"><span class="ico" style="background:${g};${i === 'note' ? 'color:#15122e' : ''}">${ic(i)}</span>${l}</button>`).join('')}</div>`);
+    openSheet(`<h3>Neu anlegen</h3><div class="newgrid">${items.map(([a, i, l, g], j) =>
+      `<button style="--j:${j}" data-act="${a}" data-status="planning"><span class="ico" style="background:${g};${i === 'note' ? 'color:#15122e' : ''}">${ic(i)}</span>${l}</button>`).join('')}</div>`);
   }
 
   function sheetEvent(ev, isNew) {
@@ -608,12 +701,21 @@
       case 'edit-event': { const e = get('events', d.id); if (e) sheetEvent({ ...e }, false); break; }
       case 'set': {
         const [col, id, f] = d.bind.split('|'); const it = get(col, id);
-        if (it) { it[f] = d.val; save(true); render(); }
+        if (it) { it[f] = d.val; save(true); pendingPop = `.seg [data-bind="${d.bind}"][data-val="${d.val}"]`; render(); if (f === 'status' && d.val === 'archive') toast('Ins Archiv verschoben'); }
         break;
       }
+      case 'archive': case 'unarchive': {
+        const p = get('projects', d.id); if (!p) break;
+        el.closest('.kcard, .arow')?.classList.add('leaving');
+        setTimeout(() => { p.status = d.act === 'archive' ? 'archive' : 'done'; save(true); render(); toast(d.act === 'archive' ? 'Archiviert' : 'Zurück in „Fertig“'); }, 380);
+        break;
+      }
+      case 'theme': db.settings.theme = d.val; save(true); applyTheme(); render(); break;
+      case 'avatar-pick': $('#avatarfile')?.click(); break;
+      case 'avatar-del': delete db.settings.avatar; save(true); render(); toast('Profilbild entfernt'); break;
       case 'task-toggle': {
         const t = get('projects', d.pid)?.tasks.find((x) => x.id === d.tid);
-        if (t) { t.done = !t.done; save(true); render(); }
+        if (t) { t.done = !t.done; save(true); pendingPop = `.task[data-tid="${t.id}"]`; render(); }
         break;
       }
       case 'task-del': {
@@ -713,6 +815,8 @@
     if (t.dataset.bind && t.dataset.rerender) {
       const [col, id, f] = t.dataset.bind.split('|'); const it = get(col, id);
       if (it) { it[f] = t.value; save(true); render(); }
+    } else if (t.id === 'avatarfile' && t.files[0]) {
+      pickAvatar(t.files[0]); t.value = '';
     } else if (t.id === 'importfile' && t.files[0]) {
       t.files[0].text().then((txt) => {
         const d = JSON.parse(txt);
@@ -731,7 +835,8 @@
       if (p) { p.tasks.push({ id: uid(), text, done: false }); save(true); render(); $(`[data-task-new="${p.id}"]`)?.focus(); }
     } else if (ev.key === 'Enter' && t.dataset.task) {
       ev.preventDefault(); $(`[data-task-new]`)?.focus();
-    } else if (ev.key === 'Escape') closeSheet();
+    } else if (ev.key === 'Enter' && t.matches('.kcard[data-go]')) go(t.dataset.go);
+    else if (ev.key === 'Escape') closeSheet();
   });
   // titles are single-line textareas: Enter blurs instead of adding a line break
   document.addEventListener('keydown', (ev) => {

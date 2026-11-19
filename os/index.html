@@ -14,12 +14,25 @@
   <link rel="apple-touch-icon" href="/os/icons/icon-180.png">
   <link rel="icon" href="/os/icons/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/os/app.css">
+  <script>
+    /* Theme vor dem ersten Paint setzen (kein Aufblitzen) */
+    try {
+      var t = ((JSON.parse(localStorage.getItem('fvos.v1')) || {}).settings || {}).theme || 'system';
+      if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      var light = t === 'light' || (t === 'system' && matchMedia('(prefers-color-scheme: light)').matches);
+      if (light) {
+        document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = 'default';
+        document.querySelector('meta[name="theme-color"]').content = '#f1f1f5';
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <div id="app"><main id="view"></main></div>
 
   <nav id="dock" aria-label="Navigation">
     <div class="pill">
+      <span class="ind"></span>
       <button data-tab="home" data-go="home" aria-label="Home"><svg class="i" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
       <button data-tab="projects" data-go="projects" aria-label="Projekte"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 7.5v7M12 7.5v4M16 7.5v9"/></svg></button>
       <button data-tab="calendar" data-go="calendar" aria-label="Kalender"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="3.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
@@ -30,6 +43,7 @@
   </nav>
 
   <div id="sheet-root"></div>
+  <input type="file" id="avatarfile" accept="image/*" hidden>
 
   <script src="/os/seed.js"></script>
   <script src="/os/app.js"></script>

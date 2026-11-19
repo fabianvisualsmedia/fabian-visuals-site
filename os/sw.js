@@ -1,5 +1,5 @@
 /* Network-first: immer die neueste Version laden, offline auf Cache zurückfallen. */
-const CACHE = 'fvos-v1';
+const CACHE = 'fvos-v2';
 const SHELL = ['/os/', '/os/app.css', '/os/app.js', '/os/seed.js', '/os/manifest.webmanifest', '/os/icons/icon-180.png', '/os/icons/icon.svg'];
 
 self.addEventListener('install', (e) => {
