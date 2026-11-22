@@ -1,5 +1,5 @@
 // Afterglow Poker service worker: app shell offline, fonts cached on first use.
-const VERSION = 'afterglow-v2';
+const VERSION = 'afterglow-v3';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
