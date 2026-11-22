@@ -26,3 +26,19 @@ Offen: Custom Domain `fabianvisuals.de` unter dem Pages-Projekt-Tab "Custom doma
 - [ ] Domain `fabianvisuals.de` auf Cloudflare Pages verbinden (Deployment selbst läuft bereits live über `fabian-visuals-site.pages.dev`)
 - [ ] Rechtstexte in `impressum.html`/`datenschutz.html` von Fabian gegenlesen lassen (Basisdaten aus dem Second-Brain-Kontext übernommen, kein Ersatz für Rechtsberatung)
 - [ ] Beide im Chat geteilten Cloudflare-API-Tokens im Dashboard rotieren (Settings → API Tokens) — waren im Klartext in der Konversation
+
+## Kochbuch-App (`/kochbuch/`)
+
+Installierbare Web-App (PWA) für Rezepte, erreichbar unter `/kochbuch/` (z. B. https://fabian-visuals-site.pages.dev/kochbuch/). Auf dem iPhone in Safari: Teilen → „Zum Home-Bildschirm“.
+
+- Rezepte rein per **Screenshot** (KI liest aus), **Spracheingabe** (Web Speech API bzw. iOS-Diktat → KI baut das Rezept), **Link** (liest die schema.org-Rezeptdaten der Seite, klappt auch ohne KI) oder **manuell**
+- Rubriken (Wenig Kalorien, Viel Protein, Fitness, Süß, Herzhaft, Vegetarisch, Unter 25 Min.) + Länderküchen, Suche, Favoriten, eigene Fotos, Portionsrechner, Kochmodus, „Kochwoche“-Kurve
+- Nährwerte pro Portion: lokal aus einer Tabelle mit ~110 Grundzutaten (`kochbuch/nutrition.js`) oder per KI
+- 18 Startrezepte in `kochbuch/recipes.js` (eigene Fassungen von Klassikern)
+- Daten liegen nur lokal im Browser (IndexedDB) → Backup-Export/-Import in den Einstellungen
+
+**KI einrichten (einmalig):** Cloudflare → Workers & Pages → `fabian-visuals-site` → Settings → Variables and Secrets:
+- `ANTHROPIC_API_KEY` (als Secret) – Key von console.anthropic.com
+- `KOCHBUCH_CODE` – frei gewähltes Passwort, damit niemand sonst über deine Seite KI-Kosten erzeugt
+
+Danach neu deployen und denselben Code in der App unter Einstellungen → Zugangscode eintragen. Die Server-Funktion liegt in `functions/api/kochbuch/[[route]].js` (Cloudflare Pages Functions, wird automatisch mit deployed, Modell: Claude Opus 5.5).
