@@ -26,3 +26,10 @@ Offen: Custom Domain `fabianvisuals.de` unter dem Pages-Projekt-Tab "Custom doma
 - [ ] Domain `fabianvisuals.de` auf Cloudflare Pages verbinden (Deployment selbst läuft bereits live über `fabian-visuals-site.pages.dev`)
 - [ ] Rechtstexte in `impressum.html`/`datenschutz.html` von Fabian gegenlesen lassen (Basisdaten aus dem Second-Brain-Kontext übernommen, kein Ersatz für Rechtsberatung)
 - [ ] Beide im Chat geteilten Cloudflare-API-Tokens im Dashboard rotieren (Settings → API Tokens) — waren im Klartext in der Konversation
+
+## Afterglow Poker (`/poker/`)
+
+Eigenständige Web-App (PWA) unter `poker/`: Texas Hold'em gegen KI, unendliche Bankroll. Kein Build-Schritt.
+- `poker/index.html` – komplette App (CSS + JS inline), `noindex`
+- `poker/manifest.webmanifest` + `poker/icons/` – installierbar („Zum Home-Bildschirm“)
+- `poker/sw.js` – Offline-Cache. Bei Änderungen an der App `VERSION` in `sw.js` hochzählen.
