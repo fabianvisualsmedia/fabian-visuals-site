@@ -47,3 +47,10 @@ Eigenständige Web-App (PWA) unter `takt/`: Tages-Score aus Schlaf, Wecker, Koff
 - `takt/index.html` – komplette App (CSS + JS inline), `noindex`, Daten nur im `localStorage` des Geräts
 - `takt/manifest.webmanifest` + `takt/icons/` – installierbar („Zum Startbildschirm“ / Chrome „App installieren“)
 - `takt/sw.js` – Offline-Cache. Bei Änderungen an der App `VERSION` in `sw.js` hochzählen.
+
+## Lowkey (`/lowkey/`)
+
+Eigenständige Web-App (PWA): Merk-Kartenspiel gegen 1–3 Bots (Deck 0–13, 0 und 13 je 2×, Rest 4×; 7/8 ansehen, 9/10 spionieren, 11/12 blind tauschen, Klopfen, Kamikaze, 100 → 50). Kein Build-Schritt.
+- `lowkey/index.html` – komplette App (CSS + JS inline), `noindex`, Spielstand + Einstellungen im `localStorage`
+- `lowkey/manifest.webmanifest` + `lowkey/icons/` – installierbar („Zum Home-Bildschirm“)
+- `lowkey/sw.js` – Offline-Cache. Bei Änderungen an der App `VERSION` in `sw.js` hochzählen.
