@@ -404,9 +404,9 @@ details.acc ul{padding-left:18px;margin:0 0 6px}
 }
 /* keep the dock clear of the bottom edge, home bar and app chrome */
 @media (max-width:520px){
-  .dock{position:fixed;bottom:calc(max(28px, 14px + env(safe-area-inset-bottom,0px)))}
-  .screen{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
-  .device::after{content:"";position:absolute;left:0;right:0;bottom:0;height:120px;z-index:15;pointer-events:none;background:linear-gradient(transparent,color-mix(in srgb,var(--app) 85%,transparent))}
+  .dock{position:fixed;bottom:calc(max(64px, 44px + env(safe-area-inset-bottom,0px)))}
+  .screen{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
+  .device::after{content:"";position:absolute;left:0;right:0;bottom:0;height:170px;z-index:15;pointer-events:none;background:linear-gradient(transparent,color-mix(in srgb,var(--app) 85%,transparent))}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
