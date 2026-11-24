@@ -1,0 +1,19 @@
+{
+  "name": "Takt Daily",
+  "short_name": "Takt",
+  "description": "Schlaf, Wecker, Koffein, Arbeitszeit und Gewohnheiten in einem Tages-Score.",
+  "lang": "de",
+  "id": "/takt/",
+  "start_url": "/takt/",
+  "scope": "/takt/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e7e7e3",
+  "theme_color": "#e7e7e3",
+  "categories": ["productivity", "health", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

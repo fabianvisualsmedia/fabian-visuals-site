@@ -33,3 +33,10 @@ Eigenständige Web-App (PWA) unter `poker/`: Texas Hold'em gegen KI, unendliche 
 - `poker/index.html` – komplette App (CSS + JS inline), `noindex`
 - `poker/manifest.webmanifest` + `poker/icons/` – installierbar („Zum Home-Bildschirm“)
 - `poker/sw.js` – Offline-Cache. Bei Änderungen an der App `VERSION` in `sw.js` hochzählen.
+
+## Takt Daily (`/takt/`)
+
+Eigenständige Web-App (PWA) unter `takt/`: Tages-Score aus Schlaf, Wecker, Koffein, Arbeitszeit, Gewohnheiten und Tagesabschluss. Kein Build-Schritt.
+- `takt/index.html` – komplette App (CSS + JS inline), `noindex`, Daten nur im `localStorage` des Geräts
+- `takt/manifest.webmanifest` + `takt/icons/` – installierbar („Zum Startbildschirm“ / Chrome „App installieren“)
+- `takt/sw.js` – Offline-Cache. Bei Änderungen an der App `VERSION` in `sw.js` hochzählen.
