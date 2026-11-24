@@ -104,7 +104,7 @@ body[data-mood="win"] .au-rain{opacity:1}
 .piles{display:flex;align-items:flex-end;justify-content:center;gap:clamp(12px,4vw,22px)}
 .pile{display:flex;flex-direction:column;align-items:center;gap:6px;--w:calc(var(--cw)*.86)}
 .pile.drawn{--w:calc(var(--cw)*1.04)}
-.pile span{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pile > span{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
 .pile.tap .card{cursor:pointer}
 .pile.tap .card,.pile.tap .slot{box-shadow:0 0 0 2px rgba(255,255,255,.85),0 0 26px 2px rgba(165,154,248,.55);animation:breathe 1.8s ease-in-out infinite}
 @keyframes breathe{50%{transform:translateY(-3px)}}
@@ -334,7 +334,7 @@ function newDeck() {
 }
 const tier = v => v === 0 ? 'zero' : v <= 3 ? 'lilac' : v <= 6 ? 'blue' : v <= 8 ? 'mint' : v <= 10 ? 'amber' : v <= 12 ? 'flame' : 'crimson';
 const power = v => v === 7 || v === 8 ? 'peek' : v === 9 || v === 10 ? 'spy' : v === 11 || v === 12 ? 'swap' : null;
-const POWER = { peek: ['Ansehen', ICON.eye], spy: ['Spionieren', ICON.spy], swap: ['Tauschen', ICON.swap] };
+const POWER = { peek: ['Ansehen', ICON.eye], spy: ['Spionieren', ICON.spy], swap: ['Blindtausch', ICON.swap] };
 const sum = h => h.reduce((s, c) => s + c.v, 0);
 const isKamikaze = h => h.length === 4 && h.map(c => c.v).sort((a, b) => a - b).join() === '12,12,13,13';
 const P = i => G.players[i];
