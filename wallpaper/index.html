@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Wallpaper Studio</title>
 <meta name="description" content="Generator für hochwertige Full-HD- und 4K-Wallpaper von Fabian Visuals.">
 <meta name="robots" content="noindex">
@@ -38,11 +38,12 @@
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html,body{margin:0;background:var(--bg);color:var(--ink)}
+html,body{margin:0;background:var(--bg);color:var(--ink);overflow-x:hidden;overscroll-behavior-x:none;max-width:100%}
+.app{overflow-x:clip}
 html{padding-top:env(safe-area-inset-top,0px)}
 body{font-family:var(--f-body);font-size:14px;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
-button{font:inherit;color:inherit}
+button{font:inherit;color:inherit;touch-action:manipulation}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .doto{font-family:var(--f-dot);font-weight:900;letter-spacing:.02em;font-variant-numeric:tabular-nums}
 
@@ -58,7 +59,7 @@ button{font:inherit;color:inherit}
 
 /* stage */
 .stage{position:relative;display:flex;flex-direction:column;align-items:center;gap:14px;padding-block:8px 4px}
-.stage::before{content:"";position:absolute;inset:6% -10%;background:radial-gradient(closest-side,var(--glow),transparent);opacity:.28;filter:blur(30px);pointer-events:none;transition:background .6s}
+.stage::before{content:"";position:absolute;inset:6% 0;background:radial-gradient(closest-side,var(--glow),transparent);opacity:.28;filter:blur(30px);pointer-events:none;transition:background .6s}
 .device{position:relative;z-index:1;aspect-ratio:var(--ar,.5625);max-width:100%;background:var(--device);box-shadow:0 30px 60px -20px var(--shadow),0 0 0 1.5px color-mix(in srgb,var(--device) 70%,#888)}
 .device.phone{width:min(330px,74vw,calc(58vh * var(--ar,.5625)));border-radius:13% / 6%;padding:3.2%}
 .device.desk{width:min(720px,100%);border-radius:14px;padding:1.4%}
