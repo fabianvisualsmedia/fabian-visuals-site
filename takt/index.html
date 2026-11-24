@@ -19,9 +19,8 @@
 // iOS home-screen apps can report a viewport shorter than the screen. Pin the app to the real screen height.
 (function () {
   function fit() {
-    var sa = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
-    var h = window.innerHeight;
-    if (sa && window.innerHeight > window.innerWidth) h = Math.max(h, screen.height);
+    // Takt keeps the system status bar visible, so the visible height is the real app height.
+    var h = window.visualViewport ? Math.round(visualViewport.height) : window.innerHeight;
     document.documentElement.style.setProperty('--app-h', h + 'px');
   }
   fit();
@@ -405,7 +404,7 @@ details.acc ul{padding-left:18px;margin:0 0 6px}
 }
 /* keep the dock clear of the bottom edge, home bar and app chrome */
 @media (max-width:520px){
-  .dock{bottom:calc(max(28px, 14px + env(safe-area-inset-bottom,0px)))}
+  .dock{position:fixed;bottom:calc(max(28px, 14px + env(safe-area-inset-bottom,0px)))}
   .screen{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
   .device::after{content:"";position:absolute;left:0;right:0;bottom:0;height:120px;z-index:15;pointer-events:none;background:linear-gradient(transparent,color-mix(in srgb,var(--app) 85%,transparent))}
 }
