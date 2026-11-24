@@ -33,3 +33,10 @@ Eigenständige Web-App (PWA) unter `poker/`: Texas Hold'em gegen KI, unendliche 
 - `poker/index.html` – komplette App (CSS + JS inline), `noindex`
 - `poker/manifest.webmanifest` + `poker/icons/` – installierbar („Zum Home-Bildschirm“)
 - `poker/sw.js` – Offline-Cache. Bei Änderungen an der App `VERSION` in `sw.js` hochzählen.
+
+## Wallpaper Studio (`/wallpaper/`)
+
+Eigenständige Web-App (PWA): generiert Wallpaper in Full HD, QHD, 4K und iPhone-Auflösung per WebGL-Shader, 16 Looks + 7 Glas-Effekte. Kein Build-Schritt.
+- `wallpaper/index.html` – komplette App (CSS + JS + Shader inline), `noindex`
+- `wallpaper/manifest.webmanifest` + `wallpaper/icons/` – in Chrome über „App installieren“ installierbar
+- `wallpaper/sw.js` – Offline-Cache. Bei Änderungen an der App `VERSION` in `sw.js` hochzählen.
