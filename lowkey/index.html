@@ -106,6 +106,7 @@ body[data-mood="win"] .au-rain{opacity:1}
 .pile.drawn{--w:calc(var(--cw)*1.04)}
 .pile > span{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
 .pile.tap .card{cursor:pointer}
+.pile > span.snap{color:var(--amber);animation:logIn .35s var(--ease)}
 .pile.tap .card,.pile.tap .slot{box-shadow:0 0 0 2px rgba(255,255,255,.85),0 0 26px 2px rgba(165,154,248,.55);animation:breathe 1.8s ease-in-out infinite}
 @keyframes breathe{50%{transform:translateY(-3px)}}
 .stack{position:relative}
@@ -308,7 +309,7 @@ let lastFace = new Map();
 
 function saveGame() {
   if (!G) return;
-  const snap = { ...G, gen: undefined, drawn: null, sel: [], reveal: [], touch: null, swapPick: null, deal: false };
+  const snap = { ...G, gen: undefined, snapOpen: false, snapBusy: false, crit: false, drawn: null, sel: [], reveal: [], touch: null, swapPick: null, deal: false };
   try { localStorage.setItem(GKEY, JSON.stringify(snap)); } catch (e) {}
 }
 function loadGame() {
@@ -372,6 +373,7 @@ function startRound() {
   G.phase = 'peek';
   G.reveal = me().hand.slice(2).map(c => c.id);
   G.deal = true; G.drawn = null; G.sel = []; G.touch = null; G.swapPick = null;
+  G.snapOpen = false; G.snapBusy = false; G.crit = false;
   G.log = 'Merk dir deine <b>zwei unteren Karten</b>';
   lastFace = new Map();
   saveGame();
@@ -458,6 +460,7 @@ async function performSwap(p, idxs, card, from) {
     pl.hand[idxs[0]] = card;
     for (let k = idxs.length - 1; k >= 1; k--) pl.hand.splice(idxs[k], 1);
     chosen.forEach(c => { forget(c.id); G.discard.push(c); });
+    openSnap();
     learn(p, card, pub);
     G.drawn = null;
     G.touch = { p, i: idxs[0] };
@@ -494,8 +497,73 @@ async function discardDrawn() {
   await fly(drawnEl(), discardEl(), card, true);
   G.discard.push(card); forget(card.id);
   G.drawn = null;
+  openSnap();
   render();
   busy = false;
+}
+
+/* ---------- snapping (Zwischenwerfen) ----------
+   After every discard the window is open until someone draws or takes the open card. Anyone except the knocker may throw
+   a card of the same value onto the pile. Wrong card: it is shown to everyone, stays, and a penalty card is added face down.
+   Bots only snap cards they remember. G.crit marks bot steps that must not be interleaved with a snap. */
+const pause = ms => new Promise(r => setTimeout(r, ms));
+async function snapIdle() { while (G && G.snapBusy) await pause(60); }
+function closeSnap() { if (G) { G.snapOpen = false; G.snapGen = (G.snapGen || 0) + 1; } }
+function canHumanSnap() {
+  return G && G.snapOpen && G.knocker !== 0 && me().hand.length > 0 && ['turn', 'done', 'bot'].includes(G.phase) && !(G.turn === 0 && busy);
+}
+function openSnap() {
+  const top = G.discard[G.discard.length - 1];
+  if (!top) return;
+  G.snapOpen = true;
+  const sg = G.snapGen = (G.snapGen || 0) + 1, gen = G.gen;
+  const lev = S.level;
+  G.players.forEach((pl, q) => {
+    if (!pl.bot || q === G.knocker) return;
+    const c = pl.hand.find(c => pl.mem[c.id] === top.v);
+    if (!c || Math.random() > [0.45, 0.8, 1][lev]) return;
+    setTimeout(() => {
+      if (!G || G.gen !== gen || !G.snapOpen) return;
+      const t = G.discard[G.discard.length - 1];
+      if (!t || t.v !== top.v) return;
+      trySnap(q, c.id);
+    }, [1100, 700, 450][lev] + Math.random() * 350);
+  });
+}
+async function trySnap(p, id) {
+  const gen = G.gen;
+  while (G && G.gen === gen && (G.crit || G.snapBusy || (G.turn === 0 && busy))) await pause(60);
+  if (!G || G.gen !== gen || !G.snapOpen || p === G.knocker) return;
+  const pl = P(p), i = pl.hand.findIndex(c => c.id === id), top = G.discard[G.discard.length - 1];
+  if (i < 0 || !top) return;
+  G.snapBusy = true;
+  const card = pl.hand[i];
+  if (G.swapPick) G.swapPick.opp = undefined;
+  if (card.v === top.v) {
+    await fly(cardEl(p, i), discardEl(), card, true);
+    pl.hand.splice(i, 1);
+    forget(card.id); G.discard.push(card);
+    if (G.sel.length) G.sel = [];
+    render();
+    toast(p === 0 ? `Zwischengeworfen – nur noch ${pl.hand.length} Karten` : `${pl.name} wirft eine ${card.v} dazwischen`);
+    if (p !== 0) setLog(`<b>${pl.name}</b> wirft eine <b>${card.v}</b> dazwischen`);
+  } else {
+    learn(p, card, true);
+    G.reveal = G.reveal.concat(card.id);
+    render();
+    toast(p === 0 ? `Daneben: ${card.v} ≠ ${top.v} – Strafkarte` : `${pl.name} wirft daneben – Strafkarte`, true);
+    await pause(1300);
+    G.reveal = G.reveal.filter(x => x !== card.id);
+    const pen = drawFromDeck();
+    if (pen) {
+      pl.hand.push(pen);
+      render();
+      const to = cardEl(p, pl.hand.length - 1);
+      if (to) { to.style.visibility = 'hidden'; await fly(deckEl(), to, pen, false); }
+    }
+    render();
+  }
+  G.snapBusy = false;
 }
 
 /* ---------- human input ---------- */
@@ -506,6 +574,7 @@ async function onDeck() {
   const card = drawFromDeck();
   if (!card) return endRound();
   busy = true;
+  closeSnap();
   G.drawn = { card, from: 'deck', owner: 0 };
   learn(0, card, false);
   const tmp = G.drawn; G.drawn = null; render(); G.drawn = tmp;
@@ -520,6 +589,7 @@ async function onDiscard() {
   if (busy || G.turn !== 0) return;
   if (G.phase === 'turn' && G.discard.length) {
     busy = true;
+    closeSnap();
     const card = G.discard.pop();
     const src = discardEl();
     G.drawn = { card, from: 'discard', owner: 0 };
@@ -545,7 +615,9 @@ function setHint() {
 }
 
 async function onCard(p, i) {
-  if (busy || !G) return;
+  if (!G) return;
+  if (p === 0 && canHumanSnap()) { const c = me().hand[i]; if (c) trySnap(0, c.id); return; }
+  if (busy) return;
   if (G.phase === 'drawn' && p === 0) {
     const k = G.sel.indexOf(i);
     if (k >= 0) G.sel.splice(k, 1); else G.sel.push(i);
@@ -630,7 +702,11 @@ async function onAct(act) {
   if (act === 'skip' && G.phase === 'swap') { setLog('Tausch ausgelassen'); return endHumanTurn(); }
 }
 
-function endHumanTurn() { G.phase = 'done'; G.swapPick = null; render(); setTimeout(nextTurn, 350); }
+function endHumanTurn() {
+  G.phase = 'done'; G.swapPick = null; render();
+  const gen = G.gen;
+  setTimeout(async () => { await snapIdle(); if (G && G.gen === gen) nextTurn(); }, 450);
+}
 
 /* ---------- bots ---------- */
 function knows(p, c) { return P(p).mem[c.id] !== undefined; }
@@ -719,7 +795,9 @@ async function botTurn(p) {
   busy = true;
   G.phase = 'bot';
   render();
-  await wait(750); if (!alive()) return;
+  await pause(G.snapOpen ? 1500 : 750 * (S.fast ? .55 : 1)); if (!alive()) return;
+  await snapIdle(); if (!alive()) return;
+  G.crit = true;
   botForget(p);
 
   if (shouldKnock(p)) {
@@ -727,7 +805,9 @@ async function botTurn(p) {
     toast(`${pl.name} klopft!`, true);
     setLog(`<b>${pl.name}</b> hat geklopft – letzte Runde`);
     render();
+    G.crit = false;
     await wait(1300); if (!alive()) return;
+    await snapIdle();
     busy = false;
     return nextTurn();
   }
@@ -737,6 +817,7 @@ async function botTurn(p) {
   let plan = top ? swapPlan(p, top.v) : null;
   if (lev === 0 && Math.random() < .2) plan = null;
   if (plan && plan.gain >= takeAt && top.v <= 6) {
+    closeSnap();
     const card = G.discard.pop();
     G.drawn = { card, from: 'discard', owner: p };
     await fly(discardEl(), drawnEl(), card, true);
@@ -746,13 +827,16 @@ async function botTurn(p) {
     const ok = await performSwap(p, plan.idxs, card, 'discard');
     if (!alive()) return;
     if (ok && plan.idxs.length > 1) setLog(`<b>${pl.name}</b> ersetzt ${plan.idxs.length} Karten auf einmal`);
-    await wait(650); if (!alive()) return;
+    G.crit = false;
+    await wait(900); if (!alive()) return;
+    await snapIdle(); if (!alive()) return;
     busy = false;
     return nextTurn();
   }
 
+  closeSnap();
   const card = drawFromDeck();
-  if (!card) { busy = false; return endRound(); }
+  if (!card) { busy = false; G.crit = false; return endRound(); }
   G.drawn = { card, from: 'deck', owner: p };
   learn(p, card, false);
   const tmp = G.drawn; G.drawn = null; render(); G.drawn = tmp;
@@ -797,7 +881,9 @@ async function botTurn(p) {
     }
   }
   if (!alive()) return;
-  await wait(650); if (!alive()) return;
+  G.crit = false;
+  await wait(900); if (!alive()) return;
+  await snapIdle(); if (!alive()) return;
   busy = false;
   G.touch = null;
   nextTurn();
@@ -806,6 +892,7 @@ async function botTurn(p) {
 /* ---------- round end ---------- */
 async function endRound() {
   const gen = G.gen;
+  closeSnap(); G.crit = false;
   G.phase = 'end'; G.drawn = null; G.sel = []; G.touch = null;
   busy = true;
   render();
@@ -866,6 +953,7 @@ function renderCard(p, i, c) {
   const t = G.touch;
   if (t && ((t.p === p && t.i === i) || (t.p2 === p && t.i2 === i))) cls.push('touch');
   if (G.knocker === p && !revealAll) cls.push('lock');
+  if (p === 0 && canHumanSnap()) cls.push('pick');
   if (G.turn === 0 && !busy) {
     if (p === 0 && G.phase === 'drawn') { cls.push('pick'); if (G.sel.includes(i)) cls.push('sel'); }
     if (p === 0 && G.phase === 'peek-own') cls.push('pick', 'aim');
@@ -896,7 +984,7 @@ function render() {
   // opponents
   $('#opps').innerHTML = G.players.slice(1).map((pl, k) => {
     const p = k + 1, b = BOTS[pl.bi];
-    const cols = Math.min(4, pl.hand.length);
+    const cols = Math.max(1, Math.min(4, pl.hand.length));
     return `<div class="opp ${G.turn === p && G.phase === 'bot' ? 'on' : ''}" style="--g:${b.g};--gc:${b.c}">
       ${G.knocker === p ? '<span class="tag">Klopft</span>' : ''}
       <div class="oh"><div class="orb"><i class="ring"></i>${pl.name[0]}</div><div><b>${pl.name}</b><small>${pl.total} Pkt</small></div></div>
@@ -921,7 +1009,7 @@ function render() {
     </div>
     <div class="pile ${tapDiscard ? 'tap' : ''}" data-act="discardPile">
       ${top ? cardHTML(top, { face: true, attrs: 'id="discardCard"' }) : '<div class="slot" id="discardSlot">leer</div>'}
-      <span>Ablage</span>
+      <span class="${canHumanSnap() ? 'snap' : ''}">${canHumanSnap() ? 'Zwischenwerfen?' : 'Ablage'}</span>
     </div>`;
 
   // log
@@ -1041,6 +1129,7 @@ function openRules() {
       <div class="rule">${ex([4, 9])}<div><b>Start</b><span>Jeder bekommt 4 verdeckte Karten. Die zwei unteren darfst du einmal ansehen – merk sie dir.</span></div></div>
       <div class="rule">${ex([2])}<div><b>Dein Zug</b><span>Zieh vom Stapel oder nimm die offene Karte. Tausch sie gegen eine (oder mehrere) deiner Karten – oder wirf sie ab (nur bei Stapelkarten).</span></div></div>
       <div class="rule">${ex([6, 6])}<div><b>Mehrfach-Tausch</b><span>Glaubst du, zwei oder mehr deiner Karten sind gleich? Tausch sie alle gegen eine. Liegst du falsch, werden sie gezeigt und du bekommst die neue Karte als Strafkarte dazu.</span></div></div>
+      <div class="rule">${ex([9, 9])}<div><b>Zwischenwerfen</b><span>Liegt oben auf der Ablage eine Zahl, die du auch hast? Tipp deine Karte an und wirf sie dazwischen – auch außerhalb deines Zugs, bis jemand die nächste Karte zieht. Falsch geworfen: Karte wird gezeigt, bleibt liegen und du bekommst eine Strafkarte.</span></div></div>
       <div class="rule">${ex([7])}<div><b>7 · 8 – Ansehen</b><span>Abwerfen und eine eigene Karte ansehen.</span></div></div>
       <div class="rule">${ex([10])}<div><b>9 · 10 – Spionieren</b><span>Abwerfen und eine Karte eines Gegners ansehen.</span></div></div>
       <div class="rule">${ex([12])}<div><b>11 · 12 – Tauschen</b><span>Abwerfen und blind eine eigene gegen eine fremde Karte tauschen.</span></div></div>
