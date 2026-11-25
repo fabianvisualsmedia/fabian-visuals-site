@@ -33,7 +33,7 @@
 <title>Lowkey</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Dancing+Script:wght@600;700&family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@300;400;500;600&display=swap">
 <style>
 /* Layout: one phone-height column. Opponents on top, piles in the middle, your 2x2 hand in a glow card, floating pill dock at the bottom.
    Deliberately dark-only, same visual family as Afterglow Poker. */
@@ -136,22 +136,13 @@ body[data-mood="win"] .au-rain{opacity:1}
 .back .in{background:radial-gradient(120% 70% at 50% 118%,rgba(102,148,255,.95) 0%,rgba(34,54,204,.6) 32%,transparent 62%),radial-gradient(80% 50% at 100% 0%,rgba(248,154,191,.28),transparent 60%),linear-gradient(180deg,#07080f,#0b0f26);box-shadow:inset 0 0 0 1px rgba(255,255,255,.13),0 8px 18px -8px rgba(0,0,0,.8)}
 .back .in::after{content:"";position:absolute;left:14%;right:14%;bottom:18%;height:1px;background:linear-gradient(90deg,transparent,#cfe0ff,transparent);box-shadow:0 0 8px 1px rgba(160,190,255,.9)}
 .back .in::before{content:"";position:absolute;left:50%;top:38%;width:30%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(255,255,255,.22)}
-.face .in{color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -10px 22px rgba(0,0,0,.22),0 10px 22px -10px rgba(0,0,0,.8)}
-.face .n{position:absolute;left:10cqw;top:5cqw;font:300 46cqw/1 var(--f-display);letter-spacing:-.06em}
-.face .pip{position:absolute;right:10cqw;bottom:7cqw;font:500 13cqw/1 var(--f-display);opacity:.75}
-.face .lbl{position:absolute;left:9cqw;bottom:8cqw;display:flex;align-items:center;gap:3cqw;font:700 10.5cqw/1 var(--f-ui);padding:3.5cqw 6cqw;border-radius:99px;border:1px solid currentColor;opacity:.9}
-.face .lbl svg{width:12cqw;height:12cqw}
-@container (max-width:62px){.face .lbl i{display:none}.face .lbl{padding:5cqw}.face .lbl svg{width:16cqw;height:16cqw}}
-.face .lbl i{font-style:normal}
-@container (max-width:44px){.memo{font-size:42cqw;min-width:70cqw}.face .lbl,.face .pip{display:none}.face .n{font-size:58cqw;left:12cqw;top:8cqw}}
-.f-zero .in{background:radial-gradient(130% 120% at 50% 120%,#bcd0ff 0%,#fff 62%);color:var(--ink)}
-.f-lilac .in{background:radial-gradient(140% 140% at 0% 100%,var(--pink) 0%,var(--lav) 45%,#5b50cf 85%,#2a2470 100%)}
-.f-blue .in{background:radial-gradient(140% 150% at 100% 0%,var(--pink) 0%,var(--sky) 26%,var(--blue) 52%,var(--indigo) 80%,#0b1450 100%)}
-.f-mint .in{background:radial-gradient(140% 140% at 0% 0%,#bff8e2 0%,var(--mint) 30%,#14967a 62%,#073c3a 100%);color:#04241f}
-.f-amber .in{background:radial-gradient(140% 140% at 100% 0%,#fff1b8 0%,var(--amber) 34%,#e0700f 70%,#5a2205 100%);color:#2b1300}
-.f-flame .in{background:radial-gradient(140% 150% at 0% 0%,var(--amber) 0%,var(--orange) 34%,var(--red) 64%,#3a0905 100%)}
-.f-crimson .in{background:radial-gradient(130% 120% at 50% 120%,#ff3d6e 0%,#8e0e3a 44%,#24030f 100%)}
-.f-mint .lbl,.f-amber .lbl{border-color:rgba(0,0,0,.35)}
+.face .in{background:var(--bgc);color:var(--ink-c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35),inset 0 0 0 3cqw rgba(255,255,255,.08),0 10px 22px -10px rgba(0,0,0,.8)}
+.face .art{position:absolute;inset:0;width:100%;height:100%}
+.face .n,.face .n2{position:absolute;font:italic 600 24cqw/1 'Cormorant Garamond',Georgia,serif;text-shadow:0 1px 2px rgba(0,0,0,.18)}
+.face .n{left:8cqw;top:5cqw}
+.face .n2{right:8cqw;bottom:5cqw;transform:rotate(180deg)}
+.face .word{position:absolute;left:0;right:0;bottom:24cqw;text-align:center;font:700 21cqw/1 'Dancing Script',cursive;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.25),0 0 6cqw rgba(0,0,0,.25)}
+@container (max-width:44px){.memo{font-size:42cqw;min-width:70cqw}.face .n2,.face .word{display:none}.face .n{font-size:44cqw;left:10cqw;top:4cqw;padding:0 6cqw;border-radius:8cqw;background:rgba(255,255,255,.72);color:#1b1530;text-shadow:none}}
 
 .card.flip{animation:flip .5s var(--ease)}
 @keyframes flip{0%{transform:rotateY(90deg) scale(.96)}100%{transform:none}}
@@ -231,7 +222,7 @@ body[data-mood="win"] .au-rain{opacity:1}
 .rule b{display:block;font:500 13.5px var(--f-display);margin-bottom:3px}
 .rule span{color:var(--mute);font-size:13px;line-height:1.45}
 .deckrow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:4px 0 14px}
-.deckrow div{--w:100%;display:flex;flex-direction:column;align-items:center;gap:4px;font:500 10px var(--f-display);color:var(--mute)}
+.deckrow > div{--w:100%;display:flex;flex-direction:column;align-items:center;gap:4px;font:500 10px var(--f-display);color:var(--mute)}
 
 .toast{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:50%;z-index:70;transform:translate(-50%,-30px);opacity:0;padding:12px 20px;border-radius:999px;background:rgba(255,255,255,.95);color:var(--ink);font-weight:800;font-size:13.5px;white-space:nowrap;box-shadow:0 14px 40px rgba(0,0,0,.45);transition:transform .45s var(--ease),opacity .3s;pointer-events:none;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
 .toast.on{transform:translate(-50%,0);opacity:1}
@@ -431,7 +422,7 @@ function fly(from, to, card, face, delay = 0) {
     f.innerHTML = cardHTML(card, { face });
     const el = f.firstElementChild;
     el.classList.add('flyer');
-    el.style.cssText = `left:${a.left}px;top:${a.top}px;--w:${a.width}px;width:${a.width}px`;
+    Object.entries({ left: a.left + 'px', top: a.top + 'px', '--w': a.width + 'px', width: a.width + 'px' }).forEach(([k, v]) => el.style.setProperty(k, v));
     from.style.visibility = 'hidden';
     document.body.appendChild(el);
     void el.offsetWidth;
@@ -927,9 +918,127 @@ async function endRound() {
 }
 
 /* ---------- render ---------- */
+/* ---------- card art: own illustrated deck, one motif per value (viewBox 0 0 100 140) ---------- */
+const ART_DEFS = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <radialGradient id="aMoon" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#fffbe6"/><stop offset="1" stop-color="#ffd98a"/></radialGradient>
+  <linearGradient id="aFeather" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd1a6"/><stop offset=".55" stop-color="#ff8a6b"/><stop offset="1" stop-color="#c2477a"/></linearGradient>
+  <radialGradient id="aCherry" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#ff8fa3"/><stop offset=".6" stop-color="#e0294f"/><stop offset="1" stop-color="#8e0f33"/></radialGradient>
+  <linearGradient id="aLeaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a6e27a"/><stop offset="1" stop-color="#3f9a55"/></linearGradient>
+  <radialGradient id="aCap" cx=".4" cy=".25" r=".9"><stop offset="0" stop-color="#ff9e7a"/><stop offset=".7" stop-color="#e24b3b"/><stop offset="1" stop-color="#a5262c"/></radialGradient>
+  <linearGradient id="aStem" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff6e6"/><stop offset="1" stop-color="#e9d3b6"/></linearGradient>
+  <radialGradient id="aB1" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffd0e4"/><stop offset="1" stop-color="#f05b9a"/></radialGradient>
+  <radialGradient id="aB2" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#d4e6ff"/><stop offset="1" stop-color="#4f7cf0"/></radialGradient>
+  <radialGradient id="aB3" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff0b8"/><stop offset="1" stop-color="#f2a81d"/></radialGradient>
+  <radialGradient id="aB4" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#d6fbe9"/><stop offset="1" stop-color="#2fb58a"/></radialGradient>
+  <radialGradient id="aPetal" cx=".5" cy=".9" r=".9"><stop offset="0" stop-color="#ffb36b"/><stop offset=".7" stop-color="#ff7aa8"/><stop offset="1" stop-color="#d9559a"/></radialGradient>
+  <radialGradient id="aHoney" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#ffe9a3"/><stop offset=".6" stop-color="#ffb52e"/><stop offset="1" stop-color="#c06a06"/></radialGradient>
+  <radialGradient id="aIris" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#1b1030"/><stop offset=".35" stop-color="#3b2a7a"/><stop offset=".75" stop-color="#6fd6c8"/><stop offset="1" stop-color="#2f8f9a"/></radialGradient>
+  <radialGradient id="aIris2" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#10202a"/><stop offset=".35" stop-color="#1f5a55"/><stop offset=".8" stop-color="#e8b44a"/><stop offset="1" stop-color="#b8741c"/></radialGradient>
+  <radialGradient id="aGlass" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset="1" stop-color="#cfe6ff" stop-opacity=".55"/></radialGradient>
+  <linearGradient id="aBrass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe7a8"/><stop offset=".5" stop-color="#d69a3a"/><stop offset="1" stop-color="#8a5a1c"/></linearGradient>
+  <radialGradient id="aKeyGlow" cx=".5" cy=".55" r=".5"><stop offset="0" stop-color="#fff4c2"/><stop offset=".5" stop-color="#ffc861"/><stop offset="1" stop-color="#ffc861" stop-opacity="0"/></radialGradient>
+  <linearGradient id="aCardA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#d6f3ee"/></linearGradient>
+  <linearGradient id="aCardB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd6a8"/><stop offset="1" stop-color="#ff8a6b"/></linearGradient>
+  <linearGradient id="aRibbon" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff6fa0"/><stop offset=".35" stop-color="#ffb84d"/><stop offset=".65" stop-color="#5fd3a8"/><stop offset="1" stop-color="#6f8cff"/></linearGradient>
+  <linearGradient id="aCloudDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a7aa8"/><stop offset="1" stop-color="#3a2a52"/></linearGradient>
+  <linearGradient id="aBolt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7c2"/><stop offset="1" stop-color="#ffb22e"/></linearGradient>
+</defs></svg>`;
+
+const cloud = (x, y, s, fill, op = 1) => `<g transform="translate(${x} ${y}) scale(${s})" fill="${fill}" opacity="${op}"><circle cx="-12" cy="4" r="9"/><circle cx="0" cy="-2" r="12"/><circle cx="13" cy="3" r="9"/><rect x="-21" y="3" width="43" height="10" rx="5"/></g>`;
+const star = (x, y, r, fill = '#fff8d6') => `<path d="M${x} ${y - r}L${x + r * .28} ${y - r * .28}L${x + r} ${y}L${x + r * .28} ${y + r * .28}L${x} ${y + r}L${x - r * .28} ${y + r * .28}L${x - r} ${y}L${x - r * .28} ${y - r * .28}Z" fill="${fill}"/>`;
+const eye = (iris, lash) => `<g transform="translate(50 74)">
+  <path d="M-34 0C-22-20 22-20 34 0C22 20-22 20-34 0Z" fill="#fff" stroke="${lash}" stroke-width="2.4"/>
+  <circle r="14.5" fill="url(#${iris})"/><circle r="6" fill="#0d0a18"/><circle cx="-5" cy="-5" r="3.4" fill="#fff"/><circle cx="4" cy="4" r="1.4" fill="#fff" opacity=".7"/>
+  ${[-26, -14, 0, 14, 26].map((x, k) => `<path d="M${x * .95} ${-13 + Math.abs(x) * .22}l${x * .14} ${-9 + Math.abs(x) * .05}" stroke="${lash}" stroke-width="2.4" stroke-linecap="round"/>`).join('')}
+</g>`;
+
+const ART = {
+  0: { bg: 'radial-gradient(90% 60% at 50% 105%,#9d8be0 0%,transparent 70%),linear-gradient(180deg,#221a45,#4a3d86)', ink: '#f3edff', svg: `
+    ${star(20, 34, 3)}${star(80, 40, 2.4)}${star(70, 22, 1.8)}${star(28, 110, 2)}${star(84, 104, 2.6)}
+    <circle cx="52" cy="64" r="24" fill="url(#aMoon)"/><circle cx="63" cy="57" r="21" fill="#3b2f70"/>
+    ${cloud(54, 94, 1.25, '#fff', .96)}${cloud(30, 100, .8, '#e6ddff', .85)}` },
+  1: { bg: 'radial-gradient(80% 60% at 30% 20%,#c9d4e8 0%,transparent 70%),linear-gradient(160deg,#6b7896,#a9b5cc)', ink: '#ffffff', svg: `
+    <g transform="rotate(-28 50 72)">
+      <path d="M50 22C64 34 66 60 60 86C57 100 52 110 50 118C48 110 43 100 40 86C34 60 36 34 50 22Z" fill="url(#aFeather)"/>
+      ${[34, 44, 54, 64, 74, 84, 94].map(y => `<path d="M50 ${y}Q${43} ${y + 4} ${38 + (y > 80 ? 3 : 0)} ${y + 9}M50 ${y}Q${57} ${y + 4} ${62 - (y > 80 ? 3 : 0)} ${y + 9}" stroke="#fff" stroke-opacity=".45" stroke-width="1.1" fill="none"/>`).join('')}
+      <path d="M50 24V128" stroke="#fff4ea" stroke-width="2" stroke-linecap="round"/>
+      <path d="M38 96l-6 6M62 70l7 4" stroke="#ffb59a" stroke-width="2" stroke-linecap="round"/>
+    </g>` },
+  2: { bg: 'radial-gradient(80% 60% at 50% 30%,#fff 0%,transparent 70%),linear-gradient(170deg,#fde6ee,#f3c3d6)', ink: '#7a3a5a', svg: `
+    <path d="M36 92C40 70 48 52 58 38M64 94C62 72 60 56 58 38" stroke="#6b8a3a" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="M58 38C66 28 80 26 86 32C78 40 66 42 58 38Z" fill="url(#aLeaf)"/><path d="M60 37L82 32" stroke="#e8ffd0" stroke-opacity=".6" stroke-width="1"/>
+    <circle cx="35" cy="98" r="14" fill="url(#aCherry)"/><circle cx="65" cy="100" r="14" fill="url(#aCherry)"/>
+    <ellipse cx="30" cy="92" rx="4" ry="2.6" fill="#fff" opacity=".7" transform="rotate(-30 30 92)"/><ellipse cx="60" cy="94" rx="4" ry="2.6" fill="#fff" opacity=".7" transform="rotate(-30 60 94)"/>
+    <path d="M50 22c-3-4-9-1-6 4l6 6 6-6c3-5-3-8-6-4z" fill="#f28ab0" opacity=".8"/>` },
+  3: { bg: 'radial-gradient(90% 50% at 50% 110%,#b7e8c6 0%,transparent 70%),linear-gradient(180deg,#ffe4cc,#dff3df)', ink: '#3c5a44', svg: `
+    <ellipse cx="50" cy="118" rx="38" ry="7" fill="#7cc48f" opacity=".55"/>
+    ${[[28, 96, 16, .85], [52, 76, 40, 1.15], [74, 100, 14, .75]].map(([x, top, h, s]) => `
+      <rect x="${x - 6 * s}" y="${top}" width="${12 * s}" height="${118 - top}" rx="${5 * s}" fill="url(#aStem)"/>
+      <path d="M${x - 22 * s} ${top + 3}C${x - 20 * s} ${top - 18 * s} ${x + 20 * s} ${top - 18 * s} ${x + 22 * s} ${top + 3}Z" fill="url(#aCap)"/>
+      <circle cx="${x - 9 * s}" cy="${top - 6 * s}" r="${2.6 * s}" fill="#fff"/><circle cx="${x + 5 * s}" cy="${top - 10 * s}" r="${3.2 * s}" fill="#fff"/><circle cx="${x + 13 * s}" cy="${top - 2 * s}" r="${2 * s}" fill="#fff"/>`).join('')}` },
+  4: { bg: 'radial-gradient(80% 50% at 70% 20%,#fff 0%,transparent 70%),linear-gradient(180deg,#a9d8ff,#e7f5ff)', ink: '#22507c', svg: `
+    ${cloud(24, 118, .9, '#fff', .9)}${cloud(80, 122, .7, '#fff', .8)}
+    ${[[30, 52, 'aB1', -6], [56, 40, 'aB2', 4], [72, 66, 'aB3', 10], [44, 72, 'aB4', -2]].map(([x, y, g, r]) => `
+      <path d="M${x} ${y + 17}C${x - 4} ${y + 34} ${50 + r} ${y + 40} 50 118" stroke="#5d6f86" stroke-width="1" fill="none" opacity=".7"/>
+      <ellipse cx="${x}" cy="${y}" rx="12" ry="15" fill="url(#${g})" transform="rotate(${r} ${x} ${y})"/>
+      <path d="M${x - 2} ${y + 15}l2 3 2-3z" fill="#5d6f86" opacity=".7"/>
+      <ellipse cx="${x - 4}" cy="${y - 6}" rx="3" ry="5" fill="#fff" opacity=".55" transform="rotate(${r - 20} ${x - 4} ${y - 6})"/>`).join('')}` },
+  5: { bg: 'radial-gradient(70% 50% at 50% 45%,#fffbe0 0%,transparent 70%),linear-gradient(170deg,#fff1a8,#ffcf9a)', ink: '#7a4612', svg: `
+    <path d="M50 80C50 96 48 108 52 124" stroke="#4f9a4f" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M51 108C40 98 28 100 24 106C34 112 44 112 51 108Z" fill="url(#aLeaf)"/>
+    <g transform="translate(50 64)">${[0, 72, 144, 216, 288].map(a => `<ellipse cx="0" cy="-15" rx="10" ry="16" fill="url(#aPetal)" transform="rotate(${a})"/>`).join('')}
+      <circle r="9" fill="#ffd23f"/><circle r="9" fill="none" stroke="#e59a12" stroke-width="1.5" stroke-dasharray="1.5 2.5"/></g>` },
+  6: { bg: 'radial-gradient(60% 45% at 50% 52%,#a8641a 0%,transparent 75%),linear-gradient(180deg,#24170b,#4a2e0c)', ink: '#ffd27a', svg: `
+    <g transform="translate(50 74)">${[[0, -24], [-21, -12], [21, -12], [-21, 12], [21, 12], [0, 24]].map(([x, y]) => `<path transform="translate(${x} ${y})" d="M0-12L10.4-6V6L0 12L-10.4 6V-6Z" fill="url(#aHoney)" stroke="#5a3408" stroke-width="1.6"/>`).join('')}
+      <path d="M0-12L10.4-6V6L0 12L-10.4 6V-6Z" fill="none" stroke="#ffcf63" stroke-opacity=".5" stroke-width="1.2"/>
+      <g transform="translate(26 -34) rotate(20)"><ellipse rx="6" ry="4.2" fill="#ffcc33"/><path d="M-2-4v8M2-4v8" stroke="#2a1a06" stroke-width="1.6"/><ellipse cx="-1" cy="-6" rx="4" ry="2.6" fill="#fff" opacity=".75"/><ellipse cx="3" cy="-6" rx="3.4" ry="2.2" fill="#fff" opacity=".6"/></g></g>` },
+  7: { bg: 'radial-gradient(70% 50% at 50% 50%,#ffe3f1 0%,transparent 75%),linear-gradient(160deg,#f6b8d6,#b9a0ec)', ink: '#ffffff', svg: `
+    ${[[22, 48], [80, 30], [16, 96], [86, 88]].map(([x, y]) => `<g transform="translate(${x} ${y})">${[0, 72, 144, 216, 288].map(a => `<ellipse cy="-3.4" rx="2.4" ry="3.6" fill="#fff" opacity=".85" transform="rotate(${a})"/>`).join('')}<circle r="1.4" fill="#f58fb4"/></g>`).join('')}
+    ${eye('aIris', '#5a3a7a')}` },
+  8: { bg: 'repeating-conic-gradient(from 0deg at 50% 53%,rgba(255,255,255,.55) 0 6deg,transparent 6deg 18deg),linear-gradient(170deg,#e9fbf6,#bfe7df)', ink: '#1f5a55', svg: `
+    <circle cx="50" cy="74" r="40" fill="#e9fbf6" opacity=".6"/>${eye('aIris2', '#1f5a55')}` },
+  9: { bg: 'radial-gradient(70% 50% at 50% 45%,#f7e6f0 0%,transparent 75%),linear-gradient(170deg,#ecd3e3,#c7a3c4)', ink: '#5a2e4f', svg: `
+    <g transform="translate(44 66)">
+      <g opacity=".55" stroke="#7a4a6c" stroke-width="1.2" fill="none">${[4, 8, 12, 16].map(r => `<path d="M${-r} 4C${-r} ${-r} ${r} ${-r} ${r} 4C${r} ${r * .6} ${r * .3} ${r} 0 ${r}"/>`).join('')}</g>
+      <circle r="20" fill="url(#aGlass)"/><circle r="20" fill="none" stroke="url(#aBrass)" stroke-width="5"/>
+      <path d="M-10-8C-6-13 0-14 4-13" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      <path d="M15 15L34 36" stroke="#5a2e4f" stroke-width="8" stroke-linecap="round"/><path d="M15 15L22 23" stroke="url(#aBrass)" stroke-width="8" stroke-linecap="round"/></g>` },
+  10: { bg: 'radial-gradient(60% 40% at 50% 50%,#efe6fb 0%,transparent 75%),linear-gradient(170deg,#dccff0,#b2a1cf)', ink: '#3f2d5c', svg: `
+    <rect x="26" y="28" width="48" height="72" rx="10" fill="url(#aBrass)"/><rect x="30" y="32" width="40" height="64" rx="7" fill="none" stroke="#fff3c9" stroke-opacity=".6" stroke-width="1.4"/>
+    <circle cx="50" cy="60" r="24" fill="url(#aKeyGlow)" opacity=".7"/>
+    <path d="M50 46a10 10 0 0 1 5 18.7L58 84H42l3-19.3A10 10 0 0 1 50 46z" fill="#2a1d3d"/>
+    <circle cx="50" cy="56" r="3.2" fill="#ffe9a8"/><circle cx="51" cy="55" r="1" fill="#fff"/>
+    <circle cx="33" cy="35" r="1.8" fill="#8a5a1c"/><circle cx="67" cy="35" r="1.8" fill="#8a5a1c"/><circle cx="33" cy="93" r="1.8" fill="#8a5a1c"/><circle cx="67" cy="93" r="1.8" fill="#8a5a1c"/>` },
+  11: { bg: 'radial-gradient(70% 50% at 50% 45%,#5fc7bd 0%,transparent 75%),linear-gradient(170deg,#0f3e45,#2a8d88)', ink: '#eafffb', svg: `
+    <g transform="translate(50 70)">
+      <rect x="-28" y="-24" width="24" height="34" rx="4" fill="url(#aCardA)" transform="rotate(-14)"/>
+      <rect x="4" y="-10" width="24" height="34" rx="4" fill="url(#aCardB)" transform="rotate(12)"/>
+      <path d="M-24-30C-6-46 22-40 30-20" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M33-27L30-18L22-23" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M26 34C8 50-20 44-28 24" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M-31 31L-28 22L-20 27" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>` },
+  12: { bg: 'linear-gradient(135deg,#ffb2a6 0%,#ffe08a 30%,#a8edcf 62%,#a7bfff 100%)', ink: '#2a2140', svg: `
+    <g transform="translate(50 72)" fill="none" stroke-linecap="round">
+      <path d="M0 0C14-22 38-22 38 0S14 22 0 0C-14-22-38-22-38 0S-14 22 0 0Z" stroke="#fff" stroke-width="13" opacity=".55"/>
+      <path d="M0 0C14-22 38-22 38 0S14 22 0 0C-14-22-38-22-38 0S-14 22 0 0Z" stroke="url(#aRibbon)" stroke-width="8"/>
+      <circle cx="-30" cy="-8" r="4" fill="#fff" stroke="none"/><circle cx="30" cy="8" r="4" fill="#fff" stroke="none"/></g>
+    ${star(20, 30, 3, '#fff')}${star(80, 116, 3, '#fff')}` },
+  13: { bg: 'radial-gradient(70% 45% at 50% 40%,#5a2a5e 0%,transparent 75%),linear-gradient(180deg,#160c20,#3e1a3a)', ink: '#ff9ec0', svg: `
+    ${[[18, 96], [30, 112], [70, 104], [82, 118], [48, 122]].map(([x, y]) => `<path d="M${x} ${y}l-2 6" stroke="#9fd3ff" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>`).join('')}
+    <path d="M54 66L40 92H52L44 116L66 84H54L62 66Z" fill="url(#aBolt)" stroke="#fff3b0" stroke-width="1"/>
+    <g transform="translate(50 56) scale(1.55)" fill="url(#aCloudDark)"><circle cx="-12" cy="4" r="9"/><circle cx="0" cy="-3" r="12"/><circle cx="13" cy="3" r="9"/><rect x="-21" y="3" width="43" height="10" rx="5"/></g>
+    <path d="M28 52C32 44 40 40 48 42" stroke="#c7b6e6" stroke-opacity=".5" stroke-width="2" fill="none" stroke-linecap="round"/>` }
+};
+const ART_LABEL = { peek: 'Ansehen', spy: 'Spion', swap: 'Tausch' };
+const artCache = {};
+function artSVG(v) {
+  // action cards carry a script word near the bottom, so their motif sits a bit higher
+  const lift = v >= 7 && v <= 12 && v !== 10 ? 'transform="translate(0 -12)"' : '';
+  return artCache[v] || (artCache[v] = `<svg class="art" viewBox="0 0 100 140" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g ${lift}>${ART[v].svg}</g></svg>`);
+}
+document.body.insertAdjacentHTML('afterbegin', ART_DEFS);
+
 function cardHTML(c, o = {}) {
   const face = !!o.face;
-  let cls = 'card ' + (face ? 'face f-' + tier(c.v) : 'back');
+  let cls = 'card ' + (face ? 'face' : 'back');
   if (o.cls) cls += ' ' + o.cls;
   if (o.track) {
     const prev = lastFace.get(c.id);
@@ -939,10 +1048,14 @@ function cardHTML(c, o = {}) {
   let inner = '';
   if (face) {
     const pw = power(c.v);
-    inner = `<span class="n">${c.v}</span>` + (pw ? `<span class="lbl">${POWER[pw][1]}<i>${POWER[pw][0]}</i></span>` : `<span class="pip">${c.v}</span>`);
+    inner = artSVG(c.v) + `<span class="n">${c.v}</span><span class="n2">${c.v}</span>` + (pw ? `<span class="word">${ART_LABEL[pw]}</span>` : '');
   }
   const memo = o.memo !== undefined ? `<span class="memo">${o.memo}</span>` : '';
-  return `<div class="${cls}" ${o.attrs || ''}><div class="in">${inner}</div>${memo}</div>`;
+  const st = face ? ` style="--bgc:${ART[c.v].bg};--ink-c:${ART[c.v].ink}"` : '';
+  const at = o.attrs || '';
+  // merge style attrs if the caller passed one
+  const attrs = face && /style="/.test(at) ? at.replace('style="', `style="--bgc:${ART[c.v].bg};--ink-c:${ART[c.v].ink};`) : at + st;
+  return `<div class="${cls}" ${attrs}><div class="in">${inner}</div>${memo}</div>`;
 }
 
 function renderCard(p, i, c) {
@@ -1122,7 +1235,7 @@ function openSettings() {
 
 function openRules() {
   const ex = vs => `<div class="ex">${vs.map(v => cardHTML({ id: 0, v }, { face: true })).join('')}</div>`;
-  const deck = [0, 1, 4, 7, 9, 11, 13].map(v => `<div>${cardHTML({ id: 0, v }, { face: true })}${v === 0 || v === 13 ? '2×' : '4×'}</div>`).join('');
+  const deck = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(v => `<div>${cardHTML({ id: 0, v }, { face: true })}${v === 0 || v === 13 ? '2×' : '4×'}</div>`).join('');
   openSheet(`<h3>So läuft Lowkey</h3><p class="sub">Ziel: am Ende der Runde die <b>niedrigste Summe</b> vor dir liegen haben. 52 Karten von 0 bis 13 – die 0 und die 13 je zweimal, alles andere viermal.</p>
     <div class="deckrow">${deck}</div>
     <div class="rules">

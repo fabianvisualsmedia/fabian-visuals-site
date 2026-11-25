@@ -1,5 +1,5 @@
 // Lowkey service worker: app shell offline, fonts cached on first use.
-const VERSION = 'lowkey-v2';
+const VERSION = 'lowkey-v3';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
